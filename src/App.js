@@ -635,11 +635,16 @@ const GolfOddsComparison = () => {
           cursor: pointer;
           font-weight: 500;
           color: #1a1a1a;
-          max-width: 140px;
         }
 
         .expand-icon {
           color: #999;
+          flex-shrink: 0;
+        }
+
+        .player-name {
+          white-space: nowrap;
+        }
           flex-shrink: 0;
         }
 
@@ -730,12 +735,6 @@ const GolfOddsComparison = () => {
           text-align: center;
           color: #ccc;
           font-size: 0.9rem;
-        }
-
-        .player-name {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
 
         .odds-cell {
