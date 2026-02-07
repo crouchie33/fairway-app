@@ -75,7 +75,7 @@ const GolfOddsComparison = () => {
       setUserRegion(detectedRegion);
       
       // Auto-set odds format based on region
-      const detectedFormat = detectedRegion === 'us' ? 'american' : 'decimal';
+      const detectedFormat = detectedRegion === 'us' ? 'american' : 'fractional';
       setOddsFormat(detectedFormat);
       
       // Save to localStorage
@@ -88,7 +88,7 @@ const GolfOddsComparison = () => {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const isUS = timezone.includes('America/') || timezone.includes('US/');
       const fallbackRegion = isUS ? 'us' : 'uk';
-      const fallbackFormat = isUS ? 'american' : 'decimal';
+      const fallbackFormat = isUS ? 'american' : 'fractional';
       
       setUserRegion(fallbackRegion);
       setOddsFormat(fallbackFormat);
@@ -227,14 +227,45 @@ const GolfOddsComparison = () => {
     if (oddsFormat === 'american') {
       // Convert decimal to American odds
       if (odds >= 2.0) {
-        // Positive odds (underdog)
         const american = Math.round((odds - 1) * 100);
         return `+${american}`;
       } else {
-        // Negative odds (favorite)
         const american = Math.round(-100 / (odds - 1));
         return american.toString();
       }
+    } else if (oddsFormat === 'fractional') {
+      // Convert decimal to fractional odds
+      const decimalOdds = odds - 1;
+      
+      // Common fractions lookup for cleaner display
+      const commonFractions = {
+        0.5: '1/2', 0.33: '1/3', 0.67: '2/3', 0.25: '1/4', 0.75: '3/4',
+        0.2: '1/5', 0.4: '2/5', 0.6: '3/5', 0.8: '4/5',
+        1: '1/1', 1.5: '3/2', 2: '2/1', 2.5: '5/2', 3: '3/1',
+        3.5: '7/2', 4: '4/1', 5: '5/1', 6: '6/1', 7: '7/1',
+        8: '8/1', 9: '9/1', 10: '10/1', 11: '11/1', 12: '12/1',
+        14: '14/1', 16: '16/1', 20: '20/1', 25: '25/1', 33: '33/1',
+        50: '50/1', 66: '66/1', 100: '100/1'
+      };
+      
+      // Check for exact match
+      const rounded = Math.round(decimalOdds * 100) / 100;
+      if (commonFractions[rounded]) {
+        return commonFractions[rounded];
+      }
+      
+      // Calculate fraction
+      const tolerance = 0.01;
+      let numerator = Math.round(decimalOdds * 100);
+      let denominator = 100;
+      
+      // Simplify fraction
+      const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+      const divisor = gcd(numerator, denominator);
+      numerator /= divisor;
+      denominator /= divisor;
+      
+      return `${numerator}/${denominator}`;
     } else {
       // Decimal format
       return odds % 1 === 0 ? odds.toFixed(0) : odds.toFixed(1);
@@ -1448,10 +1479,12 @@ const GolfOddsComparison = () => {
                   <th key={idx}>
                     <div className="bookmaker-header">
                       <div className="bookmaker-name-rotated">{bookmaker.name}</div>
-                      <div className="each-way-terms">
-                        <span className="ew-places">{bookmaker.eachWay.places}</span>
-                        <span className="ew-fraction">{bookmaker.eachWay.fraction}</span>
-                      </div>
+                      {userRegion === 'uk' && (
+                        <div className="each-way-terms">
+                          <span className="ew-places">{bookmaker.eachWay.places}</span>
+                          <span className="ew-fraction">{bookmaker.eachWay.fraction}</span>
+                        </div>
+                      )}
                     </div>
                   </th>
                 ))}
@@ -1644,9 +1677,9 @@ const GolfOddsComparison = () => {
                   className={`region-btn-footer ${userRegion === 'uk' ? 'active' : ''}`}
                   onClick={() => {
                     setUserRegion('uk');
-                    setOddsFormat('decimal');
+                    setOddsFormat('fractional');
                     localStorage.setItem('userRegion', 'uk');
-                    localStorage.setItem('oddsFormat', 'decimal');
+                    localStorage.setItem('oddsFormat', 'fractional');
                   }}
                   title="UK Bookmakers"
                 >
@@ -1678,6 +1711,7 @@ const GolfOddsComparison = () => {
                 className="footer-odds-dropdown"
               >
                 <option value="decimal">Decimal (6.50)</option>
+                <option value="fractional">Fractional (11/2)</option>
                 <option value="american">American (+550)</option>
               </select>
             </div>
