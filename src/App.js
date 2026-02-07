@@ -808,6 +808,23 @@ const GolfOddsComparison = () => {
           padding: 0 !important;
         }
 
+        .form-boxes {
+          display: flex;
+          gap: 4px;
+        }
+
+        .form-box {
+          display: inline-block;
+          padding: 4px 8px;
+          border: 1px solid #d0d0d0;
+          background: white;
+          font-size: 0.85rem;
+          font-weight: 600;
+          text-align: center;
+          min-width: 28px;
+          border-radius: 3px;
+        }
+
         /* Version 2.4 - Simple approach */
         .desktop-expanded-view {
           display: block;
@@ -1590,18 +1607,23 @@ const GolfOddsComparison = () => {
                                 </div>
                                 <div className="expanded-section">
                                   <h4>Recent Form</h4>
-                                  <div style={{ display: 'flex', gap: '6px', fontSize: '0.9rem', fontWeight: '600' }}>
+                                  <div className="form-boxes">
                                     {player.recentForm?.map((pos, i) => (
-                                      <span key={i}>
-                                        {typeof pos === 'number' ? `T${pos}` : pos}
-                                        {i < player.recentForm.length - 1 ? ' -' : ''}
+                                      <span key={i} className="form-box">
+                                        {typeof pos === 'number' ? pos : pos.replace('T', '')}
                                       </span>
                                     ))}
                                   </div>
                                 </div>
                                 <div className="expanded-section">
                                   <h4>Course History</h4>
-                                  <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{player.courseHistory}</span>
+                                  <div className="form-boxes">
+                                    {player.courseHistory?.split('-').map((pos, i) => (
+                                      <span key={i} className="form-box">
+                                        {pos.replace('T', '')}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                                 <div className="expanded-section">
                                   <h4>Best Top 5</h4>
