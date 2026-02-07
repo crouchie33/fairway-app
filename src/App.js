@@ -1255,9 +1255,9 @@ const GolfOddsComparison = () => {
             font-size: 0.85rem;
           }
 
-          /* Mobile - show mobile panes, hide desktop */
+          /* Mobile - make content visible */
           .desktop-expanded-view {
-            display: none;
+            display: block;
           }
           
           .expanded-content {
