@@ -506,8 +506,8 @@ const GolfOddsComparison = () => {
           background: #f8f8f8;
           text-align: left;
           padding-left: 20px;
-          min-width: 140px;
-          max-width: 140px;
+          min-width: 180px;
+          max-width: 180px;
         }
 
         .player-header {
@@ -523,8 +523,8 @@ const GolfOddsComparison = () => {
           left: 0;
           top: 0;
           z-index: 11;
-          min-width: 140px;
-          max-width: 140px;
+          min-width: 180px;
+          max-width: 180px;
         }
 
         .player-header-content {
