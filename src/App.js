@@ -272,6 +272,27 @@ const GolfOddsComparison = () => {
     }
   };
 
+  const getFinishClass = (position) => {
+    // Handle MC (missed cut)
+    if (position === 'MC' || position === 'WD' || position === 'DQ') {
+      return 'finish-mc';
+    }
+    
+    // Extract number from position (handles T5, 5, etc.)
+    const posNum = parseInt(position.toString().replace(/\D/g, ''));
+    
+    if (isNaN(posNum)) return 'finish-other';
+    
+    if (posNum === 1) return 'finish-1';
+    if (posNum >= 2 && posNum <= 5) return 'finish-2-5';
+    if (posNum >= 6 && posNum <= 10) return 'finish-6-10';
+    if (posNum >= 11 && posNum <= 20) return 'finish-11-20';
+    if (posNum >= 21 && posNum <= 30) return 'finish-21-30';
+    if (posNum >= 31 && posNum <= 50) return 'finish-31-50';
+    
+    return 'finish-other';
+  };
+
   const togglePlayerExpand = (playerName) => {
     setExpandedPlayer(expandedPlayer === playerName ? null : playerName);
   };
@@ -810,20 +831,44 @@ const GolfOddsComparison = () => {
 
         .form-boxes {
           display: flex;
-          gap: 4px;
+          gap: 0;
         }
 
         .form-box {
           display: inline-block;
-          padding: 4px 8px;
+          padding: 6px 10px;
           border: 1px solid #d0d0d0;
-          background: white;
+          border-right: none;
           font-size: 0.85rem;
           font-weight: 600;
           text-align: center;
-          min-width: 28px;
-          border-radius: 3px;
+          min-width: 45px;
+          width: 45px;
         }
+
+        .form-box:first-child {
+          border-radius: 3px 0 0 3px;
+        }
+
+        .form-box:last-child {
+          border-right: 1px solid #d0d0d0;
+          border-radius: 0 3px 3px 0;
+        }
+
+        .form-box:only-child {
+          border-radius: 3px;
+          border-right: 1px solid #d0d0d0;
+        }
+
+        /* Blue gradient for finishes - darker = better */
+        .form-box.finish-1 { background: #1e3a8a; color: white; }
+        .form-box.finish-2-5 { background: #3b82f6; color: white; }
+        .form-box.finish-6-10 { background: #60a5fa; color: white; }
+        .form-box.finish-11-20 { background: #93c5fd; color: #1a1a1a; }
+        .form-box.finish-21-30 { background: #bfdbfe; color: #1a1a1a; }
+        .form-box.finish-31-50 { background: #dbeafe; color: #1a1a1a; }
+        .form-box.finish-mc { background: #f3f4f6; color: #6b7280; }
+        .form-box.finish-other { background: #f9fafb; color: #1a1a1a; }
 
         /* Version 2.4 - Simple approach */
         .desktop-expanded-view {
@@ -1609,7 +1654,7 @@ const GolfOddsComparison = () => {
                                   <h4>Recent Form</h4>
                                   <div className="form-boxes">
                                     {player.recentForm?.map((pos, i) => (
-                                      <span key={i} className="form-box">
+                                      <span key={i} className={`form-box ${getFinishClass(pos)}`}>
                                         {typeof pos === 'number' ? pos : pos.replace('T', '')}
                                       </span>
                                     ))}
@@ -1619,7 +1664,7 @@ const GolfOddsComparison = () => {
                                   <h4>Course History</h4>
                                   <div className="form-boxes">
                                     {player.courseHistory?.split('-').map((pos, i) => (
-                                      <span key={i} className="form-box">
+                                      <span key={i} className={`form-box ${getFinishClass(pos)}`}>
                                         {pos.replace('T', '')}
                                       </span>
                                     ))}
