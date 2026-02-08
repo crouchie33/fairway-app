@@ -42,6 +42,31 @@ const GolfOddsComparison = () => {
   const [useMock, setUseMock] = useState(true);
   const [userRegion, setUserRegion] = useState('uk'); // 'uk' or 'us'
   const [oddsFormat, setOddsFormat] = useState('decimal'); // 'decimal' or 'american'
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  // Countdown timer
+  useEffect(() => {
+    const mastersDate = new Date('2026-04-09T08:00:00-04:00'); // Masters 2026 first round
+    
+    const updateCountdown = () => {
+      const now = new Date();
+      const diff = mastersDate - now;
+      
+      if (diff > 0) {
+        setCountdown({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((diff % (1000 * 60)) / 1000)
+        });
+      }
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchTournamentData();
@@ -414,6 +439,26 @@ const GolfOddsComparison = () => {
         .tournament-tabs {
           display: flex;
           gap: 8px;
+        }
+
+        .countdown-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          font-size: 0.85rem;
+        }
+
+        .countdown-label {
+          color: #666;
+          font-weight: 500;
+        }
+
+        .countdown-time {
+          color: #1a1a1a;
+          font-weight: 700;
+          font-family: 'Courier New', monospace;
+          letter-spacing: 0.5px;
         }
 
         .tournament-tab {
@@ -1582,11 +1627,24 @@ const GolfOddsComparison = () => {
           }
 
           .mobile-swipe-indicator {
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
             padding: 12px;
-            font-size: 0.75rem;
-            color: #999;
             border-top: 1px solid #f0f0f0;
+          }
+
+          .swipe-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d0d0d0;
+            transition: background 0.3s;
+          }
+
+          .swipe-dot:first-child {
+            background: #666;
           }
             border-bottom: 1px solid #e5e5e5;
           }
@@ -1710,6 +1768,12 @@ const GolfOddsComparison = () => {
           </div>
           <div className="header-right">
             <div className="tagline">Better Odds. Better Bets.</div>
+            <div className="countdown-container">
+              <span className="countdown-label">Countdown to The Masters:</span>
+              <span className="countdown-time">
+                {countdown.days}d {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
+              </span>
+            </div>
             <div className="tournament-tabs">
               {MAJORS.map(major => (
                 <button
@@ -2106,7 +2170,11 @@ const GolfOddsComparison = () => {
                                   </div>
                                 </div>
                               </div>
-                              <div className="mobile-swipe-indicator">← Swipe for more →</div>
+                              <div className="mobile-swipe-indicator">
+                                <span className="swipe-dot"></span>
+                                <span className="swipe-dot"></span>
+                                <span className="swipe-dot"></span>
+                              </div>
                             </div>
                           </div>
                         </td>
