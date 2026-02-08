@@ -886,55 +886,56 @@ const GolfOddsComparison = () => {
 
         .desktop-cards-grid {
           display: flex;
-          gap: 10px;
+          gap: 8px;
           width: 100%;
+          align-items: stretch;
         }
 
         .desktop-info-card,
         .desktop-odds-card {
           background: white;
           border: 1px solid #e5e5e5;
-          border-radius: 8px;
-          padding: 10px;
+          border-radius: 6px;
+          padding: 8px 6px;
           text-align: center;
-          flex: 1;
-          min-width: 0;
+          flex: 0 0 auto;
+          width: 90px;
         }
 
         .desktop-form-card {
-          flex: 2;
+          width: 280px;
         }
 
         .desktop-card-label {
-          font-size: 0.7rem;
+          font-size: 0.65rem;
           color: #999;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.3px;
           font-weight: 600;
-          line-height: 1.2;
+          line-height: 1.1;
         }
 
         .desktop-card-sublabel {
-          font-size: 0.65rem;
+          font-size: 0.6rem;
           color: #bbb;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
-          margin-top: 2px;
-          margin-bottom: 6px;
+          letter-spacing: 0.2px;
+          margin-top: 1px;
+          margin-bottom: 4px;
         }
 
         .desktop-card-value {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #1a1a1a;
-          margin-top: 8px;
-        }
-
-        .desktop-card-odds {
-          font-size: 1.3rem;
+          font-size: 1rem;
           font-weight: 700;
           color: #1a1a1a;
           margin-top: 6px;
+        }
+
+        .desktop-card-odds {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin-top: 4px;
         }
 
         .desktop-form-card .form-boxes {
