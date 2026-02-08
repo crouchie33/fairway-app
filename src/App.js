@@ -43,6 +43,7 @@ const GolfOddsComparison = () => {
   const [userRegion, setUserRegion] = useState('uk'); // 'uk' or 'us'
   const [oddsFormat, setOddsFormat] = useState('decimal'); // 'decimal' or 'american'
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [activeMobilePane, setActiveMobilePane] = useState(0);
 
   // Countdown timer
   useEffect(() => {
@@ -603,9 +604,9 @@ const GolfOddsComparison = () => {
           background: #f8f8f8;
           text-align: left;
           padding-left: 20px;
-          width: 130px;
-          min-width: 130px;
-          max-width: 130px;
+          width: 150px;
+          min-width: 150px;
+          max-width: 150px;
         }
 
         .player-header {
@@ -621,9 +622,9 @@ const GolfOddsComparison = () => {
           left: 0;
           top: 0;
           z-index: 11;
-          width: 130px;
-          min-width: 130px;
-          max-width: 130px;
+          width: 150px;
+          min-width: 150px;
+          max-width: 150px;
         }
 
         .player-header-content {
@@ -721,9 +722,9 @@ const GolfOddsComparison = () => {
           text-align: left;
           padding-left: 20px;
           border-right: 1px solid #e5e5e5;
-          width: 130px;
-          min-width: 130px;
-          max-width: 130px;
+          width: 150px;
+          min-width: 150px;
+          max-width: 150px;
         }
 
         .odds-matrix tbody tr:hover td:first-child {
@@ -1274,6 +1275,10 @@ const GolfOddsComparison = () => {
             gap: 4px;
           }
 
+          .countdown-container {
+            display: none;
+          }
+
           .tournament-tab {
             padding: 6px 10px;
             font-size: 0.7rem;
@@ -1643,7 +1648,7 @@ const GolfOddsComparison = () => {
             transition: background 0.3s;
           }
 
-          .swipe-dot:first-child {
+          .swipe-dot.active {
             background: #666;
           }
             border-bottom: 1px solid #e5e5e5;
@@ -2044,7 +2049,15 @@ const GolfOddsComparison = () => {
 
                             {/* Mobile: Horizontal swipeable panes */}
                             <div className="mobile-panes-wrapper">
-                              <div className="mobile-tabs-container">
+                              <div 
+                                className="mobile-tabs-container"
+                                onScroll={(e) => {
+                                  const scrollLeft = e.target.scrollLeft;
+                                  const paneWidth = e.target.offsetWidth;
+                                  const activePane = Math.round(scrollLeft / paneWidth);
+                                  setActiveMobilePane(activePane);
+                                }}
+                              >
                                 <div className="mobile-tab-pane">
                                   <h3 className="mobile-pane-title">Outright Winner Odds</h3>
                                   <div className="mobile-bookmaker-grid">
@@ -2171,9 +2184,9 @@ const GolfOddsComparison = () => {
                                 </div>
                               </div>
                               <div className="mobile-swipe-indicator">
-                                <span className="swipe-dot"></span>
-                                <span className="swipe-dot"></span>
-                                <span className="swipe-dot"></span>
+                                <span className={`swipe-dot ${activeMobilePane === 0 ? 'active' : ''}`}></span>
+                                <span className={`swipe-dot ${activeMobilePane === 1 ? 'active' : ''}`}></span>
+                                <span className={`swipe-dot ${activeMobilePane === 2 ? 'active' : ''}`}></span>
                               </div>
                             </div>
                           </div>
