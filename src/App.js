@@ -722,7 +722,8 @@ const GolfOddsComparison = () => {
           font-size: 0.7rem;
           padding: 8px 6px;
           min-width: 50px;
-          max-width: 60px;
+          max-width: 55px;
+          width: 55px;
           text-align: center;
           line-height: 1.2;
           vertical-align: middle;
@@ -738,13 +739,15 @@ const GolfOddsComparison = () => {
           font-weight: 600;
           color: #666;
           font-size: 0.9rem;
+          max-width: 55px;
+          width: 55px;
         }
 
         .tipster-cell {
           padding: 10px 6px;
-          min-width: 40px;
-          max-width: 45px;
-          width: 45px;
+          min-width: 45px;
+          max-width: 50px;
+          width: 50px;
         }
 
         .tipster-bar-container {
