@@ -875,7 +875,7 @@ const GolfOddsComparison = () => {
           display: block;
         }
         
-        .mobile-panes {
+        .mobile-panes-wrapper {
           display: none;
         }
         
@@ -1347,13 +1347,171 @@ const GolfOddsComparison = () => {
             font-size: 0.85rem;
           }
 
-          /* Mobile - make content visible */
+          /* Mobile - hide desktop, show mobile panes */
           .desktop-expanded-view {
-            display: block;
+            display: none;
           }
-          
+
           .expanded-content {
             padding: 15px;
+          }
+
+          .mobile-panes-wrapper {
+            display: block;
+          }
+
+          .mobile-tabs-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            gap: 0;
+          }
+
+          .mobile-tabs-container::-webkit-scrollbar {
+            display: none;
+          }
+
+          .mobile-tab-pane {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            padding: 20px;
+            box-sizing: border-box;
+            min-width: 100%;
+          }
+
+          .mobile-pane-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            text-align: center;
+          }
+
+          .mobile-bookmaker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+
+          .mobile-bookmaker-card {
+            background: white;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+          }
+
+          .mobile-bookmaker-card:active {
+            transform: scale(0.98);
+            background: #f8f8f8;
+          }
+
+          .mobile-bookmaker-card.best {
+            background: #fff8e7;
+            border-color: #d4af37;
+            border-width: 3px;
+          }
+
+          .mobile-bookmaker-name {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+          }
+
+          .mobile-bookmaker-odds {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+          }
+
+          .mobile-bookmaker-ew {
+            font-size: 0.7rem;
+            color: #999;
+          }
+
+          .mobile-extra-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+
+          .mobile-extra-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+          }
+
+          .mobile-extra-card:active {
+            background: #f8f8f8;
+            transform: scale(0.98);
+          }
+
+          .mobile-extra-label {
+            font-size: 0.7rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 700;
+          }
+
+          .mobile-extra-bookmaker {
+            font-size: 0.7rem;
+            color: #666;
+            margin-bottom: 6px;
+          }
+
+          .mobile-extra-odds {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a1a1a;
+          }
+
+          .mobile-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+
+          .mobile-stat-item {
+            background: #f8f8f8;
+            border-radius: 8px;
+            padding: 12px;
+          }
+
+          .mobile-stat-label {
+            font-size: 0.7rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+          }
+
+          .mobile-stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a1a1a;
+          }
+
+          .mobile-swipe-indicator {
+            text-align: center;
+            padding: 12px;
+            font-size: 0.75rem;
+            color: #999;
+            border-top: 1px solid #f0f0f0;
           }
             border-bottom: 1px solid #e5e5e5;
           }
@@ -1707,6 +1865,132 @@ const GolfOddsComparison = () => {
                                   </span>
                                 </div>
                               </div>
+                            </div>
+
+                            {/* Mobile: Horizontal swipeable panes */}
+                            <div className="mobile-panes-wrapper">
+                              <div className="mobile-tabs-container">
+                                <div className="mobile-tab-pane">
+                                  <h3 className="mobile-pane-title">Outright Winner Odds</h3>
+                                  <div className="mobile-bookmaker-grid">
+                                    {bookmakers.map((bookmaker, i) => {
+                                      const odds = player.bookmakerOdds[bookmaker.name]?.outright;
+                                      const isBest = odds === bestOdds;
+                                      return (
+                                        <a
+                                          key={i}
+                                          href={affiliateLinks[bookmaker.name]}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className={`mobile-bookmaker-card ${isBest ? 'best' : ''}`}
+                                          onClick={() => {
+                                            if (window.gtag) {
+                                              window.gtag('event', 'bookmaker_click', {
+                                                bookmaker: bookmaker.name,
+                                                player: player.name,
+                                                odds: odds,
+                                                source: 'mobile_outright'
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          <div className="mobile-bookmaker-name">{bookmaker.name}</div>
+                                          <div className="mobile-bookmaker-odds">{formatOdds(odds)}</div>
+                                          {userRegion === 'uk' && (
+                                            <div className="mobile-bookmaker-ew">{bookmaker.eachWay.places} places</div>
+                                          )}
+                                        </a>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <div className="mobile-tab-pane">
+                                  <h3 className="mobile-pane-title">Extra Odds</h3>
+                                  <div className="mobile-extra-grid">
+                                    {['top5', 'top10', 'top20', 'top30', 'top40', 'makeCut'].map((market, idx) => {
+                                      const labels = {
+                                        top5: 'Top 5',
+                                        top10: 'Top 10',
+                                        top20: 'Top 20',
+                                        top30: 'Top 30',
+                                        top40: 'Top 40',
+                                        makeCut: 'Make Cut'
+                                      };
+                                      
+                                      const allOdds = bookmakers.map(b => ({
+                                        name: b.name,
+                                        odds: player.bookmakerOdds[b.name]?.[market] || (market === 'makeCut' ? 1.2 : null),
+                                        url: affiliateLinks[b.name]
+                                      })).filter(o => o.odds);
+                                      
+                                      const best = allOdds.length > 0 
+                                        ? allOdds.reduce((max, curr) => curr.odds > max.odds ? curr : max, allOdds[0])
+                                        : null;
+                                      
+                                      return best ? (
+                                        <a
+                                          key={idx}
+                                          href={best.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="mobile-extra-card"
+                                          onClick={() => {
+                                            if (window.gtag) {
+                                              window.gtag('event', 'bookmaker_click', {
+                                                bookmaker: best.name,
+                                                player: player.name,
+                                                market: labels[market],
+                                                odds: best.odds,
+                                                source: 'mobile_extra'
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          <div className="mobile-extra-label">{labels[market]}</div>
+                                          <div className="mobile-extra-bookmaker">{best.name}</div>
+                                          <div className="mobile-extra-odds">{formatOdds(best.odds)}</div>
+                                        </a>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                </div>
+
+                                <div className="mobile-tab-pane">
+                                  <h3 className="mobile-pane-title">Player Stats</h3>
+                                  <div className="mobile-stats-grid">
+                                    <div className="mobile-stat-item">
+                                      <div className="mobile-stat-label">Nationality</div>
+                                      <div className="mobile-stat-value">{player.nationality}</div>
+                                    </div>
+                                    <div className="mobile-stat-item">
+                                      <div className="mobile-stat-label">World Ranking</div>
+                                      <div className="mobile-stat-value">#{player.owgr || 'N/A'}</div>
+                                    </div>
+                                    <div className="mobile-stat-item">
+                                      <div className="mobile-stat-label">Recent Form</div>
+                                      <div className="form-boxes">
+                                        {player.recentForm?.map((pos, i) => (
+                                          <span key={i} className={`form-box ${getFinishClass(pos)}`}>
+                                            {typeof pos === 'number' ? pos : pos.replace('T', '')}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div className="mobile-stat-item">
+                                      <div className="mobile-stat-label">Course History</div>
+                                      <div className="form-boxes">
+                                        {player.courseHistory?.split('-').map((pos, i) => (
+                                          <span key={i} className={`form-box ${getFinishClass(pos)}`}>
+                                            {pos.replace('T', '')}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mobile-swipe-indicator">← Swipe for more →</div>
                             </div>
                           </div>
                         </td>
