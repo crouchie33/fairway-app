@@ -32,6 +32,11 @@ const GolfOddsComparison = () => {
     'BetMGM': 'https://sports.betmgm.com/golf?wm=YOUR_BETMGM_ID'
   };
 
+  // ===== API CONFIGURATION =====
+  const USE_LIVE_API = true; // Toggle: true = live API, false = mock data
+  const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
+  const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
+
   const [odds, setOdds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'avgOdds', direction: 'asc' });
@@ -44,6 +49,7 @@ const GolfOddsComparison = () => {
   const [oddsFormat, setOddsFormat] = useState('decimal'); // 'decimal' or 'american'
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeMobilePane, setActiveMobilePane] = useState(0);
+  const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
 
   // Countdown timer
   useEffect(() => {
@@ -127,8 +133,126 @@ const GolfOddsComparison = () => {
   };
 
   const fetchTournamentData = async () => {
-    // For now using mock data - real API integration would go here
-    useMockData();
+    if (!USE_LIVE_API) {
+      console.log('📊 Using MOCK data (USE_LIVE_API = false)');
+      useMockData();
+      return;
+    }
+
+    console.log('🔴 Attempting to fetch LIVE odds from The Odds API...');
+    setLoading(true);
+
+    try {
+      // Map tournament to API sport key
+      const sportKeys = {
+        'masters': 'golf_masters',
+        'pga': 'golf_pga_championship',
+        'usopen': 'golf_us_open',
+        'open': 'golf_the_open_championship'
+      };
+
+      const sportKey = sportKeys[selectedTournament.id] || 'golf_masters';
+      const regions = userRegion === 'us' ? 'us' : 'uk';
+
+      const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
+        `apiKey=${ODDS_API_KEY}&` +
+        `regions=${regions}&` +
+        `markets=outrights&` +
+        `oddsFormat=decimal`;
+
+      console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
+
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Response:', data);
+
+      // Check if we got data
+      if (!data || data.length === 0) {
+        console.warn('⚠️ API returned empty data - falling back to mock');
+        useMockData();
+        setApiStatus({ isLive: false, lastUpdated: null, error: 'No data available' });
+        return;
+      }
+
+      // Process API data
+      processLiveOdds(data);
+      setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
+      setUseMock(false);
+      console.log('✅ LIVE DATA loaded successfully!');
+
+    } catch (error) {
+      console.error('❌ API Error:', error.message);
+      console.log('📊 Falling back to MOCK data');
+      useMockData();
+      setApiStatus({ isLive: false, lastUpdated: null, error: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processLiveOdds = (apiData) => {
+    console.log('🔄 Processing live odds data...');
+    
+    // Extract bookmakers and players from API response
+    const bookmakerSet = new Set();
+    const playersMap = new Map();
+
+    apiData.forEach(event => {
+      event.bookmakers?.forEach(bookmaker => {
+        bookmakerSet.add(bookmaker.key);
+        
+        bookmaker.markets?.forEach(market => {
+          if (market.key === 'outrights') {
+            market.outcomes?.forEach(outcome => {
+              const playerName = outcome.name;
+              
+              if (!playersMap.has(playerName)) {
+                playersMap.set(playerName, {
+                  name: playerName,
+                  nationality: 'TBD', // Would need separate API/data source
+                  owgr: null,
+                  recentForm: [],
+                  courseHistory: '',
+                  tipsterPicks: [],
+                  bookmakerOdds: {}
+                });
+              }
+
+              const player = playersMap.get(playerName);
+              player.bookmakerOdds[bookmaker.title || bookmaker.key] = {
+                outright: outcome.price,
+                top5: 'N/A',
+                top10: 'N/A',
+                top20: 'N/A',
+                top30: 'N/A',
+                top40: 'N/A',
+                makeCut: 'N/A',
+                r1Leader: 'N/A'
+              };
+            });
+          }
+        });
+      });
+    });
+
+    // Convert to array
+    const players = Array.from(playersMap.values());
+    console.log(`📊 Processed ${players.length} players from ${bookmakerSet.size} bookmakers`);
+
+    // Create bookmaker list with each-way terms (default values)
+    const bookmakerList = Array.from(bookmakerSet).map(key => ({
+      name: key,
+      eachWay: { places: '5', fraction: '1/5' },
+      regions: [userRegion]
+    }));
+
+    setOdds(players);
+    setBookmakers(bookmakerList);
   };
 
   const useMockData = () => {
@@ -565,6 +689,23 @@ const GolfOddsComparison = () => {
           border-bottom: 1px solid #ffc107;
           font-size: 0.85rem;
           color: #856404;
+        }
+
+        .live-notice {
+          background: #d4edda;
+          padding: 12px 30px;
+          border-bottom: 1px solid #28a745;
+          font-size: 0.85rem;
+          color: #155724;
+          font-weight: 600;
+        }
+
+        .error-notice {
+          background: #f8d7da;
+          padding: 12px 30px;
+          border-bottom: 1px solid #dc3545;
+          font-size: 0.85rem;
+          color: #721c24;
         }
 
         .odds-matrix-container {
@@ -1799,6 +1940,18 @@ const GolfOddsComparison = () => {
       {useMock && (
         <div className="demo-notice">
           💡 Demo data - Live odds available during major tournaments
+        </div>
+      )}
+
+      {!useMock && apiStatus.isLive && (
+        <div className="live-notice">
+          🔴 LIVE DATA • Last updated: {apiStatus.lastUpdated?.toLocaleTimeString() || 'Just now'}
+        </div>
+      )}
+
+      {apiStatus.error && (
+        <div className="error-notice">
+          ⚠️ API Error: {apiStatus.error} - Using fallback data
         </div>
       )}
 
