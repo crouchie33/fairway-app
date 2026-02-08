@@ -1941,7 +1941,7 @@ const GolfOddsComparison = () => {
                     </tr>
                     {expandedPlayer === player.name && (
                       <tr className="expanded-row">
-                        <td colSpan={bookmakers.length + 2} className="expanded-cell">
+                        <td colSpan={bookmakers.length + 4} className="expanded-cell">
                           <div className="expanded-content">
                             {/* Desktop only */}
                             <div className="desktop-expanded-view">
