@@ -1356,8 +1356,25 @@ const GolfOddsComparison = () => {
             padding: 15px;
           }
 
+          .expanded-cell {
+            max-width: 100vw !important;
+            width: 100vw !important;
+            padding: 0 !important;
+          }
+
+          .expanded-row {
+            display: block !important;
+            max-width: 100vw !important;
+          }
+
           .mobile-panes-wrapper {
             display: block;
+            width: 100vw;
+            max-width: 100vw;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            box-sizing: border-box;
           }
 
           .mobile-tabs-container {
@@ -1367,6 +1384,7 @@ const GolfOddsComparison = () => {
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             gap: 0;
+            width: 100%;
           }
 
           .mobile-tabs-container::-webkit-scrollbar {
@@ -1374,11 +1392,12 @@ const GolfOddsComparison = () => {
           }
 
           .mobile-tab-pane {
-            flex: 0 0 100%;
+            flex: 0 0 100vw;
+            width: 100vw;
+            max-width: 100vw;
             scroll-snap-align: start;
             padding: 20px;
             box-sizing: border-box;
-            min-width: 100%;
           }
 
           .mobile-pane-title {
