@@ -558,6 +558,7 @@ const GolfOddsComparison = () => {
           background: #f8f8f8;
           text-align: left;
           padding-left: 20px;
+          width: 130px;
           min-width: 130px;
           max-width: 130px;
         }
@@ -575,6 +576,7 @@ const GolfOddsComparison = () => {
           left: 0;
           top: 0;
           z-index: 11;
+          width: 130px;
           min-width: 130px;
           max-width: 130px;
         }
@@ -674,6 +676,7 @@ const GolfOddsComparison = () => {
           text-align: left;
           padding-left: 20px;
           border-right: 1px solid #e5e5e5;
+          width: 130px;
           min-width: 130px;
           max-width: 130px;
         }
@@ -1284,10 +1287,17 @@ const GolfOddsComparison = () => {
 
           .odds-matrix thead th:first-child {
             min-width: auto;
+            max-width: none;
             width: 70%;
             position: relative;
             top: 0;
             left: 0;
+          }
+
+          .odds-matrix tbody td:first-child {
+            min-width: auto;
+            max-width: none;
+            width: auto;
           }
 
           .best-odds-header {
