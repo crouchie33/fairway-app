@@ -152,7 +152,7 @@ const GolfOddsComparison = () => {
       { name: 'Shane Lowry', nationality: 'IRL', owgr: 18, recentForm: [16, 15, 17, 18, 14, 16, 15], courseHistory: 'T12-T25-MC-T20-T22-MC-T18', tipsterPicks: ['ProGolfTips'] },
       { name: 'Tyrrell Hatton', nationality: 'ENG', owgr: 20, recentForm: [18, 17, 15, 16, 19, 18, 17], courseHistory: 'T15-T18-T23-T21-T19-T22-T20', tipsterPicks: [] },
       { name: 'Min Woo Lee', nationality: 'AUS', owgr: 35, recentForm: [19, 20, 18, 17, 16, 19, 18], courseHistory: 'MC-T35-T42-T38-T40-MC-T36', tipsterPicks: [] },
-      { name: 'Ludvig Aberg', nationality: 'SWE', owgr: 13, recentForm: [2, 5, 3, 7, 6, 4, 5], courseHistory: '--T8-T6-T10-T7-T9-T8', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'OddsSharks', 'GreenJacket', 'BirdiePicksGolf'] },
+      { name: 'Ludvig Aberg', nationality: 'SWE', owgr: 13, recentForm: [2, 5, 3, 7, 6, 4, 5], courseHistory: '—-8-6-10-7-9-8', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'OddsSharks', 'GreenJacket', 'BirdiePicksGolf'] },
       { name: 'Sahith Theegala', nationality: 'USA', owgr: 25, recentForm: [20, 16, 19, 20, 18, 20, 19], courseHistory: 'T19-MC-T31-T28-T25-MC-T29', tipsterPicks: [] },
     ];
 
