@@ -604,9 +604,9 @@ const GolfOddsComparison = () => {
           background: #f8f8f8;
           text-align: left;
           padding-left: 20px;
-          width: 150px;
-          min-width: 150px;
-          max-width: 150px;
+          width: 145px;
+          min-width: 145px;
+          max-width: 145px;
         }
 
         .player-header {
@@ -622,9 +622,9 @@ const GolfOddsComparison = () => {
           left: 0;
           top: 0;
           z-index: 11;
-          width: 150px;
-          min-width: 150px;
-          max-width: 150px;
+          width: 145px;
+          min-width: 145px;
+          max-width: 145px;
         }
 
         .player-header-content {
@@ -722,9 +722,9 @@ const GolfOddsComparison = () => {
           text-align: left;
           padding-left: 20px;
           border-right: 1px solid #e5e5e5;
-          width: 150px;
-          min-width: 150px;
-          max-width: 150px;
+          width: 145px;
+          min-width: 145px;
+          max-width: 145px;
         }
 
         .odds-matrix tbody tr:hover td:first-child {
@@ -738,6 +738,8 @@ const GolfOddsComparison = () => {
           cursor: pointer;
           font-weight: 500;
           color: #1a1a1a;
+          width: 100%;
+          overflow: visible;
         }
 
         .expand-icon {
@@ -747,8 +749,8 @@ const GolfOddsComparison = () => {
 
         .player-name {
           white-space: nowrap;
-        }
-          flex-shrink: 0;
+          overflow: visible;
+          flex: 1;
         }
 
         .desktop-only {
@@ -772,9 +774,9 @@ const GolfOddsComparison = () => {
         .owgr-header {
           font-size: 0.7rem;
           padding: 8px 6px;
-          min-width: 50px;
-          max-width: 55px;
-          width: 55px;
+          min-width: 55px;
+          max-width: 60px;
+          width: 60px;
           text-align: center;
           line-height: 1.2;
           vertical-align: middle;
@@ -790,8 +792,8 @@ const GolfOddsComparison = () => {
           font-weight: 600;
           color: #666;
           font-size: 0.9rem;
-          max-width: 55px;
-          width: 55px;
+          max-width: 60px;
+          width: 60px;
         }
 
         .tipster-cell {
