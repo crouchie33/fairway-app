@@ -1498,30 +1498,22 @@ const GolfOddsComparison = () => {
             color: #1a1a1a;
           }
 
-          .mobile-stat-nationality {
-            background: #f8f8f8;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            text-align: center;
-            display: inline-block;
-            min-width: 120px;
-          }
-
           .mobile-stats-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
           }
 
-          .mobile-stat-item {
-            background: #f8f8f8;
+          .mobile-stat-card {
+            background: white;
+            border: 1px solid #e5e5e5;
             border-radius: 8px;
             padding: 12px;
+            text-align: center;
           }
 
-          .mobile-stat-full {
-            width: 100%;
+          .mobile-stat-full-width {
+            grid-column: 1 / -1;
           }
 
           .mobile-stat-label {
@@ -1991,20 +1983,19 @@ const GolfOddsComparison = () => {
 
                                 <div className="mobile-tab-pane">
                                   <h3 className="mobile-pane-title">Player Stats</h3>
-                                  
-                                  {/* Nationality - full width */}
-                                  <div className="mobile-stat-nationality">
-                                    <div className="mobile-stat-label">Nationality</div>
-                                    <div className="mobile-stat-value">{player.nationality}</div>
-                                  </div>
-
-                                  {/* Ranking + Form + History in grid */}
                                   <div className="mobile-stats-grid">
-                                    <div className="mobile-stat-item mobile-stat-full">
+                                    {/* Row 1: Nationality + Ranking side by side */}
+                                    <div className="mobile-stat-card">
+                                      <div className="mobile-stat-label">Nationality</div>
+                                      <div className="mobile-stat-value">{player.nationality}</div>
+                                    </div>
+                                    <div className="mobile-stat-card">
                                       <div className="mobile-stat-label">World Ranking</div>
                                       <div className="mobile-stat-value">#{player.owgr || 'N/A'}</div>
                                     </div>
-                                    <div className="mobile-stat-item mobile-stat-full">
+                                    
+                                    {/* Row 2: Recent Form - full width */}
+                                    <div className="mobile-stat-card mobile-stat-full-width">
                                       <div className="mobile-stat-label">Recent Form</div>
                                       <div className="form-boxes">
                                         {player.recentForm?.map((pos, i) => (
@@ -2014,7 +2005,9 @@ const GolfOddsComparison = () => {
                                         ))}
                                       </div>
                                     </div>
-                                    <div className="mobile-stat-item mobile-stat-full">
+                                    
+                                    {/* Row 3: Course History - full width */}
+                                    <div className="mobile-stat-card mobile-stat-full-width">
                                       <div className="mobile-stat-label">Course History</div>
                                       <div className="form-boxes">
                                         {player.courseHistory?.split('-').map((pos, i) => (
