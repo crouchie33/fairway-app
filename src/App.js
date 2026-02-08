@@ -1179,6 +1179,25 @@ const GolfOddsComparison = () => {
           width: 90px;
         }
 
+        .desktop-odds-card-clickable {
+          cursor: pointer;
+          transition: all 0.2s;
+          text-decoration: none;
+          color: inherit;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .desktop-odds-card-clickable:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+          border-color: #1a1a1a;
+        }
+
+        .desktop-odds-card-clickable:active {
+          transform: translateY(0);
+        }
+
         .desktop-form-card {
           width: 280px;
         }
@@ -2227,71 +2246,257 @@ const GolfOddsComparison = () => {
                                 </div>
 
                                 {/* Extra Odds Cards */}
-                                <div className="desktop-odds-card">
-                                  <div className="desktop-card-label">Top 5</div>
-                                  <div className="desktop-card-sublabel">Best</div>
-                                  <div className="desktop-card-odds">
-                                    {(() => {
-                                      const allTop5 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top5).filter(o => o);
-                                      return formatOdds(Math.max(...allTop5));
-                                    })()}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const allTop5 = bookmakers.map(b => ({
+                                    name: b.name,
+                                    odds: player.bookmakerOdds[b.name]?.top5,
+                                    url: affiliateLinks[b.name]
+                                  })).filter(o => o.odds);
+                                  
+                                  const best = allTop5.length > 0 
+                                    ? allTop5.reduce((max, curr) => curr.odds > max.odds ? curr : max, allTop5[0])
+                                    : null;
+                                  
+                                  return best ? (
+                                    <a
+                                      href={best.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="desktop-odds-card desktop-odds-card-clickable"
+                                      onClick={() => {
+                                        if (window.gtag) {
+                                          window.gtag('event', 'bookmaker_click', {
+                                            bookmaker: best.name,
+                                            player: player.name,
+                                            market: 'Top 5',
+                                            odds: best.odds,
+                                            source: 'desktop_extra'
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <div className="desktop-card-label">Top 5</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
+                                    </a>
+                                  ) : (
+                                    <div className="desktop-odds-card">
+                                      <div className="desktop-card-label">Top 5</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">N/A</div>
+                                    </div>
+                                  );
+                                })()}
                                 
-                                <div className="desktop-odds-card">
-                                  <div className="desktop-card-label">Top 10</div>
-                                  <div className="desktop-card-sublabel">Best</div>
-                                  <div className="desktop-card-odds">
-                                    {(() => {
-                                      const allTop10 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top10).filter(o => o);
-                                      return formatOdds(Math.max(...allTop10));
-                                    })()}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const allTop10 = bookmakers.map(b => ({
+                                    name: b.name,
+                                    odds: player.bookmakerOdds[b.name]?.top10,
+                                    url: affiliateLinks[b.name]
+                                  })).filter(o => o.odds);
+                                  
+                                  const best = allTop10.length > 0 
+                                    ? allTop10.reduce((max, curr) => curr.odds > max.odds ? curr : max, allTop10[0])
+                                    : null;
+                                  
+                                  return best ? (
+                                    <a
+                                      href={best.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="desktop-odds-card desktop-odds-card-clickable"
+                                      onClick={() => {
+                                        if (window.gtag) {
+                                          window.gtag('event', 'bookmaker_click', {
+                                            bookmaker: best.name,
+                                            player: player.name,
+                                            market: 'Top 10',
+                                            odds: best.odds,
+                                            source: 'desktop_extra'
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <div className="desktop-card-label">Top 10</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
+                                    </a>
+                                  ) : (
+                                    <div className="desktop-odds-card">
+                                      <div className="desktop-card-label">Top 10</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">N/A</div>
+                                    </div>
+                                  );
+                                })()}
                                 
-                                <div className="desktop-odds-card">
-                                  <div className="desktop-card-label">Top 20</div>
-                                  <div className="desktop-card-sublabel">Best</div>
-                                  <div className="desktop-card-odds">
-                                    {(() => {
-                                      const allTop20 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top20).filter(o => o);
-                                      return formatOdds(Math.max(...allTop20));
-                                    })()}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const allTop20 = bookmakers.map(b => ({
+                                    name: b.name,
+                                    odds: player.bookmakerOdds[b.name]?.top20,
+                                    url: affiliateLinks[b.name]
+                                  })).filter(o => o.odds);
+                                  
+                                  const best = allTop20.length > 0 
+                                    ? allTop20.reduce((max, curr) => curr.odds > max.odds ? curr : max, allTop20[0])
+                                    : null;
+                                  
+                                  return best ? (
+                                    <a
+                                      href={best.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="desktop-odds-card desktop-odds-card-clickable"
+                                      onClick={() => {
+                                        if (window.gtag) {
+                                          window.gtag('event', 'bookmaker_click', {
+                                            bookmaker: best.name,
+                                            player: player.name,
+                                            market: 'Top 20',
+                                            odds: best.odds,
+                                            source: 'desktop_extra'
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <div className="desktop-card-label">Top 20</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
+                                    </a>
+                                  ) : (
+                                    <div className="desktop-odds-card">
+                                      <div className="desktop-card-label">Top 20</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">N/A</div>
+                                    </div>
+                                  );
+                                })()}
 
-                                <div className="desktop-odds-card">
-                                  <div className="desktop-card-label">Top 30</div>
-                                  <div className="desktop-card-sublabel">Best</div>
-                                  <div className="desktop-card-odds">
-                                    {(() => {
-                                      const allTop30 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top30).filter(o => o);
-                                      return formatOdds(Math.max(...allTop30));
-                                    })()}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const allTop30 = bookmakers.map(b => ({
+                                    name: b.name,
+                                    odds: player.bookmakerOdds[b.name]?.top30,
+                                    url: affiliateLinks[b.name]
+                                  })).filter(o => o.odds);
+                                  
+                                  const best = allTop30.length > 0 
+                                    ? allTop30.reduce((max, curr) => curr.odds > max.odds ? curr : max, allTop30[0])
+                                    : null;
+                                  
+                                  return best ? (
+                                    <a
+                                      href={best.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="desktop-odds-card desktop-odds-card-clickable"
+                                      onClick={() => {
+                                        if (window.gtag) {
+                                          window.gtag('event', 'bookmaker_click', {
+                                            bookmaker: best.name,
+                                            player: player.name,
+                                            market: 'Top 30',
+                                            odds: best.odds,
+                                            source: 'desktop_extra'
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <div className="desktop-card-label">Top 30</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
+                                    </a>
+                                  ) : (
+                                    <div className="desktop-odds-card">
+                                      <div className="desktop-card-label">Top 30</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">N/A</div>
+                                    </div>
+                                  );
+                                })()}
 
-                                <div className="desktop-odds-card">
-                                  <div className="desktop-card-label">Top 40</div>
-                                  <div className="desktop-card-sublabel">Best</div>
-                                  <div className="desktop-card-odds">
-                                    {(() => {
-                                      const allTop40 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top40).filter(o => o);
-                                      return formatOdds(Math.max(...allTop40));
-                                    })()}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const allTop40 = bookmakers.map(b => ({
+                                    name: b.name,
+                                    odds: player.bookmakerOdds[b.name]?.top40,
+                                    url: affiliateLinks[b.name]
+                                  })).filter(o => o.odds);
+                                  
+                                  const best = allTop40.length > 0 
+                                    ? allTop40.reduce((max, curr) => curr.odds > max.odds ? curr : max, allTop40[0])
+                                    : null;
+                                  
+                                  return best ? (
+                                    <a
+                                      href={best.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="desktop-odds-card desktop-odds-card-clickable"
+                                      onClick={() => {
+                                        if (window.gtag) {
+                                          window.gtag('event', 'bookmaker_click', {
+                                            bookmaker: best.name,
+                                            player: player.name,
+                                            market: 'Top 40',
+                                            odds: best.odds,
+                                            source: 'desktop_extra'
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <div className="desktop-card-label">Top 40</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
+                                    </a>
+                                  ) : (
+                                    <div className="desktop-odds-card">
+                                      <div className="desktop-card-label">Top 40</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">N/A</div>
+                                    </div>
+                                  );
+                                })()}
                                 
-                                <div className="desktop-odds-card">
-                                  <div className="desktop-card-label">R1 Leader</div>
-                                  <div className="desktop-card-sublabel">Best</div>
-                                  <div className="desktop-card-odds">
-                                    {(() => {
-                                      const allR1 = bookmakers.map(b => player.bookmakerOdds[b.name]?.r1Leader).filter(o => o);
-                                      return formatOdds(Math.max(...allR1));
-                                    })()}
-                                  </div>
-                                </div>
+                                {(() => {
+                                  const allR1 = bookmakers.map(b => ({
+                                    name: b.name,
+                                    odds: player.bookmakerOdds[b.name]?.r1Leader,
+                                    url: affiliateLinks[b.name]
+                                  })).filter(o => o.odds);
+                                  
+                                  const best = allR1.length > 0 
+                                    ? allR1.reduce((max, curr) => curr.odds > max.odds ? curr : max, allR1[0])
+                                    : null;
+                                  
+                                  return best ? (
+                                    <a
+                                      href={best.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="desktop-odds-card desktop-odds-card-clickable"
+                                      onClick={() => {
+                                        if (window.gtag) {
+                                          window.gtag('event', 'bookmaker_click', {
+                                            bookmaker: best.name,
+                                            player: player.name,
+                                            market: 'R1 Leader',
+                                            odds: best.odds,
+                                            source: 'desktop_extra'
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <div className="desktop-card-label">R1 Leader</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
+                                    </a>
+                                  ) : (
+                                    <div className="desktop-odds-card">
+                                      <div className="desktop-card-label">R1 Leader</div>
+                                      <div className="desktop-card-sublabel">Best</div>
+                                      <div className="desktop-card-odds">N/A</div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
 
