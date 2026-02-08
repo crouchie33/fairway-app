@@ -36,6 +36,7 @@ const GolfOddsComparison = () => {
   const USE_LIVE_API = true; // Toggle: true = live API, false = mock data
   const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
   const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
+  const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour cache
 
   const [odds, setOdds] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,42 @@ const GolfOddsComparison = () => {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
+
+  // Check if cached data is still valid
+  const getCachedData = () => {
+    try {
+      const cached = localStorage.getItem('oddsCache');
+      if (!cached) return null;
+
+      const { data, timestamp, tournament } = JSON.parse(cached);
+      const age = Date.now() - timestamp;
+
+      // Check if cache is fresh and for same tournament
+      if (age < CACHE_DURATION_MS && tournament === selectedTournament.id) {
+        console.log(`✅ Using cached data (${Math.round(age / 1000 / 60)} mins old)`);
+        return data;
+      }
+
+      console.log('🕐 Cache expired or tournament changed');
+      return null;
+    } catch (error) {
+      console.error('Cache read error:', error);
+      return null;
+    }
+  };
+
+  const setCachedData = (data) => {
+    try {
+      localStorage.setItem('oddsCache', JSON.stringify({
+        data,
+        timestamp: Date.now(),
+        tournament: selectedTournament.id
+      }));
+      console.log('💾 Data cached successfully');
+    } catch (error) {
+      console.error('Cache write error:', error);
+    }
+  };
 
   // Countdown timer
   useEffect(() => {
@@ -139,7 +176,21 @@ const GolfOddsComparison = () => {
       return;
     }
 
-    console.log('🔴 Attempting to fetch LIVE odds from The Odds API...');
+    // Check cache first
+    const cachedData = getCachedData();
+    if (cachedData) {
+      processLiveOdds(cachedData.apiResponse);
+      setApiStatus({ 
+        isLive: true, 
+        lastUpdated: new Date(cachedData.timestamp), 
+        error: null 
+      });
+      setUseMock(false);
+      return;
+    }
+
+    console.log('🔴 Fetching LIVE odds from The Odds API...');
+    console.log('💰 API Request will cost 1 credit from your quota');
     setLoading(true);
 
     try {
@@ -169,21 +220,25 @@ const GolfOddsComparison = () => {
       }
 
       const data = await response.json();
-      console.log('✅ API Response:', data);
+      console.log('✅ API Response received');
+      console.log(`📊 Credits used: 1 | Remaining this month: Check dashboard`);
 
       // Check if we got data
       if (!data || data.length === 0) {
         console.warn('⚠️ API returned empty data - falling back to mock');
         useMockData();
-        setApiStatus({ isLive: false, lastUpdated: null, error: 'No data available' });
+        setApiStatus({ isLive: false, lastUpdated: null, error: 'No data available for this tournament yet' });
         return;
       }
+
+      // Cache the response
+      setCachedData({ apiResponse: data, timestamp: Date.now() });
 
       // Process API data
       processLiveOdds(data);
       setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
       setUseMock(false);
-      console.log('✅ LIVE DATA loaded successfully!');
+      console.log('✅ LIVE DATA loaded & cached for 1 hour');
 
     } catch (error) {
       console.error('❌ API Error:', error.message);
@@ -681,6 +736,30 @@ const GolfOddsComparison = () => {
           top: 50%;
           transform: translateY(-50%);
           color: #999;
+        }
+
+        .refresh-button {
+          padding: 8px 16px;
+          background: #28a745;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-left: 12px;
+        }
+
+        .refresh-button:hover:not(:disabled) {
+          background: #218838;
+          transform: translateY(-1px);
+        }
+
+        .refresh-button:disabled {
+          background: #6c757d;
+          cursor: not-allowed;
+          opacity: 0.6;
         }
 
         .demo-notice {
@@ -1965,6 +2044,20 @@ const GolfOddsComparison = () => {
             onChange={(e) => setFilterText(e.target.value)}
           />
         </div>
+        
+        {USE_LIVE_API && (
+          <button 
+            className="refresh-button"
+            onClick={() => {
+              localStorage.removeItem('oddsCache');
+              fetchTournamentData();
+            }}
+            disabled={loading}
+            title="Force refresh odds (uses 1 API credit)"
+          >
+            🔄 {loading ? 'Refreshing...' : 'Refresh Odds'}
+          </button>
+        )}
       </div>
 
       {loading ? (
