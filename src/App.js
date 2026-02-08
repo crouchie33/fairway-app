@@ -937,6 +937,8 @@ const GolfOddsComparison = () => {
         
         .expanded-content {
           padding: 25px;
+          background: #f8f9fa;
+          width: 100%;
         }
 
         .desktop-cards-grid {
