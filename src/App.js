@@ -884,29 +884,61 @@ const GolfOddsComparison = () => {
           padding: 25px;
         }
 
-        .info-row {
+        .desktop-cards-grid {
           display: flex;
-          gap: 25px;
-          flex-wrap: wrap;
+          gap: 10px;
+          width: 100%;
         }
 
-        .expanded-section h4 {
+        .desktop-info-card,
+        .desktop-odds-card {
+          background: white;
+          border: 1px solid #e5e5e5;
+          border-radius: 8px;
+          padding: 10px;
+          text-align: center;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .desktop-form-card {
+          flex: 2;
+        }
+
+        .desktop-card-label {
           font-size: 0.7rem;
           color: #999;
-          margin-bottom: 4px;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
           font-weight: 600;
+          line-height: 1.2;
         }
 
-        .nationality-badge {
-          display: inline-block;
-          background: #f0f0f0;
+        .desktop-card-sublabel {
+          font-size: 0.65rem;
+          color: #bbb;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          margin-top: 2px;
+          margin-bottom: 6px;
+        }
+
+        .desktop-card-value {
+          font-size: 1.1rem;
+          font-weight: 700;
           color: #1a1a1a;
-          padding: 4px 10px;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          font-weight: 600;
+          margin-top: 8px;
+        }
+
+        .desktop-card-odds {
+          font-size: 1.3rem;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin-top: 6px;
+        }
+
+        .desktop-form-card .form-boxes {
+          margin-top: 10px;
         }
 
         .mobile-bookmaker-grid {
@@ -1825,17 +1857,21 @@ const GolfOddsComparison = () => {
                           <div className="expanded-content">
                             {/* Desktop only */}
                             <div className="desktop-expanded-view">
-                              <div className="info-row">
-                                <div className="expanded-section">
-                                  <h4>Nationality</h4>
-                                  <span className="nationality-badge">{player.nationality}</span>
+                              <div className="desktop-cards-grid">
+                                {/* Player Info Cards */}
+                                <div className="desktop-info-card">
+                                  <div className="desktop-card-label">Nationality</div>
+                                  <div className="desktop-card-value">{player.nationality}</div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>World Ranking</h4>
-                                  <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>#{player.owgr || 'N/A'}</span>
+                                
+                                <div className="desktop-info-card">
+                                  <div className="desktop-card-label">World</div>
+                                  <div className="desktop-card-label">Ranking</div>
+                                  <div className="desktop-card-value">#{player.owgr || 'N/A'}</div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>Recent Form</h4>
+                                
+                                <div className="desktop-info-card desktop-form-card">
+                                  <div className="desktop-card-label">Recent Form</div>
                                   <div className="form-boxes">
                                     {player.recentForm?.map((pos, i) => (
                                       <span key={i} className={`form-box ${getFinishClass(pos)}`}>
@@ -1844,8 +1880,9 @@ const GolfOddsComparison = () => {
                                     ))}
                                   </div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>Course History</h4>
+                                
+                                <div className="desktop-info-card desktop-form-card">
+                                  <div className="desktop-card-label">Course History</div>
                                   <div className="form-boxes">
                                     {player.courseHistory?.split('-').map((pos, i) => (
                                       <span key={i} className={`form-box ${getFinishClass(pos)}`}>
@@ -1854,41 +1891,72 @@ const GolfOddsComparison = () => {
                                     ))}
                                   </div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>Best Top 5</h4>
-                                  <span style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1a1a1a' }}>
+
+                                {/* Extra Odds Cards */}
+                                <div className="desktop-odds-card">
+                                  <div className="desktop-card-label">Top 5</div>
+                                  <div className="desktop-card-sublabel">Best</div>
+                                  <div className="desktop-card-odds">
                                     {(() => {
                                       const allTop5 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top5).filter(o => o);
                                       return formatOdds(Math.max(...allTop5));
                                     })()}
-                                  </span>
+                                  </div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>Best Top 10</h4>
-                                  <span style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1a1a1a' }}>
+                                
+                                <div className="desktop-odds-card">
+                                  <div className="desktop-card-label">Top 10</div>
+                                  <div className="desktop-card-sublabel">Best</div>
+                                  <div className="desktop-card-odds">
                                     {(() => {
                                       const allTop10 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top10).filter(o => o);
                                       return formatOdds(Math.max(...allTop10));
                                     })()}
-                                  </span>
+                                  </div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>Best Top 20</h4>
-                                  <span style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1a1a1a' }}>
+                                
+                                <div className="desktop-odds-card">
+                                  <div className="desktop-card-label">Top 20</div>
+                                  <div className="desktop-card-sublabel">Best</div>
+                                  <div className="desktop-card-odds">
                                     {(() => {
                                       const allTop20 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top20).filter(o => o);
                                       return formatOdds(Math.max(...allTop20));
                                     })()}
-                                  </span>
+                                  </div>
                                 </div>
-                                <div className="expanded-section">
-                                  <h4>R1 Leader</h4>
-                                  <span style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1a1a1a' }}>
+
+                                <div className="desktop-odds-card">
+                                  <div className="desktop-card-label">Top 30</div>
+                                  <div className="desktop-card-sublabel">Best</div>
+                                  <div className="desktop-card-odds">
+                                    {(() => {
+                                      const allTop30 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top30).filter(o => o);
+                                      return formatOdds(Math.max(...allTop30));
+                                    })()}
+                                  </div>
+                                </div>
+
+                                <div className="desktop-odds-card">
+                                  <div className="desktop-card-label">Top 40</div>
+                                  <div className="desktop-card-sublabel">Best</div>
+                                  <div className="desktop-card-odds">
+                                    {(() => {
+                                      const allTop40 = bookmakers.map(b => player.bookmakerOdds[b.name]?.top40).filter(o => o);
+                                      return formatOdds(Math.max(...allTop40));
+                                    })()}
+                                  </div>
+                                </div>
+                                
+                                <div className="desktop-odds-card">
+                                  <div className="desktop-card-label">R1 Leader</div>
+                                  <div className="desktop-card-sublabel">Best</div>
+                                  <div className="desktop-card-odds">
                                     {(() => {
                                       const allR1 = bookmakers.map(b => player.bookmakerOdds[b.name]?.r1Leader).filter(o => o);
                                       return formatOdds(Math.max(...allR1));
                                     })()}
-                                  </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
