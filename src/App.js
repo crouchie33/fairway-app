@@ -674,6 +674,8 @@ const GolfOddsComparison = () => {
           text-align: left;
           padding-left: 20px;
           border-right: 1px solid #e5e5e5;
+          min-width: 130px;
+          max-width: 130px;
         }
 
         .odds-matrix tbody tr:hover td:first-child {
