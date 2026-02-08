@@ -720,9 +720,10 @@ const GolfOddsComparison = () => {
 
         .owgr-header {
           font-size: 0.7rem;
-          padding: 8px 6px;
+          padding: 8px 4px;
           min-width: 50px;
-          max-width: 60px;
+          max-width: 50px;
+          width: 50px;
           text-align: center;
           line-height: 1.2;
           vertical-align: middle;
@@ -733,11 +734,13 @@ const GolfOddsComparison = () => {
         }
 
         .owgr-cell {
-          padding: 10px 8px;
+          padding: 10px 6px;
           text-align: center;
           font-weight: 600;
           color: #666;
           font-size: 0.9rem;
+          max-width: 50px;
+          width: 50px;
         }
 
         .tipster-cell {
