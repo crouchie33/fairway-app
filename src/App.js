@@ -716,6 +716,7 @@ const GolfOddsComparison = () => {
           position: relative;
           width: 225px;
           max-width: 225px;
+          flex-shrink: 0;
         }
 
         .search-bar input {
@@ -875,7 +876,7 @@ const GolfOddsComparison = () => {
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
-          min-height: 140px;
+          height: 140px;
         }
 
         .bookmaker-name-rotated {
@@ -885,7 +886,7 @@ const GolfOddsComparison = () => {
           font-size: 0.8rem;
           color: #1a1a1a;
           white-space: nowrap;
-          padding: 8px 0;
+          padding-top: 8px;
         }
 
         .each-way-terms {
@@ -894,7 +895,7 @@ const GolfOddsComparison = () => {
           align-items: center;
           font-size: 0.7rem;
           color: #666;
-          padding-bottom: 4px;
+          padding-bottom: 2px;
         }
 
         .ew-places {
