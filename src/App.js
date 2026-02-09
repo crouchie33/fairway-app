@@ -714,7 +714,7 @@ const GolfOddsComparison = () => {
 
         .search-bar {
           position: relative;
-          max-width: 300px;
+          max-width: 225px;
         }
 
         .search-bar input {
@@ -873,7 +873,9 @@ const GolfOddsComparison = () => {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
+          justify-content: space-between;
+          min-height: 140px;
+          padding: 8px 0;
         }
 
         .bookmaker-name-rotated {
@@ -892,7 +894,6 @@ const GolfOddsComparison = () => {
           align-items: center;
           font-size: 0.7rem;
           color: #666;
-          margin-top: 4px;
         }
 
         .ew-places {
@@ -1534,7 +1535,7 @@ const GolfOddsComparison = () => {
           }
 
           .search-bar {
-            max-width: 100%;
+            max-width: 75%;
           }
 
           .footer-odds-format {
@@ -1550,7 +1551,7 @@ const GolfOddsComparison = () => {
           }
 
           .search-bar {
-            max-width: 100%;
+            max-width: 75%;
           }
 
           /* Mobile: Hide all bookmaker columns, only show Player + Best Odds */
