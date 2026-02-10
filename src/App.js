@@ -100,7 +100,12 @@ const GolfOddsComparison = () => {
     }
   };
 
-  const fetchTournamentData = async () => {
+// ============================================================
+// COMPLETE fetchTournamentData() FUNCTION
+// Replace your current 3-line function with this entire block
+// ============================================================
+
+const fetchTournamentData = async () => {
     console.log('🔴 Fetching LIVE odds from The Odds API...');
     setLoading(true);
 
@@ -109,13 +114,13 @@ const GolfOddsComparison = () => {
       const sportKey = selectedTournament.apiKey;
       const regions = userRegion === 'us' ? 'us' : 'uk';
 
-      const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
-        `apiKey=${ODDS_API_KEY}&` +
+      const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?` +
+        `apiKey=f68c6ebed30010a80949e68b3e57c825&` +
         `regions=${regions}&` +
         `markets=outrights&` +
         `oddsFormat=decimal`;
 
-      console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
+      console.log('🌐 API URL:', url.replace('f68c6ebed30010a80949e68b3e57c825', 'KEY_HIDDEN'));
 
       const response = await fetch(url);
       
@@ -204,7 +209,8 @@ const GolfOddsComparison = () => {
       setLoading(false);
     }
   };
-  };
+
+
 
   const useMockData = () => {
     setUseMock(true);
