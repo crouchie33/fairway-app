@@ -101,8 +101,109 @@ const GolfOddsComparison = () => {
   };
 
   const fetchTournamentData = async () => {
-    // For now using mock data - real API integration would go here
-    useMockData();
+    console.log('🔴 Fetching LIVE odds from The Odds API...');
+    setLoading(true);
+
+    try {
+      // Use the correct API key from MAJORS constant
+      const sportKey = selectedTournament.apiKey;
+      const regions = userRegion === 'us' ? 'us' : 'uk';
+
+      const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
+        `apiKey=${ODDS_API_KEY}&` +
+        `regions=${regions}&` +
+        `markets=outrights&` +
+        `oddsFormat=decimal`;
+
+      console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
+
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Response received:', data);
+
+      // Check if we got data
+      if (!data || data.length === 0) {
+        console.warn('⚠️ API returned empty data - falling back to mock');
+        useMockData();
+        return;
+      }
+
+      // Process the API data
+      const bookmakerSet = new Set();
+      const playersMap = new Map();
+
+      data.forEach(event => {
+        event.bookmakers?.forEach(bookmaker => {
+          bookmakerSet.add(bookmaker.title);
+          
+          bookmaker.markets?.forEach(market => {
+            if (market.key === 'outrights') {
+              market.outcomes?.forEach(outcome => {
+                const playerName = outcome.name;
+                
+                if (!playersMap.has(playerName)) {
+                  playersMap.set(playerName, {
+                    name: playerName,
+                    nationality: 'TBD',
+                    owgr: null,
+                    recentForm: [],
+                    courseHistory: '',
+                    tipsterPicks: [],
+                    bookmakerOdds: {}
+                  });
+                }
+
+                const player = playersMap.get(playerName);
+                player.bookmakerOdds[bookmaker.title] = {
+                  outright: outcome.price,
+                  top5: 'N/A',
+                  top10: 'N/A',
+                  top20: 'N/A',
+                  top30: 'N/A',
+                  top40: 'N/A',
+                  makeCut: 'N/A',
+                  r1Leader: 'N/A'
+                };
+              });
+            }
+          });
+        });
+      });
+
+      // Convert to array and calculate average odds
+      const players = Array.from(playersMap.values()).map(player => {
+        const outrightOdds = Object.values(player.bookmakerOdds).map(o => o.outright);
+        const avgOdds = outrightOdds.reduce((a, b) => a + b, 0) / outrightOdds.length;
+        return { ...player, avgOdds };
+      });
+
+      console.log(`📊 Processed ${players.length} players from ${bookmakerSet.size} bookmakers`);
+
+      // Create bookmaker list with each-way terms
+      const bookmakerList = Array.from(bookmakerSet).map(name => ({
+        name: name,
+        eachWay: { places: '5', fraction: '1/5' },
+        regions: [userRegion]
+      }));
+
+      setOdds(players);
+      setBookmakers(bookmakerList);
+      setUseMock(false);
+      console.log('✅ LIVE DATA loaded successfully!');
+
+    } catch (error) {
+      console.error('❌ API Error:', error.message);
+      console.log('📊 Falling back to MOCK data');
+      useMockData();
+    } finally {
+      setLoading(false);
+    }
+  };
   };
 
   const useMockData = () => {
