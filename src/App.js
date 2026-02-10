@@ -8,10 +8,10 @@ const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
 
 const MAJORS = [
-  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters' },
-  { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship' },
-  { id: 'usopen', name: 'US Open', apiKey: 'golf_us_open' },
-  { id: 'open', name: 'The Open', apiKey: 'golf_the_open_championship' }
+  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_winner' },
+  { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship_winner' },
+  { id: 'usopen', name: 'US Open', apiKey: 'golf_us_open_winner' },
+  { id: 'open', name: 'The Open', apiKey: 'golf_the_open_championship_winner' }
 ];
 
 const GolfOddsComparison = () => {
