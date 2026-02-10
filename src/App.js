@@ -10,14 +10,14 @@ const USE_LIVE_API = true;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 const MAJORS = [
-  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_winner' },
+  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
   { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship_winner' },
   { id: 'usopen', name: 'US Open', apiKey: 'golf_us_open_winner' },
   { id: 'open', name: 'The Open', apiKey: 'golf_the_open_championship_winner' }
 ];
 
 const SPORT_KEYS = {
-  'masters': 'golf_masters_winner',
+  'masters': 'golf_masters_tournament_winner',
   'pga': 'golf_pga_championship_winner',
   'usopen': 'golf_us_open_winner',
   'open': 'golf_the_open_championship_winner'
