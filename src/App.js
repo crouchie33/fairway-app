@@ -196,10 +196,10 @@ const GolfOddsComparison = () => {
     try {
       // Map tournament to API sport key
       const sportKeys = {
-        'masters': 'golf_masters',
-        'pga': 'golf_pga_championship',
-        'usopen': 'golf_us_open',
-        'open': 'golf_the_open_championship'
+        'masters': 'golf_masters_winner',
+        'pga': 'golf_pga_championship_winner',
+        'usopen': 'golf_us_open_winner',
+        'open': 'golf_the_open_championship_winner'
       };
 
       const sportKey = sportKeys[selectedTournament.id] || 'golf_masters';
