@@ -34,13 +34,7 @@ const BOOKMAKER_LOGOS = {
   'Sky Bet': 'skybet.png',
   'Betfair': 'betfair.png',
   'BoyleSports': 'boylesports.png',
-  '888sport': '888sport.png',
-  'BetRivers': 'betrivers.png',
-  'BetMGM': 'betmgm.png',
-  'FanDuel': 'fanduel.png',
-  'DraftKings': 'draftkings.png',
-  'Caesars': 'caesars.png',
-  'PointsBet': 'pointsbet.png'
+  '888sport': '888sport.png'
 };
 
 const GolfOddsComparison = () => {
@@ -55,12 +49,6 @@ const GolfOddsComparison = () => {
     'Betfair': 'https://www.betfair.com/sport/golf?pid=YOUR_BETFAIR_ID',
     'BoyleSports': 'https://www.boylesports.com/golf?aff=YOUR_BOYLE_ID',
     '888sport': 'https://www.888sport.com/golf?affiliate=YOUR_888_ID',
-    'BetRivers': 'https://www.betrivers.com/golf?affiliate=YOUR_BETRIVERS_ID',
-    'BetMGM': 'https://sports.betmgm.com/golf?wm=YOUR_BETMGM_ID',
-    'FanDuel': 'https://sportsbook.fanduel.com/golf?referral=YOUR_FD_ID',
-    'DraftKings': 'https://sportsbook.draftkings.com/golf?wpcid=YOUR_DK_ID',
-    'Caesars': 'https://sportsbook.caesars.com/golf?pid=YOUR_CAESARS_ID',
-    'PointsBet': 'https://pointsbet.com/golf?referralCode=YOUR_PB_ID'
   };
 
   const [odds, setOdds] = useState([]);
@@ -178,8 +166,30 @@ const GolfOddsComparison = () => {
     });
 
     const bookmakerList = Array.from(bookmakerSet.values());
+
+    // Always include all expected UK bookmakers so logo columns appear
+    // even if the API hasn't returned odds for them yet
+    const expectedBookmakers = [
+      { name: 'Bet365', key: 'bet365', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'William Hill', key: 'williamhill', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Betway', key: 'betway', eachWay: { places: '6', fraction: '1/5' } },
+      { name: 'Coral', key: 'coral', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Ladbrokes', key: 'ladbrokes', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Paddy Power', key: 'paddypower', eachWay: { places: '6', fraction: '1/5' } },
+      { name: 'Sky Bet', key: 'skybet', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Betfair', key: 'betfair', eachWay: { places: '5', fraction: '1/4' } },
+      { name: 'BoyleSports', key: 'boylesports', eachWay: { places: '5', fraction: '1/5' } },
+      { name: '888sport', key: '888sport', eachWay: { places: '5', fraction: '1/5' } },
+    ];
+
+    // Merge: live bookmakers first, then add any expected ones not yet live
+    const liveKeys = new Set(bookmakerList.map(b => b.key));
+    const mergedBookmakers = [
+      ...bookmakerList,
+      ...expectedBookmakers.filter(b => !liveKeys.has(b.key))
+    ];
     setOdds(players);
-    setBookmakers(bookmakerList);
+    setBookmakers(mergedBookmakers);
   }, []);
 
   const useMockData = useCallback(() => {
@@ -268,10 +278,7 @@ const GolfOddsComparison = () => {
       if (!sportKey) throw new Error(`Unknown tournament: ${tournament.id}`);
 
       const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
-        `apiKey=${ODDS_API_KEY}&` +
-        `regions=uk&` +
-        `markets=outrights&` +
-        `oddsFormat=decimal`;
+        `apiKey=${ODDS_API_KEY}&regions=uk&markets=outrights&oddsFormat=decimal`;
 
       console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
 
@@ -599,39 +606,21 @@ const GolfOddsComparison = () => {
           padding: 6px 2px 4px;
         }
 
-        /* Logo: rotated 90deg so it reads bottom-to-top like the old text */
+        /* Logo wrapper - rotates so logo reads bottom-to-top */
         .bookmaker-logo-wrapper {
           flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
+          transform: rotate(270deg);
         }
 
         .bookmaker-logo {
-          width: 60px;
-          height: 22px;
+          width: 56px;
+          height: 20px;
           object-fit: contain;
           object-position: center;
-          transform: rotate(180deg);
-          writing-mode: vertical-rl;
-          /* Fallback: if image loads, these are ignored */
-        }
-
-        /* Rotate the whole wrapper so logos read bottom-to-top */
-        .bookmaker-logo-wrapper {
-          transform: rotate(180deg);
-          writing-mode: vertical-rl;
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .bookmaker-logo {
-          width: 60px;
-          height: 22px;
-          object-fit: contain;
-          transform: rotate(180deg);
+          display: block;
         }
 
         .each-way-terms {
@@ -641,8 +630,6 @@ const GolfOddsComparison = () => {
           font-size: 0.7rem;
           color: #666;
           padding-bottom: 2px;
-          writing-mode: horizontal-tb;
-          transform: none;
         }
 
         .ew-places { font-weight: 600; color: #1a1a1a; }
