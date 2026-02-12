@@ -10,21 +10,21 @@ const USE_LIVE_API = true;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 const MAJORS = [
-  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
+  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_winner' },
   { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship_winner' },
   { id: 'usopen', name: 'US Open', apiKey: 'golf_us_open_winner' },
   { id: 'open', name: 'The Open', apiKey: 'golf_the_open_championship_winner' }
 ];
 
 const SPORT_KEYS = {
-  'masters': 'golf_masters_tournament_winner',
+  'masters': 'golf_masters_winner',
   'pga': 'golf_pga_championship_winner',
   'usopen': 'golf_us_open_winner',
   'open': 'golf_the_open_championship_winner'
 };
 
 const GolfOddsComparison = () => {
-  // Affiliate Links
+  // Affiliate Links - UKGC-licensed bookmakers only
   const affiliateLinks = {
     'Bet365': 'https://www.bet365.com/olp/golf?affiliate=YOUR_BET365_ID',
     'William Hill': 'https://www.williamhill.com/golf?AffiliateID=YOUR_WH_ID',
@@ -32,11 +32,10 @@ const GolfOddsComparison = () => {
     'Coral': 'https://www.coral.co.uk/sports/golf?cid=YOUR_CORAL_ID',
     'Ladbrokes': 'https://sports.ladbrokes.com/golf?affiliate=YOUR_LADBROKES_ID',
     'Paddy Power': 'https://www.paddypower.com/golf?AFF_ID=YOUR_PP_ID',
-    'DraftKings': 'https://sportsbook.draftkings.com/golf?wpcid=YOUR_DK_ID',
-    'FanDuel': 'https://sportsbook.fanduel.com/golf?referral=YOUR_FD_ID',
-    'PointsBet': 'https://pointsbet.com/golf?referralCode=YOUR_PB_ID',
-    'Caesars': 'https://sportsbook.caesars.com/golf?pid=YOUR_CAESARS_ID',
-    'BetMGM': 'https://sports.betmgm.com/golf?wm=YOUR_BETMGM_ID'
+    'Sky Bet': 'https://www.skybet.com/golf?aff=YOUR_SKYBET_ID',
+    'Betfair': 'https://www.betfair.com/sport/golf?pid=YOUR_BETFAIR_ID',
+    'BoyleSports': 'https://www.boylesports.com/golf?aff=YOUR_BOYLE_ID',
+    '888sport': 'https://www.888sport.com/golf?affiliate=YOUR_888_ID'
   };
 
   const [odds, setOdds] = useState([]);
@@ -47,12 +46,10 @@ const GolfOddsComparison = () => {
   const [selectedTournament, setSelectedTournament] = useState(MAJORS[0]);
   const [bookmakers, setBookmakers] = useState([]);
   const [useMock, setUseMock] = useState(false);
-  const [userRegion, setUserRegion] = useState(null); // null = not yet detected
-  const [oddsFormat, setOddsFormat] = useState('decimal');
+  const [oddsFormat, setOddsFormat] = useState('fractional'); // UK default
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
-  const [regionReady, setRegionReady] = useState(false); // tracks when region detection is done
 
   // Ref to prevent double-fetching
   const fetchInProgress = useRef(false);
@@ -115,60 +112,19 @@ const GolfOddsComparison = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ===== REGION DETECTION (runs once on mount) =====
+  // ===== ODDS FORMAT from localStorage =====
   useEffect(() => {
-    const detectRegion = async () => {
-      // Check localStorage first
-      const savedRegion = localStorage.getItem('userRegion');
-      const savedFormat = localStorage.getItem('oddsFormat');
-
-      if (savedRegion && savedFormat) {
-        setUserRegion(savedRegion);
-        setOddsFormat(savedFormat);
-        setRegionReady(true);
-        console.log(`Using saved preferences: ${savedRegion}, ${savedFormat}`);
-        return;
-      }
-
-      try {
-        const response = await fetch('https://ipapi.co/json/', {
-          signal: AbortSignal.timeout(5000) // 5s timeout so we don't hang
-        });
-        const data = await response.json();
-
-        const usCountries = ['US', 'CA'];
-        const detectedRegion = usCountries.includes(data.country_code) ? 'us' : 'uk';
-        const detectedFormat = detectedRegion === 'us' ? 'american' : 'fractional';
-
-        setUserRegion(detectedRegion);
-        setOddsFormat(detectedFormat);
-        localStorage.setItem('userRegion', detectedRegion);
-        localStorage.setItem('oddsFormat', detectedFormat);
-        console.log(`Detected region: ${detectedRegion} (${data.country_code})`);
-      } catch (error) {
-        console.warn('Region detection failed, using timezone fallback:', error.message);
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const isUS = timezone.includes('America/') || timezone.includes('US/');
-        const fallbackRegion = isUS ? 'us' : 'uk';
-        const fallbackFormat = isUS ? 'american' : 'fractional';
-
-        setUserRegion(fallbackRegion);
-        setOddsFormat(fallbackFormat);
-        localStorage.setItem('userRegion', fallbackRegion);
-        localStorage.setItem('oddsFormat', fallbackFormat);
-      } finally {
-        setRegionReady(true);
-      }
-    };
-
-    detectRegion();
+    const savedFormat = localStorage.getItem('oddsFormat');
+    if (savedFormat) {
+      setOddsFormat(savedFormat);
+    }
   }, []);
 
   // ===== PROCESS LIVE API DATA =====
-  const processLiveOdds = useCallback((apiData, region) => {
+  const processLiveOdds = useCallback((apiData) => {
     console.log('🔄 Processing live odds data...');
 
-    const bookmakerSet = new Map(); // Map to preserve title info
+    const bookmakerSet = new Map();
     const playersMap = new Map();
 
     apiData.forEach(event => {
@@ -178,8 +134,7 @@ const GolfOddsComparison = () => {
           bookmakerSet.set(bookmakerName, {
             name: bookmakerName,
             key: bookmaker.key,
-            eachWay: { places: '5', fraction: '1/5' },
-            regions: [region]
+            eachWay: { places: '5', fraction: '1/5' }
           });
         }
 
@@ -235,7 +190,7 @@ const GolfOddsComparison = () => {
   }, []);
 
   // ===== MOCK DATA =====
-  const useMockData = useCallback((region) => {
+  const useMockData = useCallback(() => {
     setUseMock(true);
     const mockPlayers = [
       { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1, recentForm: [1, 2, 1, 3, 1, 2, 1], courseHistory: 'T2-1-T5-4-2-T3-1', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'ProGolfTips', 'OddsSharks', 'GreenJacket', 'TheMastersGuru', 'BirdiePicksGolf', 'FairwayFinder'] },
@@ -261,31 +216,25 @@ const GolfOddsComparison = () => {
     ];
 
     const bookmakerList = [
-      { name: 'Bet365', eachWay: { places: '5', fraction: '1/5' }, regions: ['uk', 'us'] },
-      { name: 'William Hill', eachWay: { places: '5', fraction: '1/5' }, regions: ['uk'] },
-      { name: 'Betway', eachWay: { places: '6', fraction: '1/5' }, regions: ['uk'] },
-      { name: 'Coral', eachWay: { places: '5', fraction: '1/5' }, regions: ['uk'] },
-      { name: 'Ladbrokes', eachWay: { places: '5', fraction: '1/5' }, regions: ['uk'] },
-      { name: 'Paddy Power', eachWay: { places: '6', fraction: '1/5' }, regions: ['uk'] },
-      { name: 'DraftKings', eachWay: { places: '5', fraction: '1/4' }, regions: ['us'] },
-      { name: 'FanDuel', eachWay: { places: '4', fraction: '1/5' }, regions: ['us'] },
-      { name: 'BetMGM', eachWay: { places: '5', fraction: '1/5' }, regions: ['us'] },
-      { name: 'Caesars', eachWay: { places: '5', fraction: '1/5' }, regions: ['us'] },
-      { name: 'PointsBet', eachWay: { places: '4', fraction: '1/4' }, regions: ['us'] },
+      { name: 'Bet365', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'William Hill', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Betway', eachWay: { places: '6', fraction: '1/5' } },
+      { name: 'Coral', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Ladbrokes', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Paddy Power', eachWay: { places: '6', fraction: '1/5' } },
+      { name: 'Sky Bet', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Betfair', eachWay: { places: '5', fraction: '1/4' } },
+      { name: 'BoyleSports', eachWay: { places: '5', fraction: '1/5' } },
+      { name: '888sport', eachWay: { places: '5', fraction: '1/5' } },
     ];
 
-    const currentRegion = region || 'uk';
-    const filteredBookmakers = bookmakerList.filter(book =>
-      book.regions.includes(currentRegion)
-    );
-
-    setBookmakers(filteredBookmakers);
+    setBookmakers(bookmakerList);
 
     const mockOdds = mockPlayers.map(player => {
       const playerOdds = {};
       const baseOdds = 5 + Math.random() * 45;
 
-      filteredBookmakers.forEach(book => {
+      bookmakerList.forEach(book => {
         const outright = +(baseOdds + (Math.random() - 0.5) * 3).toFixed(1);
         playerOdds[book.name] = {
           outright: outright,
@@ -309,7 +258,7 @@ const GolfOddsComparison = () => {
   }, []);
 
   // ===== MAIN FETCH (only runs after region is ready) =====
-  const fetchTournamentData = useCallback(async (region, tournament) => {
+  const fetchTournamentData = useCallback(async (tournament) => {
     if (fetchInProgress.current) {
       console.log('⏳ Fetch already in progress, skipping');
       return;
@@ -317,14 +266,14 @@ const GolfOddsComparison = () => {
 
     if (!USE_LIVE_API) {
       console.log('📊 Using MOCK data (USE_LIVE_API = false)');
-      useMockData(region);
+      useMockData();
       return;
     }
 
     // Check cache first
     const cachedData = getCachedData(tournament.id);
     if (cachedData) {
-      processLiveOdds(cachedData, region);
+      processLiveOdds(cachedData);
       setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
       setUseMock(false);
       setLoading(false);
@@ -332,7 +281,7 @@ const GolfOddsComparison = () => {
     }
 
     console.log('🔴 Fetching LIVE odds from The Odds API...');
-    console.log(`📍 Region: ${region} | Tournament: ${tournament.name}`);
+    console.log(`📍 Region: UK | Tournament: ${tournament.name}`);
     fetchInProgress.current = true;
     setLoading(true);
 
@@ -342,10 +291,9 @@ const GolfOddsComparison = () => {
         throw new Error(`Unknown tournament: ${tournament.id}`);
       }
 
-      const apiRegion = region === 'us' ? 'us' : 'uk';
-      const url = `${ODDS_API_BASE}/sports/${sportKey}/odds?` +
+      const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
         `apiKey=${ODDS_API_KEY}&` +
-        `regions=${apiRegion}&` +
+        `regions=uk&` +
         `markets=outrights&` +
         `oddsFormat=decimal`;
 
@@ -368,7 +316,7 @@ const GolfOddsComparison = () => {
 
       if (!data || data.length === 0) {
         console.warn('⚠️ API returned empty data — tournament odds may not be available yet');
-        useMockData(region);
+        useMockData();
         setApiStatus({
           isLive: false,
           lastUpdated: null,
@@ -381,7 +329,7 @@ const GolfOddsComparison = () => {
       setCachedData(data, tournament.id);
 
       // Process the data
-      processLiveOdds(data, region);
+      processLiveOdds(data);
       setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
       setUseMock(false);
       console.log('✅ LIVE DATA loaded & cached for 1 hour');
@@ -389,7 +337,7 @@ const GolfOddsComparison = () => {
     } catch (error) {
       console.error('❌ API Error:', error);
       console.log('📊 Falling back to MOCK data');
-      useMockData(region);
+      useMockData();
       setApiStatus({
         isLive: false,
         lastUpdated: null,
@@ -401,16 +349,11 @@ const GolfOddsComparison = () => {
     }
   }, [getCachedData, setCachedData, processLiveOdds, useMockData]);
 
-  // ===== EFFECT: Fetch data ONLY after region is resolved =====
+  // ===== EFFECT: Fetch data when tournament changes =====
   useEffect(() => {
-    if (!regionReady || !userRegion) {
-      console.log('⏳ Waiting for region detection before fetching...');
-      return;
-    }
-
-    console.log(`🚀 Region ready (${userRegion}), fetching ${selectedTournament.name}...`);
-    fetchTournamentData(userRegion, selectedTournament);
-  }, [regionReady, userRegion, selectedTournament, fetchTournamentData]);
+    console.log(`🚀 Fetching ${selectedTournament.name} (UK region)...`);
+    fetchTournamentData(selectedTournament);
+  }, [selectedTournament, fetchTournamentData]);
 
   // ===== SORTING & FILTERING =====
   const sortedAndFilteredOdds = useMemo(() => {
@@ -517,9 +460,7 @@ const GolfOddsComparison = () => {
   const handleForceRefresh = () => {
     localStorage.removeItem('oddsCache');
     fetchInProgress.current = false;
-    if (userRegion) {
-      fetchTournamentData(userRegion, selectedTournament);
-    }
+    fetchTournamentData(selectedTournament);
   };
 
   const SortableHeader = ({ sortKey, label, className = '' }) => (
@@ -671,28 +612,6 @@ const GolfOddsComparison = () => {
           align-items: center;
           gap: 20px;
         }
-
-        .region-toggle {
-          display: flex;
-          gap: 8px;
-          background: #f5f5f5;
-          padding: 4px;
-          border-radius: 8px;
-        }
-
-        .region-btn {
-          padding: 8px 12px;
-          border: none;
-          background: transparent;
-          border-radius: 6px;
-          font-size: 1.5rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-        }
-
-        .region-btn:hover { background: #e5e5e5; transform: scale(1.1); }
-        .region-btn.active { background: #1a1a1a; }
 
         .search-bar { position: relative; max-width: 300px; }
 
@@ -1139,30 +1058,6 @@ const GolfOddsComparison = () => {
         .footer-settings-group { display: flex; align-items: center; gap: 10px; }
         .footer-odds-format label { font-size: 0.9rem; color: #666; font-weight: 500; }
 
-        .region-toggle-footer {
-          display: flex;
-          gap: 6px;
-          background: #f5f5f5;
-          padding: 3px;
-          border-radius: 6px;
-        }
-
-        .region-btn-footer {
-          padding: 6px 12px;
-          border: none;
-          background: transparent;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          font-weight: 500;
-          color: #666;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-        }
-
-        .region-btn-footer:hover { background: #e5e5e5; color: #1a1a1a; }
-        .region-btn-footer.active { background: #1a1a1a; color: white; font-weight: 600; }
-
         .footer-odds-dropdown {
           padding: 6px 12px;
           border: 1px solid #e5e5e5;
@@ -1428,10 +1323,8 @@ const GolfOddsComparison = () => {
         )}
       </div>
 
-      {loading || !regionReady ? (
-        <div className="loading-state">
-          {!regionReady ? 'Detecting your region...' : 'Loading odds...'}
-        </div>
+      {loading ? (
+        <div className="loading-state">Loading odds...</div>
       ) : (
         <div className="odds-matrix-container">
           <table className="odds-matrix">
@@ -1461,12 +1354,10 @@ const GolfOddsComparison = () => {
                   <th key={idx}>
                     <div className="bookmaker-header">
                       <div className="bookmaker-name-rotated">{bookmaker.name}</div>
-                      {userRegion === 'uk' && (
-                        <div className="each-way-terms">
-                          <span className="ew-places">{bookmaker.eachWay?.places}</span>
-                          <span className="ew-fraction">{bookmaker.eachWay?.fraction}</span>
-                        </div>
-                      )}
+                      <div className="each-way-terms">
+                        <span className="ew-places">{bookmaker.eachWay?.places}</span>
+                        <span className="ew-fraction">{bookmaker.eachWay?.fraction}</span>
+                      </div>
                     </div>
                   </th>
                 ))}
@@ -1677,9 +1568,7 @@ const GolfOddsComparison = () => {
                                         >
                                           <div className="mobile-bookmaker-name">{bookmaker.name}</div>
                                           <div className="mobile-bookmaker-odds">{formatOdds(mobileOdds)}</div>
-                                          {userRegion === 'uk' && (
-                                            <div className="mobile-bookmaker-ew">{bookmaker.eachWay?.places} places</div>
-                                          )}
+                                          <div className="mobile-bookmaker-ew">{bookmaker.eachWay?.places} places</div>
                                         </a>
                                       );
                                     })}
@@ -1801,45 +1690,13 @@ const GolfOddsComparison = () => {
                 {' '}or call the National Gambling Helpline on 0808 8020 133.
               </p>
               <p className="affiliate-notice">
-                The Fairway is an independent odds comparison service. We may earn commission from bookmaker links.
-                All odds are subject to change. Please check bookmaker sites for current terms and conditions.
+                The Fairway is an independent odds comparison service. We only feature bookmakers licensed by the UK Gambling Commission (UKGC). 
+                We may earn commission from bookmaker links. All odds are subject to change. Please check bookmaker sites for current terms and conditions. 18+ only.
               </p>
             </div>
           </div>
 
           <div className="footer-odds-format">
-            <div className="footer-settings-group">
-              <label htmlFor="region-footer">Region:</label>
-              <div className="region-toggle-footer">
-                <button
-                  className={`region-btn-footer ${userRegion === 'uk' ? 'active' : ''}`}
-                  onClick={() => {
-                    setUserRegion('uk');
-                    setOddsFormat('fractional');
-                    localStorage.setItem('userRegion', 'uk');
-                    localStorage.setItem('oddsFormat', 'fractional');
-                    // Clear cache so it re-fetches with new region
-                    localStorage.removeItem('oddsCache');
-                  }}
-                  title="UK Bookmakers"
-                >
-                  🇬🇧 UK
-                </button>
-                <button
-                  className={`region-btn-footer ${userRegion === 'us' ? 'active' : ''}`}
-                  onClick={() => {
-                    setUserRegion('us');
-                    setOddsFormat('american');
-                    localStorage.setItem('userRegion', 'us');
-                    localStorage.setItem('oddsFormat', 'american');
-                    localStorage.removeItem('oddsCache');
-                  }}
-                  title="US Bookmakers"
-                >
-                  🇺🇸 US
-                </button>
-              </div>
-            </div>
             <div className="footer-settings-group">
               <label htmlFor="odds-format-footer">Odds Format:</label>
               <select
