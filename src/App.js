@@ -6,7 +6,7 @@ import wordmarkImg from './wordmark.png';
 // ===== API CONFIGURATION (single declaration) =====
 const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
-const USE_LIVE_API = true;
+const USE_LIVE_API = false;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 const MAJORS = [
@@ -612,23 +612,26 @@ const GolfOddsComparison = () => {
           width: 100%;
         }
 
-        /* Logo wrapper - fills full width then rotates */
+        /* Rotate the wrapper so logo reads bottom-to-top */
         .bookmaker-logo-wrapper {
           flex: 1;
-          width: 120px;
           display: flex;
           align-items: center;
           justify-content: center;
           transform: rotate(270deg);
-          transform-origin: center center;
+          width: 120px;
+          height: 52px;
+          overflow: hidden;
         }
 
+        /* Every logo gets the same fixed box - object-fit scales within it */
         .bookmaker-logo {
           width: 110px;
-          height: 28px;
+          height: 32px;
           object-fit: contain;
           object-position: center;
           display: block;
+          flex-shrink: 0;
         }
 
         .each-way-terms {
