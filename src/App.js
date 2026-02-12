@@ -69,10 +69,16 @@ async function fetchWorldRankings() {
     );
     if (!response.ok) throw new Error(`Rankings API ${response.status}`);
     const data = await response.json();
-    const entries = data?.rankings ?? [];
+    console.log('🏌️ OWGR raw response keys:', Object.keys(data || {}));
+    // API returns { rankings: [...] } — each entry has fullName + rank
+    const entries = data?.rankings ?? data?.golfers ?? data?.players ?? [];
+    console.log(`🏌️ OWGR entries found: ${entries.length}, sample:`, entries[0]);
     const rankingsMap = {};
     entries.forEach(entry => {
-      if (entry.fullName && entry.rank) rankingsMap[entry.fullName] = Number(entry.rank);
+      // Handle both { fullName, rank } and { name, worldRanking } shapes
+      const name = entry.fullName || entry.name || entry.playerName;
+      const rank = entry.rank || entry.worldRanking || entry.position;
+      if (name && rank) rankingsMap[name] = Number(rank);
     });
     setCachedRankings(rankingsMap);
     console.log(`✅ OWGR loaded — ${Object.keys(rankingsMap).length} players (week ${getISOWeekKey()})`);
@@ -85,11 +91,16 @@ async function fetchWorldRankings() {
 
 function getWorldRank(rankingsMap, playerName) {
   if (!rankingsMap || !playerName) return null;
+  // 1. Direct match
   if (rankingsMap[playerName] !== undefined) return rankingsMap[playerName];
-  // Last-name fallback for minor name discrepancies between APIs
+  // 2. Case-insensitive direct match
+  const lower = playerName.toLowerCase();
+  const exactCI = Object.keys(rankingsMap).find(n => n.toLowerCase() === lower);
+  if (exactCI) return rankingsMap[exactCI];
+  // 3. Last-name match (handles "Rory McIlroy" vs "McIlroy, Rory")
   const lastName = playerName.split(' ').slice(-1)[0].toLowerCase();
-  const match = Object.keys(rankingsMap).find(n => n.toLowerCase().endsWith(lastName));
-  return match ? rankingsMap[match] : null;
+  const lastMatch = Object.keys(rankingsMap).find(n => n.toLowerCase().endsWith(lastName));
+  return lastMatch ? rankingsMap[lastMatch] : null;
 }
 
 const MAJORS = [
@@ -290,26 +301,26 @@ const GolfOddsComparison = () => {
   const useMockData = useCallback(() => {
     setUseMock(true);
     const mockPlayers = [
-      { name: 'Scottie Scheffler', nationality: 'USA', owgr: null, recentForm: [1, 2, 1, 3, 1, 2, 1], courseHistory: 'T2-1-T5-4-2-T3-1', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'ProGolfTips', 'OddsSharks', 'GreenJacket', 'TheMastersGuru', 'BirdiePicksGolf', 'FairwayFinder'] },
-      { name: 'Rory McIlroy', nationality: 'NIR', owgr: null, recentForm: [3, 1, 5, 2, 4, 3, 2], courseHistory: 'T5-T7-2-T8-3-T6-4', tipsterPicks: ['GolfAnalyst', 'ProGolfTips', 'GreenJacket', 'BirdiePicksGolf', 'FairwayFinder', 'SwingTipster'] },
-      { name: 'Jon Rahm', nationality: 'ESP', owgr: null, recentForm: [2, 4, 1, 1, 6, 3, 2], courseHistory: '1-T3-T4-2-1-T5-3', tipsterPicks: ['BettingExpert', 'OddsSharks', 'TheMastersGuru', 'SwingTipster', 'GolfWisdom'] },
-      { name: 'Viktor Hovland', nationality: 'NOR', owgr: null, recentForm: [5, 3, 2, 4, 3, 5, 4], courseHistory: 'T12-T8-T15-T10-T9-T11-T13', tipsterPicks: ['ProGolfTips', 'BirdiePicksGolf', 'GolfWisdom'] },
-      { name: 'Brooks Koepka', nationality: 'USA', owgr: null, recentForm: [4, 6, 3, 5, 2, 4, 3], courseHistory: 'T2-1-T4-3-T2-2-1', tipsterPicks: ['OddsSharks', 'TheMastersGuru', 'FairwayFinder', 'SwingTipster'] },
-      { name: 'Xander Schauffele', nationality: 'USA', owgr: null, recentForm: [6, 2, 4, 3, 5, 6, 4], courseHistory: 'T3-T5-T9-T7-T4-T6-T8', tipsterPicks: ['GolfAnalyst', 'GreenJacket', 'GolfWisdom'] },
-      { name: 'Collin Morikawa', nationality: 'USA', owgr: null, recentForm: [7, 5, 6, 8, 4, 7, 5], courseHistory: 'T18-T12-T20-T15-T11-T14-T16', tipsterPicks: ['BettingExpert', 'BirdiePicksGolf'] },
-      { name: 'Patrick Cantlay', nationality: 'USA', owgr: null, recentForm: [8, 4, 7, 6, 7, 8, 6], courseHistory: 'T9-T14-T11-T10-T12-T13-T11', tipsterPicks: ['ProGolfTips', 'SwingTipster'] },
-      { name: 'Tommy Fleetwood', nationality: 'ENG', owgr: null, recentForm: [10, 8, 9, 7, 9, 10, 8], courseHistory: 'T17-T22-T15-T19-T18-T20-T16', tipsterPicks: ['TheMastersGuru'] },
-      { name: 'Jordan Spieth', nationality: 'USA', owgr: null, recentForm: [9, 11, 8, 10, 8, 9, 10], courseHistory: '1-T2-MC-T8-T10-MC-T15', tipsterPicks: ['OddsSharks', 'FairwayFinder', 'GolfWisdom'] },
-      { name: 'Max Homa', nationality: 'USA', owgr: null, recentForm: [11, 9, 10, 12, 11, 11, 9], courseHistory: 'T24-T19-T28-T22-T25-T21-T23', tipsterPicks: ['BirdiePicksGolf'] },
-      { name: 'Cameron Smith', nationality: 'AUS', owgr: null, recentForm: [12, 13, 11, 9, 13, 12, 11], courseHistory: 'T3-T5-T12-T8-T6-T9-T7', tipsterPicks: ['GreenJacket', 'SwingTipster'] },
-      { name: 'Justin Thomas', nationality: 'USA', owgr: null, recentForm: [14, 10, 12, 14, 10, 13, 12], courseHistory: 'T8-T16-T7-T12-T10-T14-T9', tipsterPicks: ['GolfAnalyst'] },
-      { name: 'Hideki Matsuyama', nationality: 'JPN', owgr: null, recentForm: [13, 14, 13, 11, 15, 14, 13], courseHistory: '1-T11-T18-T15-T12-T16-T14', tipsterPicks: ['BettingExpert', 'TheMastersGuru'] },
-      { name: 'Tony Finau', nationality: 'USA', owgr: null, recentForm: [15, 12, 14, 13, 12, 15, 14], courseHistory: 'T5-T10-T21-T18-T15-T19-T17', tipsterPicks: [] },
-      { name: 'Shane Lowry', nationality: 'IRL', owgr: null, recentForm: [16, 15, 17, 18, 14, 16, 15], courseHistory: 'T12-T25-MC-T20-T22-MC-T18', tipsterPicks: ['ProGolfTips'] },
-      { name: 'Tyrrell Hatton', nationality: 'ENG', owgr: null, recentForm: [18, 17, 15, 16, 19, 18, 17], courseHistory: 'T15-T18-T23-T21-T19-T22-T20', tipsterPicks: [] },
-      { name: 'Min Woo Lee', nationality: 'AUS', owgr: null, recentForm: [19, 20, 18, 17, 16, 19, 18], courseHistory: 'MC-T35-T42-T38-T40-MC-T36', tipsterPicks: [] },
-      { name: 'Ludvig Aberg', nationality: 'SWE', owgr: null, recentForm: [2, 5, 3, 7, 6, 4, 5], courseHistory: '—-8-6-10-7-9-8', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'OddsSharks', 'GreenJacket', 'BirdiePicksGolf'] },
-      { name: 'Sahith Theegala', nationality: 'USA', owgr: null, recentForm: [20, 16, 19, 20, 18, 20, 19], courseHistory: 'T19-MC-T31-T28-T25-MC-T29', tipsterPicks: [] },
+      { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1, recentForm: [1, 2, 1, 3, 1, 2, 1], courseHistory: 'T2-1-T5-4-2-T3-1', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'ProGolfTips', 'OddsSharks', 'GreenJacket', 'TheMastersGuru', 'BirdiePicksGolf', 'FairwayFinder'] },
+      { name: 'Rory McIlroy', nationality: 'NIR', owgr: 2, recentForm: [3, 1, 5, 2, 4, 3, 2], courseHistory: 'T5-T7-2-T8-3-T6-4', tipsterPicks: ['GolfAnalyst', 'ProGolfTips', 'GreenJacket', 'BirdiePicksGolf', 'FairwayFinder', 'SwingTipster'] },
+      { name: 'Jon Rahm', nationality: 'ESP', owgr: 3, recentForm: [2, 4, 1, 1, 6, 3, 2], courseHistory: '1-T3-T4-2-1-T5-3', tipsterPicks: ['BettingExpert', 'OddsSharks', 'TheMastersGuru', 'SwingTipster', 'GolfWisdom'] },
+      { name: 'Viktor Hovland', nationality: 'NOR', owgr: 4, recentForm: [5, 3, 2, 4, 3, 5, 4], courseHistory: 'T12-T8-T15-T10-T9-T11-T13', tipsterPicks: ['ProGolfTips', 'BirdiePicksGolf', 'GolfWisdom'] },
+      { name: 'Brooks Koepka', nationality: 'USA', owgr: 5, recentForm: [4, 6, 3, 5, 2, 4, 3], courseHistory: 'T2-1-T4-3-T2-2-1', tipsterPicks: ['OddsSharks', 'TheMastersGuru', 'FairwayFinder', 'SwingTipster'] },
+      { name: 'Xander Schauffele', nationality: 'USA', owgr: 6, recentForm: [6, 2, 4, 3, 5, 6, 4], courseHistory: 'T3-T5-T9-T7-T4-T6-T8', tipsterPicks: ['GolfAnalyst', 'GreenJacket', 'GolfWisdom'] },
+      { name: 'Collin Morikawa', nationality: 'USA', owgr: 7, recentForm: [7, 5, 6, 8, 4, 7, 5], courseHistory: 'T18-T12-T20-T15-T11-T14-T16', tipsterPicks: ['BettingExpert', 'BirdiePicksGolf'] },
+      { name: 'Patrick Cantlay', nationality: 'USA', owgr: 8, recentForm: [8, 4, 7, 6, 7, 8, 6], courseHistory: 'T9-T14-T11-T10-T12-T13-T11', tipsterPicks: ['ProGolfTips', 'SwingTipster'] },
+      { name: 'Tommy Fleetwood', nationality: 'ENG', owgr: 9, recentForm: [10, 8, 9, 7, 9, 10, 8], courseHistory: 'T17-T22-T15-T19-T18-T20-T16', tipsterPicks: ['TheMastersGuru'] },
+      { name: 'Jordan Spieth', nationality: 'USA', owgr: 10, recentForm: [9, 11, 8, 10, 8, 9, 10], courseHistory: '1-T2-MC-T8-T10-MC-T15', tipsterPicks: ['OddsSharks', 'FairwayFinder', 'GolfWisdom'] },
+      { name: 'Max Homa', nationality: 'USA', owgr: 12, recentForm: [11, 9, 10, 12, 11, 11, 9], courseHistory: 'T24-T19-T28-T22-T25-T21-T23', tipsterPicks: ['BirdiePicksGolf'] },
+      { name: 'Cameron Smith', nationality: 'AUS', owgr: 14, recentForm: [12, 13, 11, 9, 13, 12, 11], courseHistory: 'T3-T5-T12-T8-T6-T9-T7', tipsterPicks: ['GreenJacket', 'SwingTipster'] },
+      { name: 'Justin Thomas', nationality: 'USA', owgr: 15, recentForm: [14, 10, 12, 14, 10, 13, 12], courseHistory: 'T8-T16-T7-T12-T10-T14-T9', tipsterPicks: ['GolfAnalyst'] },
+      { name: 'Hideki Matsuyama', nationality: 'JPN', owgr: 11, recentForm: [13, 14, 13, 11, 15, 14, 13], courseHistory: '1-T11-T18-T15-T12-T16-T14', tipsterPicks: ['BettingExpert', 'TheMastersGuru'] },
+      { name: 'Tony Finau', nationality: 'USA', owgr: 16, recentForm: [15, 12, 14, 13, 12, 15, 14], courseHistory: 'T5-T10-T21-T18-T15-T19-T17', tipsterPicks: [] },
+      { name: 'Shane Lowry', nationality: 'IRL', owgr: 18, recentForm: [16, 15, 17, 18, 14, 16, 15], courseHistory: 'T12-T25-MC-T20-T22-MC-T18', tipsterPicks: ['ProGolfTips'] },
+      { name: 'Tyrrell Hatton', nationality: 'ENG', owgr: 20, recentForm: [18, 17, 15, 16, 19, 18, 17], courseHistory: 'T15-T18-T23-T21-T19-T22-T20', tipsterPicks: [] },
+      { name: 'Min Woo Lee', nationality: 'AUS', owgr: 35, recentForm: [19, 20, 18, 17, 16, 19, 18], courseHistory: 'MC-T35-T42-T38-T40-MC-T36', tipsterPicks: [] },
+      { name: 'Ludvig Aberg', nationality: 'SWE', owgr: 13, recentForm: [2, 5, 3, 7, 6, 4, 5], courseHistory: '—-8-6-10-7-9-8', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'OddsSharks', 'GreenJacket', 'BirdiePicksGolf'] },
+      { name: 'Sahith Theegala', nationality: 'USA', owgr: 25, recentForm: [20, 16, 19, 20, 18, 20, 19], courseHistory: 'T19-MC-T31-T28-T25-MC-T29', tipsterPicks: [] },
     ];
 
     const bookmakerList = [
