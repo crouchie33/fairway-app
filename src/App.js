@@ -1,28 +1,28 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
 import wordmarkImg from './wordmark.png';
 
-// ===== API CONFIGURATION =====
-// PRIMARY: UK Betting Odds API (RapidAPI) — purpose-built for UK bookmaker golf odds
-// Sign up free: https://rapidapi.com/willmahoney/api/uk-betting-odds
-const RAPIDAPI_KEY = de5bc06063msh0b3fa8ba9928231p10c2a7jsn25e0a9e7e6f3 ; // Replace with your RapidAPI key
-const RAPIDAPI_HOST = 'uk-betting-odds.p.rapidapi.com';
-
-// FALLBACK: The Odds API — used when RapidAPI is unavailable or not configured
+// ===== API CONFIGURATION (single declaration) =====
 const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
-
 const USE_LIVE_API = true;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
-// Tournament identifiers for both APIs
 const MAJORS = [
-  { id: 'masters', name: 'The Masters', oddsApiKey: 'golf_masters_winner', rapidApiSlug: 'us-masters' },
-  { id: 'pga', name: 'PGA Championship', oddsApiKey: 'golf_pga_championship_winner', rapidApiSlug: 'pga-championship' },
-  { id: 'usopen', name: 'US Open', oddsApiKey: 'golf_us_open_winner', rapidApiSlug: 'us-open' },
-  { id: 'open', name: 'The Open', oddsApiKey: 'golf_the_open_championship_winner', rapidApiSlug: 'the-open' }
+  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_winner' },
+  { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship_winner' },
+  { id: 'usopen', name: 'US Open', apiKey: 'golf_us_open_winner' },
+  { id: 'open', name: 'The Open', apiKey: 'golf_the_open_championship_winner' }
 ];
+
+const SPORT_KEYS = {
+  'masters': 'golf_masters_winner',
+  'pga': 'golf_pga_championship_winner',
+  'usopen': 'golf_us_open_winner',
+  'open': 'golf_the_open_championship_winner'
+};
 
 const GolfOddsComparison = () => {
   // Affiliate Links - UKGC-licensed bookmakers only
@@ -258,257 +258,7 @@ const GolfOddsComparison = () => {
     setOdds(mockOdds);
   }, []);
 
-  // ===== RAPIDAPI: UK Betting Odds API =====
-  const fetchFromRapidAPI = useCallback(async (tournament) => {
-    if (RAPIDAPI_KEY === 'YOUR_RAPIDAPI_KEY_HERE') {
-      console.log('⚠️ RapidAPI key not configured — skipping');
-      return null;
-    }
-
-    const slug = tournament.rapidApiSlug;
-    if (!slug) {
-      console.warn('⚠️ No RapidAPI slug for tournament:', tournament.id);
-      return null;
-    }
-
-    // The UK Betting Odds API endpoint for golf outrights
-    const url = `https://${RAPIDAPI_HOST}/golf/${slug}/outright`;
-    console.log(`🇬🇧 Trying UK Betting Odds API: /golf/${slug}/outright`);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-host': RAPIDAPI_HOST,
-        'x-rapidapi-key': RAPIDAPI_KEY
-      },
-      signal: AbortSignal.timeout(12000)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      console.warn(`⚠️ RapidAPI returned ${response.status}: ${errorText}`);
-      return null;
-    }
-
-    const data = await response.json();
-    console.log('✅ RapidAPI response received');
-    return data;
-  }, []);
-
-  // ===== PROCESS RAPIDAPI DATA =====
-  // The UK Betting Odds API returns data in a different format to The Odds API.
-  // This normaliser converts it into our standard internal format.
-  // NOTE: You may need to adjust field names once you inspect the actual response.
-  const processRapidApiData = useCallback((data) => {
-    console.log('🔄 Processing UK Betting Odds API data...');
-
-    const bookmakerSet = new Map();
-    const playersMap = new Map();
-
-    // The API typically returns an array of golfer objects, each with odds per bookmaker.
-    // Expected shape (adjust if different):
-    // [{ name: "Scottie Scheffler", odds: { "Bet365": "10/1", "Paddy Power": "12/1", ... } }, ...]
-    //
-    // OR it may be bookmaker-centric:
-    // { bookmakers: [{ name: "Bet365", selections: [{ name: "...", odds: "10/1" }] }] }
-
-    const processBookmakerCentric = (apiData) => {
-      // Format: { bookmakers: [...] } or array of bookmaker objects
-      const bookmakers = apiData.bookmakers || apiData;
-      if (!Array.isArray(bookmakers)) return false;
-
-      bookmakers.forEach(bm => {
-        const bmName = bm.name || bm.title || bm.bookmaker;
-        if (!bmName) return;
-
-        if (!bookmakerSet.has(bmName)) {
-          bookmakerSet.set(bmName, {
-            name: bmName,
-            key: bmName.toLowerCase().replace(/\s+/g, '_'),
-            eachWay: bm.eachWay || bm.each_way || { places: '5', fraction: '1/5' }
-          });
-        }
-
-        const selections = bm.selections || bm.odds || bm.runners || bm.outcomes || [];
-        selections.forEach(sel => {
-          const playerName = sel.name || sel.player || sel.runner;
-          if (!playerName) return;
-
-          if (!playersMap.has(playerName)) {
-            playersMap.set(playerName, {
-              name: playerName,
-              nationality: sel.nationality || 'TBD',
-              owgr: sel.owgr || sel.ranking || null,
-              recentForm: [],
-              courseHistory: '',
-              tipsterPicks: [],
-              bookmakerOdds: {}
-            });
-          }
-
-          // Parse odds — could be fractional string "10/1" or decimal number
-          let decimalOdds;
-          const rawOdds = sel.odds || sel.price || sel.decimal_odds || sel.fractional_odds;
-          if (typeof rawOdds === 'number') {
-            decimalOdds = rawOdds;
-          } else if (typeof rawOdds === 'string' && rawOdds.includes('/')) {
-            const [num, den] = rawOdds.split('/').map(Number);
-            decimalOdds = den > 0 ? (num / den) + 1 : null;
-          } else if (typeof rawOdds === 'string') {
-            decimalOdds = parseFloat(rawOdds) || null;
-          }
-
-          if (decimalOdds) {
-            const player = playersMap.get(playerName);
-            player.bookmakerOdds[bmName] = {
-              outright: decimalOdds,
-              top5: 'N/A', top10: 'N/A', top20: 'N/A',
-              top30: 'N/A', top40: 'N/A', makeCut: 'N/A', r1Leader: 'N/A'
-            };
-          }
-        });
-      });
-
-      return playersMap.size > 0;
-    };
-
-    const processPlayerCentric = (apiData) => {
-      // Format: [{ name: "...", odds: { "Bet365": "10/1", ... } }, ...]
-      const players = Array.isArray(apiData) ? apiData : (apiData.players || apiData.golfers || apiData.selections || []);
-      if (!Array.isArray(players) || players.length === 0) return false;
-
-      players.forEach(player => {
-        const playerName = player.name || player.player || player.golfer;
-        if (!playerName) return;
-
-        const oddsObj = player.odds || player.prices || player.bookmakers || {};
-
-        if (!playersMap.has(playerName)) {
-          playersMap.set(playerName, {
-            name: playerName,
-            nationality: player.nationality || 'TBD',
-            owgr: player.owgr || player.ranking || null,
-            recentForm: [],
-            courseHistory: '',
-            tipsterPicks: [],
-            bookmakerOdds: {}
-          });
-        }
-
-        Object.entries(oddsObj).forEach(([bmName, rawOdds]) => {
-          if (!bookmakerSet.has(bmName)) {
-            bookmakerSet.set(bmName, {
-              name: bmName,
-              key: bmName.toLowerCase().replace(/\s+/g, '_'),
-              eachWay: { places: '5', fraction: '1/5' }
-            });
-          }
-
-          let decimalOdds;
-          if (typeof rawOdds === 'number') {
-            decimalOdds = rawOdds;
-          } else if (typeof rawOdds === 'string' && rawOdds.includes('/')) {
-            const [num, den] = rawOdds.split('/').map(Number);
-            decimalOdds = den > 0 ? (num / den) + 1 : null;
-          } else if (typeof rawOdds === 'object' && rawOdds !== null) {
-            decimalOdds = rawOdds.decimal || rawOdds.price || rawOdds.odds || null;
-            if (typeof decimalOdds === 'string' && decimalOdds.includes('/')) {
-              const [num, den] = decimalOdds.split('/').map(Number);
-              decimalOdds = den > 0 ? (num / den) + 1 : null;
-            }
-          } else if (typeof rawOdds === 'string') {
-            decimalOdds = parseFloat(rawOdds) || null;
-          }
-
-          if (decimalOdds) {
-            const p = playersMap.get(playerName);
-            p.bookmakerOdds[bmName] = {
-              outright: decimalOdds,
-              top5: 'N/A', top10: 'N/A', top20: 'N/A',
-              top30: 'N/A', top40: 'N/A', makeCut: 'N/A', r1Leader: 'N/A'
-            };
-          }
-        });
-      });
-
-      return playersMap.size > 0;
-    };
-
-    // Try both formats
-    if (!processBookmakerCentric(data) && !processPlayerCentric(data)) {
-      console.warn('⚠️ Could not parse RapidAPI response — unknown format');
-      console.log('📋 Response sample:', JSON.stringify(data).substring(0, 500));
-      return false;
-    }
-
-    const players = Array.from(playersMap.values()).map(player => {
-      const outrightOdds = Object.values(player.bookmakerOdds)
-        .map(o => o.outright)
-        .filter(o => typeof o === 'number');
-      const avgOdds = outrightOdds.length > 0
-        ? outrightOdds.reduce((a, b) => a + b, 0) / outrightOdds.length
-        : 999;
-      return { ...player, avgOdds };
-    });
-
-    const bookmakerList = Array.from(bookmakerSet.values());
-
-    console.log(`📊 Processed ${players.length} players from ${bookmakerList.length} UK bookmakers`);
-    setOdds(players);
-    setBookmakers(bookmakerList);
-    return true;
-  }, []);
-
-  // ===== FALLBACK: The Odds API =====
-  const fetchFromOddsAPI = useCallback(async (tournament) => {
-    const sportKey = tournament.oddsApiKey;
-    if (!sportKey) {
-      console.warn('⚠️ No Odds API key for tournament:', tournament.id);
-      return null;
-    }
-
-    // Step 1: Check if this sport key is currently available (FREE call)
-    const sportsUrl = `${ODDS_API_BASE}/sports/?apiKey=${ODDS_API_KEY}&all=true`;
-    console.log('🔍 Checking sport availability on The Odds API (free call)...');
-
-    const sportsResponse = await fetch(sportsUrl, {
-      signal: AbortSignal.timeout(10000)
-    });
-
-    if (!sportsResponse.ok) {
-      throw new Error(`Sports endpoint returned ${sportsResponse.status}`);
-    }
-
-    const availableSports = await sportsResponse.json();
-    const targetSport = availableSports.find(s => s.key === sportKey);
-
-    if (!targetSport || !targetSport.active) {
-      console.warn(`⚠️ Sport "${sportKey}" ${!targetSport ? 'not found' : 'inactive'} on The Odds API`);
-      return null;
-    }
-
-    console.log(`✅ Sport "${sportKey}" is active — fetching odds (costs 1 credit)...`);
-
-    // Step 2: Fetch actual odds (costs 1 API credit)
-    const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
-      `apiKey=${ODDS_API_KEY}&regions=uk&markets=outrights&oddsFormat=decimal`;
-
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(15000)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`Odds API returned ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-    if (!data || data.length === 0) return null;
-
-    return data;
-  }, []);
-
-  // ===== MAIN FETCH: Tries RapidAPI first, then The Odds API, then mock =====
+  // ===== MAIN FETCH (only runs after region is ready) =====
   const fetchTournamentData = useCallback(async (tournament) => {
     if (fetchInProgress.current) {
       console.log('⏳ Fetch already in progress, skipping');
@@ -524,66 +274,70 @@ const GolfOddsComparison = () => {
     // Check cache first
     const cachedData = getCachedData(tournament.id);
     if (cachedData) {
-      if (cachedData._source === 'rapidapi') {
-        const success = processRapidApiData(cachedData.data);
-        if (success) {
-          setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
-          setUseMock(false);
-          setLoading(false);
-          return;
-        }
-      } else {
-        processLiveOdds(cachedData.data || cachedData);
-        setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
-        setUseMock(false);
-        setLoading(false);
-        return;
-      }
+      processLiveOdds(cachedData);
+      setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
+      setUseMock(false);
+      setLoading(false);
+      return;
     }
 
+    console.log('🔴 Fetching LIVE odds from The Odds API...');
+    console.log(`📍 Region: UK | Tournament: ${tournament.name}`);
     fetchInProgress.current = true;
     setLoading(true);
 
     try {
-      // ATTEMPT 1: UK Betting Odds API (RapidAPI)
-      console.log('🇬🇧 Attempting UK Betting Odds API (primary)...');
-      const rapidData = await fetchFromRapidAPI(tournament);
-
-      if (rapidData) {
-        const success = processRapidApiData(rapidData);
-        if (success) {
-          setCachedData({ _source: 'rapidapi', data: rapidData }, tournament.id);
-          setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
-          setUseMock(false);
-          console.log('✅ LIVE DATA from UK Betting Odds API — cached for 1 hour');
-          return;
-        }
+      const sportKey = SPORT_KEYS[tournament.id];
+      if (!sportKey) {
+        throw new Error(`Unknown tournament: ${tournament.id}`);
       }
 
-      // ATTEMPT 2: The Odds API (fallback)
-      console.log('🔄 Trying The Odds API (fallback)...');
-      const oddsData = await fetchFromOddsAPI(tournament);
+      const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
+        `apiKey=${ODDS_API_KEY}&` +
+        `regions=uk&` +
+        `markets=outrights&` +
+        `oddsFormat=decimal`;
 
-      if (oddsData) {
-        setCachedData({ _source: 'oddsapi', data: oddsData }, tournament.id);
-        processLiveOdds(oddsData);
-        setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
-        setUseMock(false);
-        console.log('✅ LIVE DATA from The Odds API — cached for 1 hour');
+      console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
+
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(15000) // 15s timeout
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`API returned ${response.status}: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Response received:', {
+        events: data.length,
+        firstEvent: data[0]?.sport_title || 'N/A'
+      });
+
+      if (!data || data.length === 0) {
+        console.warn('⚠️ API returned empty data — tournament odds may not be available yet');
+        useMockData();
+        setApiStatus({
+          isLive: false,
+          lastUpdated: null,
+          error: 'No data available for this tournament yet. Showing demo data.'
+        });
         return;
       }
 
-      // ATTEMPT 3: Mock data
-      console.log('📊 No live data available — using mock data');
-      useMockData();
-      setApiStatus({
-        isLive: false,
-        lastUpdated: null,
-        error: `${tournament.name} outright odds are not yet available from our data providers. Bookmakers have their own odds live — we'll surface them as soon as our API feeds activate. Showing demo data.`
-      });
+      // Cache the raw API response
+      setCachedData(data, tournament.id);
+
+      // Process the data
+      processLiveOdds(data);
+      setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
+      setUseMock(false);
+      console.log('✅ LIVE DATA loaded & cached for 1 hour');
 
     } catch (error) {
       console.error('❌ API Error:', error);
+      console.log('📊 Falling back to MOCK data');
       useMockData();
       setApiStatus({
         isLive: false,
@@ -594,7 +348,7 @@ const GolfOddsComparison = () => {
       setLoading(false);
       fetchInProgress.current = false;
     }
-  }, [getCachedData, setCachedData, processLiveOdds, processRapidApiData, fetchFromRapidAPI, fetchFromOddsAPI, useMockData]);
+  }, [getCachedData, setCachedData, processLiveOdds, useMockData]);
 
   // ===== EFFECT: Fetch data when tournament changes =====
   useEffect(() => {
@@ -1529,21 +1283,21 @@ const GolfOddsComparison = () => {
         </div>
       </header>
 
-      {useMock && !apiStatus.error && (
+      {useMock && (
         <div className="demo-notice">
-          💡 Showing demo data — live odds from UK bookmakers will appear when the outright market opens for this tournament
+          💡 Demo data - Live odds available during major tournaments
         </div>
       )}
 
       {!useMock && apiStatus.isLive && (
         <div className="live-notice">
-          🟢 LIVE ODDS from UKGC-licensed bookmakers • Last updated: {apiStatus.lastUpdated?.toLocaleTimeString() || 'Just now'}
+          🔴 LIVE DATA • Last updated: {apiStatus.lastUpdated?.toLocaleTimeString() || 'Just now'}
         </div>
       )}
 
       {apiStatus.error && (
-        <div className="demo-notice">
-          ℹ️ {apiStatus.error}
+        <div className="error-notice">
+          ⚠️ {apiStatus.error}
         </div>
       )}
 
