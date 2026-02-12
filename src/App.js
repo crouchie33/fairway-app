@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -8,100 +9,6 @@ const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
 const USE_LIVE_API = false;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
-
-// ===== WORLD RANKINGS CONFIGURATION =====
-const RANKINGS_API_KEY = 'de5bc06063msh0b3fa8ba9928231p10c2a7jsn25e0a9e7e6f3';
-const RANKINGS_CACHE_KEY = 'fairway_world_rankings';
-const RANKINGS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — rankings update weekly
-
-/**
- * Returns a Monday-anchored ISO week string e.g. "2025-W17".
- * Rankings update on Mondays so two fetches within the same week reuse the cache.
- */
-function getISOWeekKey() {
-  const now = new Date();
-  const jan4 = new Date(now.getFullYear(), 0, 4);
-  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1;
-  const weekNum = Math.ceil((dayOfYear + jan4.getDay()) / 7);
-  return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
-}
-
-function getCachedRankings() {
-  try {
-    const raw = localStorage.getItem(RANKINGS_CACHE_KEY);
-    if (!raw) return null;
-    const cached = JSON.parse(raw);
-    const age = Date.now() - cached.timestamp;
-    if (age > RANKINGS_CACHE_TTL_MS || cached.weekKey !== getISOWeekKey()) {
-      console.log('🏌️ World rankings cache expired — will refresh');
-      return null;
-    }
-    console.log(`✅ Using cached world rankings (${Math.round(age / 1000 / 60 / 60)} hrs old, week ${cached.weekKey})`);
-    return cached.rankingsMap;
-  } catch { return null; }
-}
-
-function setCachedRankings(rankingsMap) {
-  try {
-    localStorage.setItem(RANKINGS_CACHE_KEY, JSON.stringify({
-      rankingsMap,
-      timestamp: Date.now(),
-      weekKey: getISOWeekKey()
-    }));
-  } catch { /* localStorage full — silently skip */ }
-}
-
-async function fetchWorldRankings() {
-  const cached = getCachedRankings();
-  if (cached) return cached;
-
-  console.log('🌍 Fetching OWGR from Live Golf Data API...');
-  try {
-    const response = await fetch(
-      'https://live-golf-data.p.rapidapi.com/rankings?orgId=1',
-      {
-        headers: {
-          'x-rapidapi-key': RANKINGS_API_KEY,
-          'x-rapidapi-host': 'live-golf-data.p.rapidapi.com'
-        },
-        signal: AbortSignal.timeout(12000)
-      }
-    );
-    if (!response.ok) throw new Error(`Rankings API ${response.status}`);
-    const data = await response.json();
-    console.log('🏌️ OWGR raw response keys:', Object.keys(data || {}));
-    // API returns { rankings: [...] } — each entry has fullName + rank
-    const entries = data?.rankings ?? data?.golfers ?? data?.players ?? [];
-    console.log(`🏌️ OWGR entries found: ${entries.length}, sample:`, entries[0]);
-    const rankingsMap = {};
-    entries.forEach(entry => {
-      // Handle both { fullName, rank } and { name, worldRanking } shapes
-      const name = entry.fullName || entry.name || entry.playerName;
-      const rank = entry.rank || entry.worldRanking || entry.position;
-      if (name && rank) rankingsMap[name] = Number(rank);
-    });
-    setCachedRankings(rankingsMap);
-    console.log(`✅ OWGR loaded — ${Object.keys(rankingsMap).length} players (week ${getISOWeekKey()})`);
-    return rankingsMap;
-  } catch (err) {
-    console.error('❌ OWGR fetch failed:', err.message);
-    return null;
-  }
-}
-
-function getWorldRank(rankingsMap, playerName) {
-  if (!rankingsMap || !playerName) return null;
-  // 1. Direct match
-  if (rankingsMap[playerName] !== undefined) return rankingsMap[playerName];
-  // 2. Case-insensitive direct match
-  const lower = playerName.toLowerCase();
-  const exactCI = Object.keys(rankingsMap).find(n => n.toLowerCase() === lower);
-  if (exactCI) return rankingsMap[exactCI];
-  // 3. Last-name match (handles "Rory McIlroy" vs "McIlroy, Rory")
-  const lastName = playerName.split(' ').slice(-1)[0].toLowerCase();
-  const lastMatch = Object.keys(rankingsMap).find(n => n.toLowerCase().endsWith(lastName));
-  return lastMatch ? rankingsMap[lastMatch] : null;
-}
 
 const MAJORS = [
   { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
@@ -158,15 +65,7 @@ const GolfOddsComparison = () => {
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
 
-  // World rankings — fetched once on mount, cached for one week
-  const [worldRankings, setWorldRankings] = useState(null);
-
   const fetchInProgress = useRef(false);
-
-  // Fetch OWGR on mount — only hits the API when the weekly cache is stale
-  useEffect(() => {
-    fetchWorldRankings().then(map => { if (map) setWorldRankings(map); });
-  }, []);
 
   const getCachedData = useCallback((tournamentId) => {
     try {
@@ -423,17 +322,8 @@ const GolfOddsComparison = () => {
     fetchTournamentData(selectedTournament);
   }, [selectedTournament, fetchTournamentData]);
 
-  // Hydrate owgr from live world rankings (falls back gracefully if not loaded yet)
-  const oddsWithRankings = useMemo(() => {
-    if (!worldRankings) return odds;
-    return odds.map(player => ({
-      ...player,
-      owgr: getWorldRank(worldRankings, player.name) ?? player.owgr
-    }));
-  }, [odds, worldRankings]);
-
   const sortedAndFilteredOdds = useMemo(() => {
-    let filtered = oddsWithRankings.filter(player =>
+    let filtered = odds.filter(player =>
       player.name.toLowerCase().includes(filterText.toLowerCase())
     );
     return filtered.sort((a, b) => {
@@ -455,7 +345,7 @@ const GolfOddsComparison = () => {
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [oddsWithRankings, sortConfig, filterText]);
+  }, [odds, sortConfig, filterText]);
 
   const handleSort = (key) => {
     setSortConfig(prev => ({
@@ -792,19 +682,6 @@ const GolfOddsComparison = () => {
         .player-name { white-space: nowrap; flex: 1; min-width: 0; }
         .desktop-only { display: table-cell; }
         .mobile-only { display: none; }
-
-        /* World ranking badge colours */
-        .owgr-badge {
-          display: inline-block;
-          padding: 2px 5px;
-          border-radius: 3px;
-          font-size: 0.78rem;
-          font-weight: 700;
-          line-height: 1.4;
-        }
-        .owgr-top10  { background: #d4edda; color: #155724; }
-        .owgr-top50  { background: #fff3cd; color: #856404; }
-        .owgr-other  { background: #f0f0f0; color: #555; }
 
         .tipster-header {
           font-size: 1.4rem;
@@ -1163,12 +1040,7 @@ const GolfOddsComparison = () => {
                           <span className="player-name">{player.name}</span>
                         </div>
                       </td>
-                      <td className="owgr-cell desktop-only">
-                        {player.owgr
-                          ? <span className={`owgr-badge ${player.owgr <= 10 ? 'owgr-top10' : player.owgr <= 50 ? 'owgr-top50' : 'owgr-other'}`}>#{player.owgr}</span>
-                          : <span style={{ color: '#ccc' }}>-</span>
-                        }
-                      </td>
+                      <td className="owgr-cell desktop-only">{player.owgr || '-'}</td>
                       <td className="tipster-cell desktop-only">
                         {player.tipsterPicks && player.tipsterPicks.length > 0 ? (
                           <div
@@ -1219,12 +1091,7 @@ const GolfOddsComparison = () => {
                                 <div className="desktop-info-card">
                                   <div className="desktop-card-label">World</div>
                                   <div className="desktop-card-label">Ranking</div>
-                                  <div className="desktop-card-value">
-                                    {player.owgr
-                                      ? <span className={`owgr-badge ${player.owgr <= 10 ? 'owgr-top10' : player.owgr <= 50 ? 'owgr-top50' : 'owgr-other'}`}>#{player.owgr}</span>
-                                      : 'N/A'
-                                    }
-                                  </div>
+                                  <div className="desktop-card-value">#{player.owgr || 'N/A'}</div>
                                 </div>
                                 {player.recentForm?.length > 0 && (
                                   <div className="desktop-info-card desktop-form-card">
@@ -1337,12 +1204,7 @@ const GolfOddsComparison = () => {
                                     </div>
                                     <div className="mobile-stat-card">
                                       <div className="mobile-stat-label">World Ranking</div>
-                                      <div className="mobile-stat-value">
-                                        {player.owgr
-                                          ? <span className={`owgr-badge ${player.owgr <= 10 ? 'owgr-top10' : player.owgr <= 50 ? 'owgr-top50' : 'owgr-other'}`}>#{player.owgr}</span>
-                                          : 'N/A'
-                                        }
-                                      </div>
+                                      <div className="mobile-stat-value">#{player.owgr || 'N/A'}</div>
                                     </div>
                                     {player.recentForm?.length > 0 && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
