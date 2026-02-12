@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -11,21 +10,40 @@ const USE_LIVE_API = true;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 const MAJORS = [
-  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_winner' },
+  { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
   { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship_winner' },
   { id: 'usopen', name: 'US Open', apiKey: 'golf_us_open_winner' },
   { id: 'open', name: 'The Open', apiKey: 'golf_the_open_championship_winner' }
 ];
 
 const SPORT_KEYS = {
-  'masters': 'golf_masters_winner',
+  'masters': 'golf_masters_tournament_winner',
   'pga': 'golf_pga_championship_winner',
   'usopen': 'golf_us_open_winner',
   'open': 'golf_the_open_championship_winner'
 };
 
+// Map bookmaker names to logo filenames in /public/logos/
+const BOOKMAKER_LOGOS = {
+  'Bet365': 'bet365.png',
+  'William Hill': 'williamhill.png',
+  'Betway': 'betway.png',
+  'Coral': 'coral.png',
+  'Ladbrokes': 'ladbrokes.png',
+  'Paddy Power': 'paddypower.png',
+  'Sky Bet': 'skybet.png',
+  'Betfair': 'betfair.png',
+  'BoyleSports': 'boylesports.png',
+  '888sport': '888sport.png',
+  'BetRivers': 'betrivers.png',
+  'BetMGM': 'betmgm.png',
+  'FanDuel': 'fanduel.png',
+  'DraftKings': 'draftkings.png',
+  'Caesars': 'caesars.png',
+  'PointsBet': 'pointsbet.png'
+};
+
 const GolfOddsComparison = () => {
-  // Affiliate Links - UKGC-licensed bookmakers only
   const affiliateLinks = {
     'Bet365': 'https://www.bet365.com/olp/golf?affiliate=YOUR_BET365_ID',
     'William Hill': 'https://www.williamhill.com/golf?AffiliateID=YOUR_WH_ID',
@@ -36,7 +54,13 @@ const GolfOddsComparison = () => {
     'Sky Bet': 'https://www.skybet.com/golf?aff=YOUR_SKYBET_ID',
     'Betfair': 'https://www.betfair.com/sport/golf?pid=YOUR_BETFAIR_ID',
     'BoyleSports': 'https://www.boylesports.com/golf?aff=YOUR_BOYLE_ID',
-    '888sport': 'https://www.888sport.com/golf?affiliate=YOUR_888_ID'
+    '888sport': 'https://www.888sport.com/golf?affiliate=YOUR_888_ID',
+    'BetRivers': 'https://www.betrivers.com/golf?affiliate=YOUR_BETRIVERS_ID',
+    'BetMGM': 'https://sports.betmgm.com/golf?wm=YOUR_BETMGM_ID',
+    'FanDuel': 'https://sportsbook.fanduel.com/golf?referral=YOUR_FD_ID',
+    'DraftKings': 'https://sportsbook.draftkings.com/golf?wpcid=YOUR_DK_ID',
+    'Caesars': 'https://sportsbook.caesars.com/golf?pid=YOUR_CAESARS_ID',
+    'PointsBet': 'https://pointsbet.com/golf?referralCode=YOUR_PB_ID'
   };
 
   const [odds, setOdds] = useState([]);
@@ -47,32 +71,25 @@ const GolfOddsComparison = () => {
   const [selectedTournament, setSelectedTournament] = useState(MAJORS[0]);
   const [bookmakers, setBookmakers] = useState([]);
   const [useMock, setUseMock] = useState(false);
-  const [oddsFormat, setOddsFormat] = useState('fractional'); // UK default
+  const [oddsFormat, setOddsFormat] = useState('fractional');
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
 
-  // Ref to prevent double-fetching
   const fetchInProgress = useRef(false);
 
-  // ===== CACHE HELPERS =====
   const getCachedData = useCallback((tournamentId) => {
     try {
       const cached = localStorage.getItem('oddsCache');
       if (!cached) return null;
-
       const parsed = JSON.parse(cached);
       const age = Date.now() - parsed.timestamp;
-
       if (age < CACHE_DURATION_MS && parsed.tournament === tournamentId) {
         console.log(`✅ Using cached data (${Math.round(age / 1000 / 60)} mins old)`);
         return parsed.apiResponse;
       }
-
-      console.log('🕐 Cache expired or tournament changed');
       return null;
     } catch (error) {
-      console.error('Cache read error:', error);
       return null;
     }
   }, []);
@@ -84,20 +101,14 @@ const GolfOddsComparison = () => {
         timestamp: Date.now(),
         tournament: tournamentId
       }));
-      console.log('💾 Data cached successfully');
-    } catch (error) {
-      console.error('Cache write error:', error);
-    }
+    } catch (error) {}
   }, []);
 
-  // ===== COUNTDOWN TIMER =====
   useEffect(() => {
     const mastersDate = new Date('2026-04-09T08:00:00-04:00');
-
     const updateCountdown = () => {
       const now = new Date();
       const diff = mastersDate - now;
-
       if (diff > 0) {
         setCountdown({
           days: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -107,24 +118,17 @@ const GolfOddsComparison = () => {
         });
       }
     };
-
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // ===== ODDS FORMAT from localStorage =====
   useEffect(() => {
     const savedFormat = localStorage.getItem('oddsFormat');
-    if (savedFormat) {
-      setOddsFormat(savedFormat);
-    }
+    if (savedFormat) setOddsFormat(savedFormat);
   }, []);
 
-  // ===== PROCESS LIVE API DATA =====
   const processLiveOdds = useCallback((apiData) => {
-    console.log('🔄 Processing live odds data...');
-
     const bookmakerSet = new Map();
     const playersMap = new Map();
 
@@ -138,12 +142,10 @@ const GolfOddsComparison = () => {
             eachWay: { places: '5', fraction: '1/5' }
           });
         }
-
         bookmaker.markets?.forEach(market => {
           if (market.key === 'outrights') {
             market.outcomes?.forEach(outcome => {
               const playerName = outcome.name;
-
               if (!playersMap.has(playerName)) {
                 playersMap.set(playerName, {
                   name: playerName,
@@ -155,17 +157,11 @@ const GolfOddsComparison = () => {
                   bookmakerOdds: {}
                 });
               }
-
               const player = playersMap.get(playerName);
               player.bookmakerOdds[bookmakerName] = {
                 outright: outcome.price,
-                top5: 'N/A',
-                top10: 'N/A',
-                top20: 'N/A',
-                top30: 'N/A',
-                top40: 'N/A',
-                makeCut: 'N/A',
-                r1Leader: 'N/A'
+                top5: 'N/A', top10: 'N/A', top20: 'N/A',
+                top30: 'N/A', top40: 'N/A', makeCut: 'N/A', r1Leader: 'N/A'
               };
             });
           }
@@ -175,22 +171,17 @@ const GolfOddsComparison = () => {
 
     const players = Array.from(playersMap.values()).map(player => {
       const outrightOdds = Object.values(player.bookmakerOdds)
-        .map(o => o.outright)
-        .filter(o => typeof o === 'number');
+        .map(o => o.outright).filter(o => typeof o === 'number');
       const avgOdds = outrightOdds.length > 0
-        ? outrightOdds.reduce((a, b) => a + b, 0) / outrightOdds.length
-        : 999;
+        ? outrightOdds.reduce((a, b) => a + b, 0) / outrightOdds.length : 999;
       return { ...player, avgOdds };
     });
 
     const bookmakerList = Array.from(bookmakerSet.values());
-
-    console.log(`📊 Processed ${players.length} players from ${bookmakerList.length} bookmakers`);
     setOdds(players);
     setBookmakers(bookmakerList);
   }, []);
 
-  // ===== MOCK DATA =====
   const useMockData = useCallback(() => {
     setUseMock(true);
     const mockPlayers = [
@@ -234,11 +225,10 @@ const GolfOddsComparison = () => {
     const mockOdds = mockPlayers.map(player => {
       const playerOdds = {};
       const baseOdds = 5 + Math.random() * 45;
-
       bookmakerList.forEach(book => {
         const outright = +(baseOdds + (Math.random() - 0.5) * 3).toFixed(1);
         playerOdds[book.name] = {
-          outright: outright,
+          outright,
           top5: +(outright * 0.25).toFixed(1),
           top10: +(outright * 0.15).toFixed(1),
           top20: +(outright * 0.08).toFixed(1),
@@ -248,30 +238,18 @@ const GolfOddsComparison = () => {
           topNationality: +(outright * 0.35).toFixed(1)
         };
       });
-
       const outrightOdds = Object.values(playerOdds).map(o => o.outright);
       const avgOdds = outrightOdds.reduce((a, b) => a + b, 0) / outrightOdds.length;
-
       return { ...player, bookmakerOdds: playerOdds, avgOdds };
     });
 
     setOdds(mockOdds);
   }, []);
 
-  // ===== MAIN FETCH (only runs after region is ready) =====
   const fetchTournamentData = useCallback(async (tournament) => {
-    if (fetchInProgress.current) {
-      console.log('⏳ Fetch already in progress, skipping');
-      return;
-    }
+    if (fetchInProgress.current) return;
+    if (!USE_LIVE_API) { useMockData(); return; }
 
-    if (!USE_LIVE_API) {
-      console.log('📊 Using MOCK data (USE_LIVE_API = false)');
-      useMockData();
-      return;
-    }
-
-    // Check cache first
     const cachedData = getCachedData(tournament.id);
     if (cachedData) {
       processLiveOdds(cachedData);
@@ -282,15 +260,12 @@ const GolfOddsComparison = () => {
     }
 
     console.log('🔴 Fetching LIVE odds from The Odds API...');
-    console.log(`📍 Region: UK | Tournament: ${tournament.name}`);
     fetchInProgress.current = true;
     setLoading(true);
 
     try {
       const sportKey = SPORT_KEYS[tournament.id];
-      if (!sportKey) {
-        throw new Error(`Unknown tournament: ${tournament.id}`);
-      }
+      if (!sportKey) throw new Error(`Unknown tournament: ${tournament.id}`);
 
       const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
         `apiKey=${ODDS_API_KEY}&` +
@@ -300,78 +275,50 @@ const GolfOddsComparison = () => {
 
       console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
 
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(15000) // 15s timeout
-      });
+      const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        throw new Error(`API returned ${response.status}: ${response.statusText} - ${errorText}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`API returned ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('✅ API Response received:', {
-        events: data.length,
-        firstEvent: data[0]?.sport_title || 'N/A'
-      });
 
       if (!data || data.length === 0) {
-        console.warn('⚠️ API returned empty data — tournament odds may not be available yet');
         useMockData();
-        setApiStatus({
-          isLive: false,
-          lastUpdated: null,
-          error: 'No data available for this tournament yet. Showing demo data.'
-        });
+        setApiStatus({ isLive: false, lastUpdated: null, error: 'No data available yet. Showing demo data.' });
         return;
       }
 
-      // Cache the raw API response
       setCachedData(data, tournament.id);
-
-      // Process the data
       processLiveOdds(data);
       setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
       setUseMock(false);
-      console.log('✅ LIVE DATA loaded & cached for 1 hour');
+      console.log('✅ LIVE DATA loaded!');
 
     } catch (error) {
-      console.error('❌ API Error:', error);
-      console.log('📊 Falling back to MOCK data');
+      console.error('❌ API Error:', error.message);
       useMockData();
-      setApiStatus({
-        isLive: false,
-        lastUpdated: null,
-        error: error.message || 'Failed to fetch odds'
-      });
+      setApiStatus({ isLive: false, lastUpdated: null, error: error.message });
     } finally {
       setLoading(false);
       fetchInProgress.current = false;
     }
   }, [getCachedData, setCachedData, processLiveOdds, useMockData]);
 
-  // ===== EFFECT: Fetch data when tournament changes =====
   useEffect(() => {
-    console.log(`🚀 Fetching ${selectedTournament.name} (UK region)...`);
     fetchTournamentData(selectedTournament);
   }, [selectedTournament, fetchTournamentData]);
 
-  // ===== SORTING & FILTERING =====
   const sortedAndFilteredOdds = useMemo(() => {
-    let filtered = odds.filter(player => {
-      const searchTerm = filterText.toLowerCase();
-      return player.name.toLowerCase().includes(searchTerm);
-    });
-
+    let filtered = odds.filter(player =>
+      player.name.toLowerCase().includes(filterText.toLowerCase())
+    );
     return filtered.sort((a, b) => {
       let aValue, bValue;
-
       if (sortConfig.key === 'name') {
         aValue = a.name.split(' ').slice(-1)[0];
         bValue = b.name.split(' ').slice(-1)[0];
-      } else if (sortConfig.key === 'avgOdds') {
-        aValue = a.avgOdds;
-        bValue = b.avgOdds;
       } else if (sortConfig.key === 'owgr') {
         aValue = a.owgr || 999;
         bValue = b.owgr || 999;
@@ -382,7 +329,6 @@ const GolfOddsComparison = () => {
         aValue = a[sortConfig.key] || 0;
         bValue = b[sortConfig.key] || 0;
       }
-
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
@@ -396,22 +342,14 @@ const GolfOddsComparison = () => {
     }));
   };
 
-  // ===== ODDS FORMATTING =====
   const formatOdds = (odds) => {
     if (!odds || odds === 'N/A') return '-';
-
     const numOdds = typeof odds === 'string' ? parseFloat(odds) : odds;
     if (isNaN(numOdds)) return '-';
-
     if (oddsFormat === 'american') {
-      if (numOdds >= 2.0) {
-        return `+${Math.round((numOdds - 1) * 100)}`;
-      } else {
-        return `${Math.round(-100 / (numOdds - 1))}`;
-      }
+      return numOdds >= 2.0 ? `+${Math.round((numOdds - 1) * 100)}` : `${Math.round(-100 / (numOdds - 1))}`;
     } else if (oddsFormat === 'fractional') {
       const decimalOdds = numOdds - 1;
-
       const commonFractions = {
         0.5: '1/2', 0.33: '1/3', 0.67: '2/3', 0.25: '1/4', 0.75: '3/4',
         0.2: '1/5', 0.4: '2/5', 0.6: '3/5', 0.8: '4/5',
@@ -421,20 +359,13 @@ const GolfOddsComparison = () => {
         14: '14/1', 16: '16/1', 20: '20/1', 25: '25/1', 33: '33/1',
         50: '50/1', 66: '66/1', 100: '100/1'
       };
-
       const rounded = Math.round(decimalOdds * 100) / 100;
-      if (commonFractions[rounded]) {
-        return commonFractions[rounded];
-      }
-
+      if (commonFractions[rounded]) return commonFractions[rounded];
       let numerator = Math.round(decimalOdds * 100);
       let denominator = 100;
       const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
       const divisor = gcd(numerator, denominator);
-      numerator /= divisor;
-      denominator /= divisor;
-
-      return `${numerator}/${denominator}`;
+      return `${numerator / divisor}/${denominator / divisor}`;
     } else {
       return numOdds % 1 === 0 ? numOdds.toFixed(0) : numOdds.toFixed(1);
     }
@@ -457,7 +388,6 @@ const GolfOddsComparison = () => {
     setExpandedPlayer(expandedPlayer === playerName ? null : playerName);
   };
 
-  // ===== FORCE REFRESH HANDLER =====
   const handleForceRefresh = () => {
     localStorage.removeItem('oddsCache');
     fetchInProgress.current = false;
@@ -468,13 +398,6 @@ const GolfOddsComparison = () => {
     <span
       onClick={() => handleSort(sortKey)}
       className={`sortable-header ${className}`}
-      title={
-        sortKey === 'owgr' ? 'Click to sort by World Ranking' :
-        sortKey === 'tipsterPicks' ? 'Click to sort by Tipster Consensus' :
-        sortKey === 'name' ? 'Click to sort by Player Name' :
-        sortKey === 'avgOdds' ? 'Click to sort by Best Price (default)' :
-        'Click to sort'
-      }
     >
       {label}
       {sortConfig.key === sortKey && (
@@ -486,12 +409,7 @@ const GolfOddsComparison = () => {
   return (
     <div className="app-container">
       <style>{`
-        /* Version 3.0 - Fixed API integration */
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -501,12 +419,7 @@ const GolfOddsComparison = () => {
           max-width: 100vw;
         }
 
-        .app-container {
-          max-width: 1600px;
-          margin: 0 auto;
-          padding: 0;
-          overflow-x: hidden;
-        }
+        .app-container { max-width: 1600px; margin: 0 auto; padding: 0; overflow-x: hidden; }
 
         header {
           background: white;
@@ -534,31 +447,15 @@ const GolfOddsComparison = () => {
           display: flex;
           flex-direction: column;
           align-items: flex-end;
-          justify-content: space-between;
           gap: 0;
           height: 100%;
         }
 
-        .tagline {
-          font-size: 1.7rem;
-          color: #666;
-          font-weight: 500;
-          letter-spacing: 0.3px;
-          padding-top: 8px;
-        }
-
+        .tagline { font-size: 1.7rem; color: #666; font-weight: 500; padding-top: 8px; }
         .wordmark { width: 100mm; height: auto; }
         .logo-center { height: 90px; width: auto; }
         .logo-mobile { display: none; }
         .logo-desktop { display: block; }
-
-        header h1 {
-          font-size: 1.8rem;
-          font-weight: 700;
-          color: #1a1a1a;
-          letter-spacing: -0.5px;
-          margin: 0;
-        }
 
         .tournament-tabs { display: flex; gap: 8px; }
 
@@ -571,13 +468,7 @@ const GolfOddsComparison = () => {
         }
 
         .countdown-label { color: #666; font-weight: 500; }
-
-        .countdown-time {
-          color: #1a1a1a;
-          font-weight: 700;
-          font-family: 'Courier New', monospace;
-          letter-spacing: 0.5px;
-        }
+        .countdown-time { color: #1a1a1a; font-weight: 700; font-family: 'Courier New', monospace; }
 
         .tournament-tab {
           padding: 8px 16px;
@@ -593,13 +484,7 @@ const GolfOddsComparison = () => {
         }
 
         .tournament-tab:hover { color: #1a1a1a; border-color: #1a1a1a; }
-
-        .tournament-tab.active {
-          background: #1a1a1a;
-          color: white;
-          border-color: #1a1a1a;
-          font-weight: 600;
-        }
+        .tournament-tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; font-weight: 600; }
 
         .best-odds-header { display: none; }
         .best-odds-cell-mobile { display: none; }
@@ -626,13 +511,7 @@ const GolfOddsComparison = () => {
 
         .search-bar input:focus { outline: none; border-color: #1a1a1a; }
 
-        .search-icon {
-          position: absolute;
-          left: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #999;
-        }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999; }
 
         .refresh-button {
           padding: 8px 16px;
@@ -644,50 +523,27 @@ const GolfOddsComparison = () => {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
-          margin-left: 12px;
         }
 
         .refresh-button:hover:not(:disabled) { background: #218838; transform: translateY(-1px); }
         .refresh-button:disabled { background: #6c757d; cursor: not-allowed; opacity: 0.6; }
 
-        .demo-notice {
-          background: #fff3cd;
-          padding: 12px 30px;
-          border-bottom: 1px solid #ffc107;
-          font-size: 0.85rem;
-          color: #856404;
-        }
-
-        .live-notice {
-          background: #d4edda;
-          padding: 12px 30px;
-          border-bottom: 1px solid #28a745;
-          font-size: 0.85rem;
-          color: #155724;
-          font-weight: 600;
-        }
-
-        .error-notice {
-          background: #f8d7da;
-          padding: 12px 30px;
-          border-bottom: 1px solid #dc3545;
-          font-size: 0.85rem;
-          color: #721c24;
-        }
+        .demo-notice { background: #fff3cd; padding: 12px 30px; border-bottom: 1px solid #ffc107; font-size: 0.85rem; color: #856404; }
+        .live-notice { background: #d4edda; padding: 12px 30px; border-bottom: 1px solid #28a745; font-size: 0.85rem; color: #155724; font-weight: 600; }
+        .error-notice { background: #f8d7da; padding: 12px 30px; border-bottom: 1px solid #dc3545; font-size: 0.85rem; color: #721c24; }
 
         .odds-matrix-container {
           background: white;
-          margin: 0;
           overflow-x: auto;
           overflow-y: auto;
           max-height: calc(100vh - 140px);
         }
 
-        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; }
 
         .odds-matrix thead th {
           background: #f8f8f8;
-          padding: 16px 8px;
+          padding: 8px 4px;
           text-align: center;
           font-weight: 600;
           font-size: 0.75rem;
@@ -729,27 +585,53 @@ const GolfOddsComparison = () => {
         }
 
         .player-header-content { display: flex; align-items: center; gap: 8px; }
-
-        .inline-sort {
-          cursor: pointer;
-          transition: color 0.2s;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
+        .inline-sort { cursor: pointer; transition: color 0.2s; font-size: 0.75rem; font-weight: 600; }
         .inline-sort:hover { color: #1a1a1a; }
         .header-separator { color: #ccc; font-weight: 400; }
 
-        .bookmaker-header { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        /* Bookmaker header - logo replaces text, E/W at bottom */
+        .bookmaker-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          height: 120px;
+          padding: 6px 2px 4px;
+        }
 
-        .bookmaker-name-rotated {
-          writing-mode: vertical-rl;
+        /* Logo: rotated 90deg so it reads bottom-to-top like the old text */
+        .bookmaker-logo-wrapper {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .bookmaker-logo {
+          width: 60px;
+          height: 22px;
+          object-fit: contain;
+          object-position: center;
           transform: rotate(180deg);
-          font-weight: 600;
-          font-size: 0.8rem;
-          color: #1a1a1a;
-          white-space: nowrap;
-          padding: 8px 0;
+          writing-mode: vertical-rl;
+          /* Fallback: if image loads, these are ignored */
+        }
+
+        /* Rotate the whole wrapper so logos read bottom-to-top */
+        .bookmaker-logo-wrapper {
+          transform: rotate(180deg);
+          writing-mode: vertical-rl;
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .bookmaker-logo {
+          width: 60px;
+          height: 22px;
+          object-fit: contain;
+          transform: rotate(180deg);
         }
 
         .each-way-terms {
@@ -758,13 +640,15 @@ const GolfOddsComparison = () => {
           align-items: center;
           font-size: 0.7rem;
           color: #666;
-          margin-top: 4px;
+          padding-bottom: 2px;
+          writing-mode: horizontal-tb;
+          transform: none;
         }
 
         .ew-places { font-weight: 600; color: #1a1a1a; }
         .ew-fraction { font-weight: 400; }
 
-        .sortable-header { cursor: pointer; user-select: none; transition: background 0.2s; }
+        .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { background: #f0f0f0; }
         .sort-arrow { font-size: 0.8rem; opacity: 0.7; }
 
@@ -772,7 +656,7 @@ const GolfOddsComparison = () => {
         .odds-matrix tbody tr:hover { background: #fafafa; }
 
         .odds-matrix tbody td {
-          padding: 14px 8px;
+          padding: 14px 4px;
           font-size: 0.9rem;
           text-align: center;
           border-right: 1px solid #f5f5f5;
@@ -793,15 +677,7 @@ const GolfOddsComparison = () => {
 
         .odds-matrix tbody tr:hover td:first-child { background: #fafafa; }
 
-        .player-cell {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          font-weight: 500;
-          color: #1a1a1a;
-        }
-
+        .player-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; }
         .expand-icon { color: #999; flex-shrink: 0; }
         .player-name { white-space: nowrap; flex: 1; min-width: 0; }
         .desktop-only { display: table-cell; }
@@ -813,34 +689,29 @@ const GolfOddsComparison = () => {
           padding: 12px 6px;
           min-width: 40px;
           max-width: 50px;
-          text-align: center;
-          vertical-align: middle;
         }
 
         .owgr-header {
           font-size: 0.7rem;
           padding: 8px 6px;
-          min-width: 55px;
-          max-width: 60px;
           width: 60px;
-          text-align: center;
+          min-width: 60px;
+          max-width: 60px;
           line-height: 1.2;
-          vertical-align: middle;
         }
 
         .owgr-header div { font-weight: 600; }
 
         .owgr-cell {
-          padding: 10px 8px;
+          padding: 10px 4px;
           text-align: center;
           font-weight: 600;
           color: #666;
           font-size: 0.9rem;
-          max-width: 60px;
           width: 60px;
         }
 
-        .tipster-cell { padding: 10px 6px; min-width: 45px; max-width: 50px; width: 50px; }
+        .tipster-cell { padding: 10px 4px; width: 50px; }
 
         .tipster-bar-container {
           position: relative;
@@ -853,15 +724,13 @@ const GolfOddsComparison = () => {
           transition: transform 0.2s;
         }
 
-        .tipster-bar-container:hover { transform: scale(1.05); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .tipster-bar-container:hover { transform: scale(1.05); }
 
         .tipster-bar {
           position: absolute;
-          left: 0;
-          top: 0;
+          left: 0; top: 0;
           height: 100%;
-          background: linear-gradient(90deg, #2d5a2d 0%, #3d7a3d 50%, #4d8a4d 100%);
-          transition: width 0.3s ease;
+          background: linear-gradient(90deg, #2d5a2d, #4d8a4d);
           border-radius: 3px 0 0 3px;
         }
 
@@ -873,30 +742,26 @@ const GolfOddsComparison = () => {
           font-size: 0.75rem;
           font-weight: 700;
           color: #1a1a1a;
-          z-index: 1;
         }
 
-        .tipster-empty { text-align: center; color: #ccc; font-size: 0.9rem; }
+        .tipster-empty { text-align: center; color: #ccc; }
         .odds-cell { font-weight: 500; color: #1a1a1a; }
 
         .odds-link {
           display: block;
-          width: 100%;
-          height: 100%;
           color: inherit;
           text-decoration: none;
-          transition: all 0.2s;
           padding: 2px 4px;
           border-radius: 3px;
+          transition: all 0.2s;
         }
 
         .odds-link:hover { background: rgba(0,0,0,0.05); transform: scale(1.05); font-weight: 700; }
-        .odds-link:active { transform: scale(0.98); }
-        .best-odds { background: #fff8e7; font-weight: 700; color: #1a1a1a; }
+        .best-odds { background: #fff8e7; font-weight: 700; }
         .expanded-row { background: #f8f9fa; }
         .expanded-row td { padding: 0 !important; }
 
-        .form-boxes { display: flex; gap: 0; justify-content: center; }
+        .form-boxes { display: flex; justify-content: center; }
 
         .form-box {
           display: inline-block;
@@ -907,7 +772,6 @@ const GolfOddsComparison = () => {
           font-weight: 600;
           text-align: center;
           min-width: 38px;
-          width: 38px;
         }
 
         .form-box:first-child { border-radius: 3px 0 0 3px; }
@@ -926,21 +790,11 @@ const GolfOddsComparison = () => {
         .desktop-expanded-view { display: block; }
         .mobile-panes-wrapper { display: none; }
 
-        .expanded-content {
-          padding: 25px;
-          background: #f8f9fa;
-          width: 100%;
-        }
+        .expanded-content { padding: 25px; background: #f8f9fa; width: 100%; }
 
-        .desktop-cards-grid {
-          display: flex;
-          gap: 8px;
-          width: 100%;
-          align-items: stretch;
-        }
+        .desktop-cards-grid { display: flex; gap: 8px; width: 100%; align-items: stretch; }
 
-        .desktop-info-card,
-        .desktop-odds-card {
+        .desktop-info-card, .desktop-odds-card {
           background: white;
           border: 1px solid #e5e5e5;
           border-radius: 6px;
@@ -959,293 +813,100 @@ const GolfOddsComparison = () => {
           flex-direction: column;
         }
 
-        .desktop-odds-card-clickable:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-          border-color: #1a1a1a;
-        }
-
-        .desktop-odds-card-clickable:active { transform: translateY(0); }
+        .desktop-odds-card-clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #1a1a1a; }
         .desktop-form-card { width: 280px; }
 
-        .desktop-card-label {
-          font-size: 0.65rem;
-          color: #999;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-          font-weight: 600;
-          line-height: 1.1;
-        }
-
-        .desktop-card-sublabel {
-          font-size: 0.6rem;
-          color: #bbb;
-          text-transform: uppercase;
-          letter-spacing: 0.2px;
-          margin-top: 1px;
-          margin-bottom: 4px;
-        }
-
+        .desktop-card-label { font-size: 0.65rem; color: #999; text-transform: uppercase; font-weight: 600; line-height: 1.1; }
+        .desktop-card-sublabel { font-size: 0.6rem; color: #bbb; text-transform: uppercase; margin-top: 1px; margin-bottom: 4px; }
         .desktop-card-value { font-size: 1rem; font-weight: 700; color: #1a1a1a; margin-top: 6px; }
         .desktop-card-odds { font-size: 1.2rem; font-weight: 700; color: #1a1a1a; margin-top: 4px; }
         .desktop-form-card .form-boxes { margin-top: 10px; }
-        .mobile-bookmaker-grid { display: none; }
 
         .loading-state { text-align: center; padding: 60px 20px; color: #999; font-size: 1.1rem; }
 
-        .site-footer {
-          background: #f8f8f8;
-          border-top: 1px solid #e5e5e5;
-          padding: 40px 30px 30px;
-          margin-top: 60px;
-        }
-
-        .footer-content {
-          max-width: 1200px;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          gap: 25px;
-        }
-
+        .site-footer { background: #f8f8f8; border-top: 1px solid #e5e5e5; padding: 40px 30px 30px; margin-top: 60px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
         .footer-disclaimer { display: flex; flex-direction: column; gap: 15px; }
-
         .responsible-gambling { font-size: 0.95rem; color: #1a1a1a; line-height: 1.6; margin: 0; }
         .responsible-gambling strong { color: #d32f2f; font-weight: 700; }
         .responsible-gambling a { color: #1a1a1a; text-decoration: underline; font-weight: 600; }
-        .responsible-gambling a:hover { color: #666; }
-
         .affiliate-notice { font-size: 0.85rem; color: #666; line-height: 1.5; margin: 0; }
 
-        .footer-links {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 15px;
-        }
-
-        .footer-link { color: #1a1a1a; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+        .footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; }
+        .footer-link { color: #1a1a1a; text-decoration: none; font-size: 0.9rem; font-weight: 500; }
         .footer-link:hover { color: #666; text-decoration: underline; }
-        .footer-separator { color: #ccc; font-size: 0.9rem; }
+        .footer-separator { color: #ccc; }
 
-        .footer-logos {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 15px;
-          padding: 20px 0;
-          border-top: 1px solid #e5e5e5;
-          border-bottom: 1px solid #e5e5e5;
-        }
-
+        .footer-logos { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
         .footer-logo-link { text-decoration: none; transition: opacity 0.2s; }
         .footer-logo-link:hover { opacity: 0.7; }
         .gamcare-text { font-size: 0.9rem; color: #1a1a1a; font-weight: 600; }
         .footer-copyright { text-align: center; }
         .footer-copyright p { font-size: 0.85rem; color: #999; margin: 0; }
 
-        .footer-odds-format {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: center;
-          gap: 30px;
-          padding: 20px 0;
-          border-top: 1px solid #e5e5e5;
-          border-bottom: 1px solid #e5e5e5;
-        }
-
+        .footer-odds-format { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 30px; padding: 20px 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
         .footer-settings-group { display: flex; align-items: center; gap: 10px; }
         .footer-odds-format label { font-size: 0.9rem; color: #666; font-weight: 500; }
-
-        .footer-odds-dropdown {
-          padding: 6px 12px;
-          border: 1px solid #e5e5e5;
-          border-radius: 6px;
-          font-size: 0.9rem;
-          font-weight: 500;
-          color: #1a1a1a;
-          background: white;
-          cursor: pointer;
-          transition: border-color 0.2s;
-        }
-
-        .footer-odds-dropdown:hover { border-color: #1a1a1a; }
+        .footer-odds-dropdown { padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 0.9rem; background: white; cursor: pointer; }
         .footer-odds-dropdown:focus { outline: none; border-color: #1a1a1a; }
 
         @media (max-width: 768px) {
-          header { padding: 10px 15px !important; max-width: 100vw !important; overflow-x: hidden !important; }
-
-          .header-content {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            grid-template-columns: none !important;
-          }
-
+          header { padding: 10px 15px !important; }
+          .header-content { display: flex !important; flex-direction: column !important; gap: 10px !important; }
           .tagline { display: none !important; }
-          .header-right { order: 2; }
-
-          .header-left {
-            order: 1;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            width: 100% !important;
-            gap: 10px !important;
-          }
-
+          .header-left { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
           .header-center { display: none !important; }
-          .wordmark { height: 28px !important; width: auto !important; max-width: 60% !important; display: block !important; }
-          .logo-mobile { height: 32px !important; width: auto !important; max-width: 35% !important; display: block !important; }
+          .wordmark { height: 28px !important; width: auto !important; display: block !important; }
+          .logo-mobile { height: 32px !important; width: auto !important; display: block !important; }
           .logo-desktop { display: none !important; }
-
-          .tournament-tabs {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            justify-content: flex-start;
-            max-width: 100% !important;
-            gap: 4px;
-          }
-
+          .tournament-tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; }
           .countdown-container { display: none; }
-          .tournament-tab { padding: 6px 10px; font-size: 0.7rem; white-space: nowrap; flex-shrink: 0; }
-          .controls-bar { padding: 12px 20px; max-width: 100vw !important; }
+          .tournament-tab { padding: 6px 10px; font-size: 0.7rem; flex-shrink: 0; }
+          .controls-bar { padding: 12px 20px; }
           .search-bar { max-width: 100%; }
-
           .footer-odds-format { flex-direction: column; gap: 15px; padding: 15px 0; }
           .footer-settings-group { flex-direction: column; gap: 8px; text-align: center; }
-
           .odds-matrix thead th:not(:first-child):not(.best-odds-header) { display: none; }
           .odds-matrix tbody td:not(:first-child):not(.best-odds-cell-mobile) { display: none; }
           .desktop-only { display: none !important; }
           .mobile-only { display: table-cell !important; }
-
           .odds-matrix thead th { position: relative; top: 0; }
-
-          .odds-matrix thead th:first-child {
-            min-width: auto; max-width: none; width: 70%; position: relative; top: 0; left: 0;
-          }
-
-          .odds-matrix tbody td:first-child { min-width: auto; max-width: none; width: auto; }
+          .odds-matrix thead th:first-child { min-width: auto; max-width: none; width: 70%; position: relative; left: 0; }
+          .odds-matrix tbody td:first-child { min-width: auto; max-width: none; }
           .best-odds-header { display: table-cell !important; width: 30%; text-align: center; }
           .best-odds-cell-mobile { display: table-cell !important; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
-          .player-cell { max-width: none; width: 100%; }
           .player-name { font-size: 0.95rem; }
           .odds-matrix { font-size: 0.85rem; min-width: 100%; }
-
-          .expanded-content { padding: 0 !important; margin: 0; width: 100%; }
-          .info-row { display: flex; flex-wrap: wrap; gap: 30px; padding: 20px; flex-direction: column; }
-          .expanded-section { min-width: 150px; }
-          .expanded-section h4 { font-size: 0.75rem; color: #999; text-transform: uppercase; margin-bottom: 8px; }
-
+          .expanded-content { padding: 0 !important; width: 100%; }
           .site-footer { padding: 30px 20px 20px; margin-top: 40px; }
           .footer-links { flex-direction: column; gap: 10px; }
           .footer-separator { display: none; }
-          .footer-disclaimer { text-align: center; }
-          .responsible-gambling, .affiliate-notice { font-size: 0.85rem; }
-
           .desktop-expanded-view { display: none; }
-          .expanded-content { padding: 15px; }
           .expanded-cell { max-width: 100vw !important; width: 100vw !important; padding: 0 !important; }
-          .expanded-row { display: block !important; max-width: 100vw !important; }
-
-          .mobile-panes-wrapper {
-            display: block;
-            width: 100vw;
-            max-width: 100vw;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-          }
-
-          .mobile-tabs-container {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            gap: 0;
-            width: 100%;
-          }
-
+          .expanded-row { display: block !important; }
+          .mobile-panes-wrapper { display: block; width: 100vw; overflow: hidden; }
+          .mobile-tabs-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
           .mobile-tabs-container::-webkit-scrollbar { display: none; }
-
-          .mobile-tab-pane {
-            flex: 0 0 100vw;
-            width: 100vw;
-            max-width: 100vw;
-            scroll-snap-align: start;
-            padding: 20px;
-            box-sizing: border-box;
-          }
-
-          .mobile-pane-title { font-size: 1rem; font-weight: 700; color: #1a1a1a; margin-bottom: 15px; text-align: center; }
-
+          .mobile-tab-pane { flex: 0 0 100vw; width: 100vw; scroll-snap-align: start; padding: 20px; box-sizing: border-box; }
+          .mobile-pane-title { font-size: 1rem; font-weight: 700; margin-bottom: 15px; text-align: center; }
           .mobile-bookmaker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-          .mobile-bookmaker-card {
-            background: white;
-            border: 2px solid #e5e5e5;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.2s;
-            display: block;
-          }
-
-          .mobile-bookmaker-card:active { transform: scale(0.98); background: #f8f8f8; }
+          .mobile-bookmaker-card { background: white; border: 2px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
+          .mobile-bookmaker-card:active { transform: scale(0.98); }
           .mobile-bookmaker-card.best { background: #fff8e7; border-color: #d4af37; border-width: 3px; }
           .mobile-bookmaker-name { font-size: 0.75rem; color: #666; margin-bottom: 6px; font-weight: 600; }
           .mobile-bookmaker-odds { font-size: 1.4rem; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
           .mobile-bookmaker-ew { font-size: 0.7rem; color: #999; }
-
           .mobile-extra-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-          .mobile-extra-card {
-            background: white;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.2s;
-          }
-
-          .mobile-extra-card:active { background: #f8f8f8; transform: scale(0.98); }
-          .mobile-extra-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 700; }
+          .mobile-extra-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; }
+          .mobile-extra-label { font-size: 0.7rem; color: #999; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
           .mobile-extra-bookmaker { font-size: 0.7rem; color: #666; margin-bottom: 6px; }
           .mobile-extra-odds { font-size: 1.3rem; font-weight: 700; color: #1a1a1a; }
-
           .mobile-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-          .mobile-stat-card {
-            background: white;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-          }
-
+          .mobile-stat-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; }
           .mobile-stat-full-width { grid-column: 1 / -1; }
-          .mobile-stat-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600; }
+          .mobile-stat-label { font-size: 0.7rem; color: #999; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
           .mobile-stat-value { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
-
-          .mobile-swipe-indicator {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            padding: 12px;
-            border-top: 1px solid #f0f0f0;
-          }
-
+          .mobile-swipe-indicator { display: flex; justify-content: center; gap: 8px; padding: 12px; border-top: 1px solid #f0f0f0; }
           .swipe-dot { width: 8px; height: 8px; border-radius: 50%; background: #d0d0d0; transition: background 0.3s; }
           .swipe-dot.active { background: #666; }
         }
@@ -1284,9 +945,7 @@ const GolfOddsComparison = () => {
       </header>
 
       {useMock && (
-        <div className="demo-notice">
-          💡 Demo data - Live odds available during major tournaments
-        </div>
+        <div className="demo-notice">💡 Demo data - Live odds available during major tournaments</div>
       )}
 
       {!useMock && apiStatus.isLive && (
@@ -1296,9 +955,7 @@ const GolfOddsComparison = () => {
       )}
 
       {apiStatus.error && (
-        <div className="error-notice">
-          ⚠️ {apiStatus.error}
-        </div>
+        <div className="error-notice">⚠️ {apiStatus.error}</div>
       )}
 
       <div className="controls-bar">
@@ -1311,14 +968,8 @@ const GolfOddsComparison = () => {
             onChange={(e) => setFilterText(e.target.value)}
           />
         </div>
-
         {USE_LIVE_API && (
-          <button
-            className="refresh-button"
-            onClick={handleForceRefresh}
-            disabled={loading}
-            title="Force refresh odds (uses 1 API credit)"
-          >
+          <button className="refresh-button" onClick={handleForceRefresh} disabled={loading} title="Force refresh (uses 1 API credit)">
             🔄 {loading ? 'Refreshing...' : 'Refresh Odds'}
           </button>
         )}
@@ -1341,20 +992,29 @@ const GolfOddsComparison = () => {
                 <th className="owgr-header desktop-only" onClick={() => handleSort('owgr')} style={{ cursor: 'pointer' }}>
                   <div>World</div>
                   <div>Ranking</div>
-                  {sortConfig.key === 'owgr' && (
-                    <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>
-                  )}
+                  {sortConfig.key === 'owgr' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>}
                 </th>
-                <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} style={{ cursor: 'pointer' }} title="Click to sort by Tipster Consensus">
+                <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} style={{ cursor: 'pointer' }} title="Tipster Consensus">
                   🎯
-                  {sortConfig.key === 'tipsterPicks' && (
-                    <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>
-                  )}
+                  {sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>}
                 </th>
                 {bookmakers.map((bookmaker, idx) => (
-                  <th key={idx}>
+                  <th key={idx} style={{ width: '52px', minWidth: '52px', maxWidth: '52px' }}>
                     <div className="bookmaker-header">
-                      <div className="bookmaker-name-rotated">{bookmaker.name}</div>
+                      <div className="bookmaker-logo-wrapper">
+                        <img
+                          src={`/logos/${BOOKMAKER_LOGOS[bookmaker.name] || bookmaker.name.toLowerCase().replace(/\s/g, '') + '.png'}`}
+                          alt={bookmaker.name}
+                          className="bookmaker-logo"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
+                        />
+                        <span style={{ display: 'none', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '0.75rem', fontWeight: '600' }}>
+                          {bookmaker.name}
+                        </span>
+                      </div>
                       <div className="each-way-terms">
                         <span className="ew-places">{bookmaker.eachWay?.places}</span>
                         <span className="ew-fraction">{bookmaker.eachWay?.fraction}</span>
@@ -1377,11 +1037,7 @@ const GolfOddsComparison = () => {
                     <tr>
                       <td>
                         <div className="player-cell" onClick={() => togglePlayerExpand(player.name)}>
-                          {expandedPlayer === player.name ? (
-                            <ChevronUp className="expand-icon" size={16} />
-                          ) : (
-                            <ChevronDown className="expand-icon" size={16} />
-                          )}
+                          {expandedPlayer === player.name ? <ChevronUp className="expand-icon" size={16} /> : <ChevronDown className="expand-icon" size={16} />}
                           <span className="player-name">{player.name}</span>
                         </div>
                       </td>
@@ -1390,13 +1046,10 @@ const GolfOddsComparison = () => {
                         {player.tipsterPicks && player.tipsterPicks.length > 0 ? (
                           <div
                             className="tipster-bar-container"
-                            onClick={() => alert(`${player.tipsterPicks.length} tipsters selected ${player.name}:\n\n${player.tipsterPicks.join('\n')}`)}
-                            title={`${player.tipsterPicks.length} expert tipsters selected this player`}
+                            onClick={() => alert(`${player.tipsterPicks.length} tipsters picked ${player.name}:\n\n${player.tipsterPicks.join('\n')}`)}
+                            title={`${player.tipsterPicks.length} tipsters selected this player`}
                           >
-                            <div
-                              className="tipster-bar"
-                              style={{ width: `${Math.min((player.tipsterPicks.length / 8) * 100, 100)}%` }}
-                            />
+                            <div className="tipster-bar" style={{ width: `${Math.min((player.tipsterPicks.length / 8) * 100, 100)}%` }} />
                             <span className="tipster-count">{player.tipsterPicks.length}</span>
                           </div>
                         ) : (
@@ -1406,24 +1059,15 @@ const GolfOddsComparison = () => {
                       {bookmakers.map((bookmaker, bIdx) => {
                         const playerOdds = player.bookmakerOdds[bookmaker.name]?.outright;
                         const isBest = playerOdds === bestOdds && bestOdds !== null;
-                        const affiliateUrl = affiliateLinks[bookmaker.name];
-
                         return (
                           <td key={bIdx} className={`odds-cell ${isBest ? 'best-odds' : ''}`}>
                             <a
-                              href={affiliateUrl}
+                              href={affiliateLinks[bookmaker.name]}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="odds-link"
                               onClick={() => {
-                                if (window.gtag) {
-                                  window.gtag('event', 'bookmaker_click', {
-                                    bookmaker: bookmaker.name,
-                                    player: player.name,
-                                    odds: playerOdds,
-                                    tournament: selectedTournament.name
-                                  });
-                                }
+                                if (window.gtag) window.gtag('event', 'bookmaker_click', { bookmaker: bookmaker.name, player: player.name, odds: playerOdds, tournament: selectedTournament.name });
                               }}
                             >
                               {formatOdds(playerOdds)}
@@ -1431,10 +1075,7 @@ const GolfOddsComparison = () => {
                           </td>
                         );
                       })}
-                      <td
-                        className="odds-cell best-odds-cell-mobile"
-                        onClick={() => togglePlayerExpand(player.name)}
-                      >
+                      <td className="odds-cell best-odds-cell-mobile" onClick={() => togglePlayerExpand(player.name)}>
                         {formatOdds(bestOdds)}
                       </td>
                     </tr>
@@ -1442,20 +1083,17 @@ const GolfOddsComparison = () => {
                       <tr className="expanded-row">
                         <td colSpan={bookmakers.length + 4} className="expanded-cell">
                           <div className="expanded-content">
-                            {/* Desktop expanded view */}
                             <div className="desktop-expanded-view">
                               <div className="desktop-cards-grid">
                                 <div className="desktop-info-card">
                                   <div className="desktop-card-label">Nationality</div>
                                   <div className="desktop-card-value">{player.nationality}</div>
                                 </div>
-
                                 <div className="desktop-info-card">
                                   <div className="desktop-card-label">World</div>
                                   <div className="desktop-card-label">Ranking</div>
                                   <div className="desktop-card-value">#{player.owgr || 'N/A'}</div>
                                 </div>
-
                                 {player.recentForm?.length > 0 && (
                                   <div className="desktop-info-card desktop-form-card">
                                     <div className="desktop-card-label">Recent Form</div>
@@ -1468,7 +1106,6 @@ const GolfOddsComparison = () => {
                                     </div>
                                   </div>
                                 )}
-
                                 {player.courseHistory && (
                                   <div className="desktop-info-card desktop-form-card">
                                     <div className="desktop-card-label">Course History</div>
@@ -1481,43 +1118,20 @@ const GolfOddsComparison = () => {
                                     </div>
                                   </div>
                                 )}
-
-                                {/* Extra odds cards - reusable helper */}
                                 {['top5', 'top10', 'top20', 'top30', 'top40', 'r1Leader'].map(market => {
-                                  const labels = {
-                                    top5: 'Top 5', top10: 'Top 10', top20: 'Top 20',
-                                    top30: 'Top 30', top40: 'Top 40', r1Leader: 'R1 Leader'
-                                  };
-
+                                  const labels = { top5: 'Top 5', top10: 'Top 10', top20: 'Top 20', top30: 'Top 30', top40: 'Top 40', r1Leader: 'R1 Leader' };
                                   const allMarketOdds = bookmakers.map(b => ({
                                     name: b.name,
                                     odds: player.bookmakerOdds[b.name]?.[market],
                                     url: affiliateLinks[b.name]
                                   })).filter(o => o.odds && o.odds !== 'N/A');
-
                                   const best = allMarketOdds.length > 0
                                     ? allMarketOdds.reduce((max, curr) => curr.odds > max.odds ? curr : max, allMarketOdds[0])
                                     : null;
-
                                   return best ? (
-                                    <a
-                                      key={market}
-                                      href={best.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    <a key={market} href={best.url} target="_blank" rel="noopener noreferrer"
                                       className="desktop-odds-card desktop-odds-card-clickable"
-                                      onClick={() => {
-                                        if (window.gtag) {
-                                          window.gtag('event', 'bookmaker_click', {
-                                            bookmaker: best.name,
-                                            player: player.name,
-                                            market: labels[market],
-                                            odds: best.odds,
-                                            source: 'desktop_extra'
-                                          });
-                                        }
-                                      }}
-                                    >
+                                      onClick={() => { if (window.gtag) window.gtag('event', 'bookmaker_click', { bookmaker: best.name, player: player.name, market: labels[market], odds: best.odds, source: 'desktop_extra' }); }}>
                                       <div className="desktop-card-label">{labels[market]}</div>
                                       <div className="desktop-card-sublabel">Best</div>
                                       <div className="desktop-card-odds">{formatOdds(best.odds)}</div>
@@ -1533,16 +1147,13 @@ const GolfOddsComparison = () => {
                               </div>
                             </div>
 
-                            {/* Mobile: Horizontal swipeable panes */}
                             <div className="mobile-panes-wrapper">
-                              <div
-                                className="mobile-tabs-container"
+                              <div className="mobile-tabs-container"
                                 onScroll={(e) => {
                                   const scrollLeft = e.target.scrollLeft;
                                   const paneWidth = e.target.offsetWidth;
                                   setActiveMobilePane(Math.round(scrollLeft / paneWidth));
-                                }}
-                              >
+                                }}>
                                 <div className="mobile-tab-pane">
                                   <h3 className="mobile-pane-title">Outright Winner Odds</h3>
                                   <div className="mobile-bookmaker-grid">
@@ -1550,23 +1161,9 @@ const GolfOddsComparison = () => {
                                       const mobileOdds = player.bookmakerOdds[bookmaker.name]?.outright;
                                       const isBest = mobileOdds === bestOdds;
                                       return (
-                                        <a
-                                          key={i}
-                                          href={affiliateLinks[bookmaker.name]}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
+                                        <a key={i} href={affiliateLinks[bookmaker.name]} target="_blank" rel="noopener noreferrer"
                                           className={`mobile-bookmaker-card ${isBest ? 'best' : ''}`}
-                                          onClick={() => {
-                                            if (window.gtag) {
-                                              window.gtag('event', 'bookmaker_click', {
-                                                bookmaker: bookmaker.name,
-                                                player: player.name,
-                                                odds: mobileOdds,
-                                                source: 'mobile_outright'
-                                              });
-                                            }
-                                          }}
-                                        >
+                                          onClick={() => { if (window.gtag) window.gtag('event', 'bookmaker_click', { bookmaker: bookmaker.name, player: player.name, odds: mobileOdds, source: 'mobile_outright' }); }}>
                                           <div className="mobile-bookmaker-name">{bookmaker.name}</div>
                                           <div className="mobile-bookmaker-odds">{formatOdds(mobileOdds)}</div>
                                           <div className="mobile-bookmaker-ew">{bookmaker.eachWay?.places} places</div>
@@ -1580,40 +1177,16 @@ const GolfOddsComparison = () => {
                                   <h3 className="mobile-pane-title">Extra Odds</h3>
                                   <div className="mobile-extra-grid">
                                     {['top5', 'top10', 'top20', 'top30', 'top40', 'makeCut'].map((market, mIdx) => {
-                                      const labels = {
-                                        top5: 'Top 5', top10: 'Top 10', top20: 'Top 20',
-                                        top30: 'Top 30', top40: 'Top 40', makeCut: 'Make Cut'
-                                      };
-
+                                      const labels = { top5: 'Top 5', top10: 'Top 10', top20: 'Top 20', top30: 'Top 30', top40: 'Top 40', makeCut: 'Make Cut' };
                                       const allOdds = bookmakers.map(b => ({
                                         name: b.name,
                                         odds: player.bookmakerOdds[b.name]?.[market] || (market === 'makeCut' ? 1.2 : null),
                                         url: affiliateLinks[b.name]
                                       })).filter(o => o.odds && o.odds !== 'N/A');
-
-                                      const best = allOdds.length > 0
-                                        ? allOdds.reduce((max, curr) => curr.odds > max.odds ? curr : max, allOdds[0])
-                                        : null;
-
+                                      const best = allOdds.length > 0 ? allOdds.reduce((max, curr) => curr.odds > max.odds ? curr : max, allOdds[0]) : null;
                                       return best ? (
-                                        <a
-                                          key={mIdx}
-                                          href={best.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="mobile-extra-card"
-                                          onClick={() => {
-                                            if (window.gtag) {
-                                              window.gtag('event', 'bookmaker_click', {
-                                                bookmaker: best.name,
-                                                player: player.name,
-                                                market: labels[market],
-                                                odds: best.odds,
-                                                source: 'mobile_extra'
-                                              });
-                                            }
-                                          }}
-                                        >
+                                        <a key={mIdx} href={best.url} target="_blank" rel="noopener noreferrer" className="mobile-extra-card"
+                                          onClick={() => { if (window.gtag) window.gtag('event', 'bookmaker_click', { bookmaker: best.name, player: player.name, market: labels[market], odds: best.odds, source: 'mobile_extra' }); }}>
                                           <div className="mobile-extra-label">{labels[market]}</div>
                                           <div className="mobile-extra-bookmaker">{best.name}</div>
                                           <div className="mobile-extra-odds">{formatOdds(best.odds)}</div>
@@ -1634,7 +1207,6 @@ const GolfOddsComparison = () => {
                                       <div className="mobile-stat-label">World Ranking</div>
                                       <div className="mobile-stat-value">#{player.owgr || 'N/A'}</div>
                                     </div>
-
                                     {player.recentForm?.length > 0 && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
                                         <div className="mobile-stat-label">Recent Form</div>
@@ -1647,7 +1219,6 @@ const GolfOddsComparison = () => {
                                         </div>
                                       </div>
                                     )}
-
                                     {player.courseHistory && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
                                         <div className="mobile-stat-label">Course History</div>
@@ -1683,32 +1254,24 @@ const GolfOddsComparison = () => {
 
       <footer className="site-footer">
         <div className="footer-content">
-          <div className="footer-section">
-            <div className="footer-disclaimer">
-              <p className="responsible-gambling">
-                <strong>18+ Only.</strong> Please gamble responsibly. If you need help, visit{' '}
-                <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer">BeGambleAware.org</a>
-                {' '}or call the National Gambling Helpline on 0808 8020 133.
-              </p>
-              <p className="affiliate-notice">
-                The Fairway is an independent odds comparison service. We only feature bookmakers licensed by the UK Gambling Commission (UKGC). 
-                We may earn commission from bookmaker links. All odds are subject to change. Please check bookmaker sites for current terms and conditions. 18+ only.
-              </p>
-            </div>
+          <div className="footer-disclaimer">
+            <p className="responsible-gambling">
+              <strong>18+ Only.</strong> Please gamble responsibly. If you need help, visit{' '}
+              <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer">BeGambleAware.org</a>
+              {' '}or call the National Gambling Helpline on 0808 8020 133.
+            </p>
+            <p className="affiliate-notice">
+              The Fairway is an independent odds comparison service. We only feature bookmakers licensed by the UK Gambling Commission (UKGC).
+              We may earn commission from bookmaker links. All odds are subject to change. Please check bookmaker sites for current terms and conditions. 18+ only.
+            </p>
           </div>
 
           <div className="footer-odds-format">
             <div className="footer-settings-group">
               <label htmlFor="odds-format-footer">Odds Format:</label>
-              <select
-                id="odds-format-footer"
-                value={oddsFormat}
-                onChange={(e) => {
-                  setOddsFormat(e.target.value);
-                  localStorage.setItem('oddsFormat', e.target.value);
-                }}
-                className="footer-odds-dropdown"
-              >
+              <select id="odds-format-footer" value={oddsFormat}
+                onChange={(e) => { setOddsFormat(e.target.value); localStorage.setItem('oddsFormat', e.target.value); }}
+                className="footer-odds-dropdown">
                 <option value="decimal">Decimal (6.50)</option>
                 <option value="fractional">Fractional (11/2)</option>
                 <option value="american">American (+550)</option>
