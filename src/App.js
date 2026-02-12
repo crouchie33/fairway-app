@@ -32,7 +32,8 @@ const BOOKMAKER_LOGOS = {
   'Ladbrokes': 'ladbrokes.png',
   'Paddy Power': 'paddypower.png',
   'Sky Bet': 'skybet.png',
-  'Betfair': 'betfair.png',
+  'Betfair Exchange': 'betfair_exchange.png',
+  'Betfair Sportsbook': 'betfair_sportsbook.png',
   'BoyleSports': 'boylesports.png',
   '888sport': '888sport.png'
 };
@@ -46,7 +47,8 @@ const GolfOddsComparison = () => {
     'Ladbrokes': 'https://sports.ladbrokes.com/golf?affiliate=YOUR_LADBROKES_ID',
     'Paddy Power': 'https://www.paddypower.com/golf?AFF_ID=YOUR_PP_ID',
     'Sky Bet': 'https://www.skybet.com/golf?aff=YOUR_SKYBET_ID',
-    'Betfair': 'https://www.betfair.com/sport/golf?pid=YOUR_BETFAIR_ID',
+    'Betfair Exchange': 'https://www.betfair.com/exchange/plus/golf?pid=YOUR_BETFAIR_ID',
+    'Betfair Sportsbook': 'https://www.betfair.com/sport/golf?pid=YOUR_BETFAIR_ID',
     'BoyleSports': 'https://www.boylesports.com/golf?aff=YOUR_BOYLE_ID',
     '888sport': 'https://www.888sport.com/golf?affiliate=YOUR_888_ID',
   };
@@ -122,7 +124,9 @@ const GolfOddsComparison = () => {
 
     apiData.forEach(event => {
       event.bookmakers?.forEach(bookmaker => {
-        const bookmakerName = bookmaker.title || bookmaker.key;
+        const bookmakerName = bookmaker.key === 'betfair_ex' ? 'Betfair Exchange'
+          : bookmaker.key === 'betfair' ? 'Betfair Sportsbook'
+          : (bookmaker.title || bookmaker.key);
         if (!bookmakerSet.has(bookmakerName)) {
           bookmakerSet.set(bookmakerName, {
             name: bookmakerName,
@@ -170,16 +174,17 @@ const GolfOddsComparison = () => {
     // Always include all expected UK bookmakers so logo columns appear
     // even if the API hasn't returned odds for them yet
     const expectedBookmakers = [
-      { name: 'Bet365', key: 'bet365', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'William Hill', key: 'williamhill', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Betway', key: 'betway', eachWay: { places: '6', fraction: '1/5' } },
-      { name: 'Coral', key: 'coral', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Ladbrokes', key: 'ladbrokes', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Paddy Power', key: 'paddypower', eachWay: { places: '6', fraction: '1/5' } },
-      { name: 'Sky Bet', key: 'skybet', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Betfair', key: 'betfair', eachWay: { places: '5', fraction: '1/4' } },
-      { name: 'BoyleSports', key: 'boylesports', eachWay: { places: '5', fraction: '1/5' } },
-      { name: '888sport', key: '888sport', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Bet365', key: 'bet365', eachWay: { places: '5' } },
+      { name: 'William Hill', key: 'williamhill', eachWay: { places: '5' } },
+      { name: 'Betway', key: 'betway', eachWay: { places: '6' } },
+      { name: 'Coral', key: 'coral', eachWay: { places: '5' } },
+      { name: 'Ladbrokes', key: 'ladbrokes', eachWay: { places: '5' } },
+      { name: 'Paddy Power', key: 'paddypower', eachWay: { places: '6' } },
+      { name: 'Sky Bet', key: 'skybet', eachWay: { places: '5' } },
+      { name: 'Betfair Exchange', key: 'betfair_ex', eachWay: { places: '5' } },
+      { name: 'Betfair Sportsbook', key: 'betfair_sb', eachWay: { places: '5' } },
+      { name: 'BoyleSports', key: 'boylesports', eachWay: { places: '5' } },
+      { name: '888sport', key: '888sport', eachWay: { places: '5' } },
     ];
 
     // Merge: live bookmakers first, then add any expected ones not yet live
@@ -218,16 +223,17 @@ const GolfOddsComparison = () => {
     ];
 
     const bookmakerList = [
-      { name: 'Bet365', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'William Hill', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Betway', eachWay: { places: '6', fraction: '1/5' } },
-      { name: 'Coral', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Ladbrokes', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Paddy Power', eachWay: { places: '6', fraction: '1/5' } },
-      { name: 'Sky Bet', eachWay: { places: '5', fraction: '1/5' } },
-      { name: 'Betfair', eachWay: { places: '5', fraction: '1/4' } },
-      { name: 'BoyleSports', eachWay: { places: '5', fraction: '1/5' } },
-      { name: '888sport', eachWay: { places: '5', fraction: '1/5' } },
+      { name: 'Bet365', eachWay: { places: '5' } },
+      { name: 'William Hill', eachWay: { places: '5' } },
+      { name: 'Betway', eachWay: { places: '6' } },
+      { name: 'Coral', eachWay: { places: '5' } },
+      { name: 'Ladbrokes', eachWay: { places: '5' } },
+      { name: 'Paddy Power', eachWay: { places: '6' } },
+      { name: 'Sky Bet', eachWay: { places: '5' } },
+      { name: 'Betfair Exchange', eachWay: { places: '5' } },
+      { name: 'Betfair Sportsbook', eachWay: { places: '5' } },
+      { name: 'BoyleSports', eachWay: { places: '5' } },
+      { name: '888sport', eachWay: { places: '5' } },
     ];
 
     setBookmakers(bookmakerList);
@@ -596,14 +602,15 @@ const GolfOddsComparison = () => {
         .inline-sort:hover { color: #1a1a1a; }
         .header-separator { color: #ccc; font-weight: 400; }
 
-        /* Bookmaker header - logo replaces text, E/W at bottom */
+        /* Bookmaker header - logo fills column width */
         .bookmaker-header {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
           height: 120px;
-          padding: 6px 2px 4px;
+          padding: 0;
+          overflow: hidden;
         }
 
         /* Logo wrapper - rotates so logo reads bottom-to-top */
@@ -613,10 +620,11 @@ const GolfOddsComparison = () => {
           align-items: center;
           justify-content: center;
           transform: rotate(270deg);
+          width: 100%;
         }
 
         .bookmaker-logo {
-          width: 56px;
+          width: 100%;
           height: 20px;
           object-fit: contain;
           object-position: center;
@@ -629,11 +637,11 @@ const GolfOddsComparison = () => {
           align-items: center;
           font-size: 0.7rem;
           color: #666;
-          padding-bottom: 2px;
+          padding-bottom: 3px;
         }
 
         .ew-places { font-weight: 600; color: #1a1a1a; }
-        .ew-fraction { font-weight: 400; }
+        .ew-fraction { display: none; }
 
         .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { background: #f0f0f0; }
@@ -1003,8 +1011,7 @@ const GolfOddsComparison = () => {
                         </span>
                       </div>
                       <div className="each-way-terms">
-                        <span className="ew-places">{bookmaker.eachWay?.places}</span>
-                        <span className="ew-fraction">{bookmaker.eachWay?.fraction}</span>
+                        <span className="ew-places">{bookmaker.eachWay?.places}pl</span>
                       </div>
                     </div>
                   </th>
