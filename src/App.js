@@ -502,13 +502,10 @@ export default function GolfOddsComparison() {
 
         /* ── POLYMARKET COLUMN ── */
         .poly-header {
-          font-size: 0.7rem; padding: 6px 4px; width: 62px; min-width: 62px; max-width: 62px;
+          padding: 8px 4px; width: 52px; min-width: 52px; max-width: 52px;
           cursor: pointer; vertical-align: bottom;
         }
-        .poly-header-inner { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .poly-logo { height: 18px; width: auto; max-width: 50px; object-fit: contain; }
-        .poly-header-label { font-size: 0.6rem; color: #888; font-weight: 600; text-transform: uppercase; }
-        .poly-cell { width: 62px; min-width: 62px; padding: 0 !important; position: relative; height: 48px; }
+        .poly-cell { width: 52px; min-width: 52px; max-width: 52px; padding: 0 !important; position: relative; height: 48px; }
         .poly-link {
           display: flex; align-items: center; justify-content: center;
           position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -676,7 +673,8 @@ export default function GolfOddsComparison() {
           .odds-matrix thead th:first-child { width: auto !important; min-width: unset !important; max-width: unset !important; position: relative; left: 0; }
           .odds-matrix tbody td:first-child  { min-width: unset !important; max-width: unset !important; width: auto !important; }
           .best-odds-header { display: table-cell !important; width: 28vw; max-width: 110px; text-align: center; }
-          .odds-matrix { table-layout: fixed; width: 100%; }
+          .odds-matrix { table-layout: fixed; width: 100%; min-width: unset !important; }
+          .odds-matrix-container { overflow-x: hidden; }
           .best-odds-cell-mobile { display: table-cell !important; font-size: 1.1rem; font-weight: 700; cursor: pointer; padding: 0 8px !important; }
 
           .expanded-content { padding: 0 !important; }
@@ -788,14 +786,17 @@ export default function GolfOddsComparison() {
                   🎯{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
-                  <div className="poly-header-inner">
-                    <img src="/logos/polymarket.png" alt="Polymarket" className="poly-logo"
-                      onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='inline'; }}
-                    />
-                    <span style={{display:'none', fontSize:'0.65rem', fontWeight:700}}>POLY</span>
-                    <div className="poly-header-label">Mkt Odds</div>
+                  <div className="bookmaker-header">
+                    <div className="bookmaker-logo-wrapper">
+                      <img src="/logos/polymarket.png" alt="Polymarket" className="bookmaker-logo"
+                        onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }}
+                      />
+                      <span style={{display:'none', writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:'0.72rem', fontWeight:700}}>POLY</span>
+                    </div>
+                    <div className="ew-terms" style={{fontSize:'0.6rem', color:'#888'}}>
+                      {sortConfig.key === 'polyOdds' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    </div>
                   </div>
-                  {sortConfig.key === 'polyOdds' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 {bookmakers.map((bm, i) => (
                   <th key={i} style={{ width: '52px', minWidth: '52px', maxWidth: '52px' }}>
@@ -841,6 +842,20 @@ export default function GolfOddsComparison() {
                       {/* owgr */}
                       <td className="owgr-cell desktop-only">{player.owgr ?? '-'}</td>
 
+                      {/* tipster bar */}
+                      <td className="tipster-cell desktop-only">
+                        {player.tipsterPicks?.length > 0 ? (
+                          <div
+                            className="tipster-bar-container"
+                            onClick={() => alert(`${player.tipsterPicks.length} tipsters picked ${player.name}:\n\n${player.tipsterPicks.join('\n')}`)}
+                            title={`${player.tipsterPicks.length} tipsters`}
+                          >
+                            <div className="tipster-bar" style={{ width: `${Math.min((player.tipsterPicks.length / 8) * 100, 100)}%` }} />
+                            <span className="tipster-count">{player.tipsterPicks.length}</span>
+                          </div>
+                        ) : <div className="tipster-empty">-</div>}
+                      </td>
+
                       {/* polymarket */}
                       {(() => {
                         const polyKey = Object.keys(POLYMARKET_ODDS).find(k => norm(k) === norm(player.name));
@@ -855,20 +870,6 @@ export default function GolfOddsComparison() {
                           </td>
                         );
                       })()}
-
-                      {/* tipster bar */}
-                      <td className="tipster-cell desktop-only">
-                        {player.tipsterPicks?.length > 0 ? (
-                          <div
-                            className="tipster-bar-container"
-                            onClick={() => alert(`${player.tipsterPicks.length} tipsters picked ${player.name}:\n\n${player.tipsterPicks.join('\n')}`)}
-                            title={`${player.tipsterPicks.length} tipsters`}
-                          >
-                            <div className="tipster-bar" style={{ width: `${Math.min((player.tipsterPicks.length / 8) * 100, 100)}%` }} />
-                            <span className="tipster-count">{player.tipsterPicks.length}</span>
-                          </div>
-                        ) : <div className="tipster-empty">-</div>}
-                      </td>
 
                       {/* odds — full-cell anchor */}
                       {bookmakers.map((bm, bIdx) => {
