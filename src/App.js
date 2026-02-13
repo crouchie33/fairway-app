@@ -746,7 +746,6 @@ export default function GolfOddsComparison() {
 
       {/* ── NOTICES ── */}
       {useMock && <div className="notice notice-demo">💡 Demo data — live odds available during major tournaments</div>}
-      {rankingsCount > 0 && <div className="notice notice-rankings">📊 World rankings loaded ({rankingsCount} players)</div>}
 
       {/* ── CONTROLS ── */}
       <div className="controls-bar">
