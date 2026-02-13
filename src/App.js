@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -8,66 +10,6 @@ const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
 const USE_LIVE_API = false;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
-
-// ===== WORLD RANKINGS — Google Sheets =====
-const RANKINGS_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz0AV6lo8WSGm1qFLfKVKW8zbg2NrLaYGd82e20vPvrPFmQqsMUK6sIA0sc5fApVUUx/exec';
-const RANKINGS_CACHE_KEY = 'fairway_owgr';
-const RANKINGS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-function getISOWeekKey() {
-  const now = new Date();
-  const jan4 = new Date(now.getFullYear(), 0, 4);
-  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1;
-  const weekNum = Math.ceil((dayOfYear + jan4.getDay()) / 7);
-  return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
-}
-
-function getCachedRankings() {
-  try {
-    const raw = localStorage.getItem(RANKINGS_CACHE_KEY);
-    if (!raw) return null;
-    const { data, timestamp, weekKey } = JSON.parse(raw);
-    if ((Date.now() - timestamp) > RANKINGS_TTL_MS || weekKey !== getISOWeekKey()) return null;
-    return data;
-  } catch { return null; }
-}
-
-function setCachedRankings(data) {
-  try {
-    localStorage.setItem(RANKINGS_CACHE_KEY, JSON.stringify({
-      data, timestamp: Date.now(), weekKey: getISOWeekKey()
-    }));
-  } catch { }
-}
-
-async function fetchWorldRankings() {
-  const cached = getCachedRankings();
-  if (cached) return cached;
-  try {
-    const res = await fetch(RANKINGS_SHEET_URL, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const rankings = json.rankings || {};
-    if (Object.keys(rankings).length === 0) throw new Error('Empty response');
-    setCachedRankings(rankings);
-    console.log(`OWGR loaded: ${Object.keys(rankings).length} players`);
-    return rankings;
-  } catch (err) {
-    console.warn('OWGR unavailable, using fallback:', err.message);
-    return null;
-  }
-}
-
-function getWorldRank(rankings, playerName) {
-  if (!rankings || !playerName) return null;
-  if (rankings[playerName] !== undefined) return rankings[playerName];
-  const lower = playerName.toLowerCase();
-  const ci = Object.keys(rankings).find(k => k.toLowerCase() === lower);
-  if (ci) return rankings[ci];
-  const last = playerName.split(' ').slice(-1)[0].toLowerCase();
-  const fallback = Object.keys(rankings).find(k => k.toLowerCase().endsWith(last));
-  return fallback ? rankings[fallback] : null;
-}
 
 const MAJORS = [
   { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
@@ -97,8 +39,6 @@ const BOOKMAKER_LOGOS = {
   '888sport': '888sport.png'
 };
 
-// ===== WORLD RANKINGS HELPERS =====
-
 const GolfOddsComparison = () => {
   const affiliateLinks = {
     'Bet365': 'https://www.bet365.com/olp/golf?affiliate=YOUR_BET365_ID',
@@ -125,17 +65,8 @@ const GolfOddsComparison = () => {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
-  const [worldRankings, setWorldRankings] = useState(null);
-
-  // World rankings state
 
   const fetchInProgress = useRef(false);
-
-  // Fetch OWGR from Google Sheet on mount — cached 7 days
-  useEffect(() => {
-    fetchWorldRankings().then(r => { if (r) setWorldRankings(r); });
-  }, []);
-
 
   const getCachedData = useCallback((tournamentId) => {
     try {
@@ -144,7 +75,7 @@ const GolfOddsComparison = () => {
       const parsed = JSON.parse(cached);
       const age = Date.now() - parsed.timestamp;
       if (age < CACHE_DURATION_MS && parsed.tournament === tournamentId) {
-        console.log(`\u2705 Using cached data (${Math.round(age / 1000 / 60)} mins old)`);
+        console.log(`✅ Using cached data (${Math.round(age / 1000 / 60)} mins old)`);
         return parsed.apiResponse;
       }
       return null;
@@ -242,6 +173,8 @@ const GolfOddsComparison = () => {
 
     const bookmakerList = Array.from(bookmakerSet.values());
 
+    // Always include all expected UK bookmakers so logo columns appear
+    // even if the API hasn't returned odds for them yet
     const expectedBookmakers = [
       { name: 'Bet365', key: 'bet365', eachWay: { places: '5' } },
       { name: 'William Hill', key: 'williamhill', eachWay: { places: '5' } },
@@ -255,6 +188,7 @@ const GolfOddsComparison = () => {
       { name: '888sport', key: '888sport', eachWay: { places: '5' } },
     ];
 
+    // Merge: live bookmakers first, then add any expected ones not yet live
     const liveKeys = new Set(bookmakerList.map(b => b.key));
     const mergedBookmakers = [
       ...bookmakerList,
@@ -267,26 +201,26 @@ const GolfOddsComparison = () => {
   const useMockData = useCallback(() => {
     setUseMock(true);
     const mockPlayers = [
-      { name: 'Scottie Scheffler', nationality: 'USA', owgr: null, recentForm: [1, 2, 1, 3, 1, 2, 1], courseHistory: 'T2-1-T5-4-2-T3-1', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'ProGolfTips', 'OddsSharks', 'GreenJacket', 'TheMastersGuru', 'BirdiePicksGolf', 'FairwayFinder'] },
-      { name: 'Rory McIlroy', nationality: 'NIR', owgr: null, recentForm: [3, 1, 5, 2, 4, 3, 2], courseHistory: 'T5-T7-2-T8-3-T6-4', tipsterPicks: ['GolfAnalyst', 'ProGolfTips', 'GreenJacket', 'BirdiePicksGolf', 'FairwayFinder', 'SwingTipster'] },
-      { name: 'Jon Rahm', nationality: 'ESP', owgr: null, recentForm: [2, 4, 1, 1, 6, 3, 2], courseHistory: '1-T3-T4-2-1-T5-3', tipsterPicks: ['BettingExpert', 'OddsSharks', 'TheMastersGuru', 'SwingTipster', 'GolfWisdom'] },
-      { name: 'Viktor Hovland', nationality: 'NOR', owgr: null, recentForm: [5, 3, 2, 4, 3, 5, 4], courseHistory: 'T12-T8-T15-T10-T9-T11-T13', tipsterPicks: ['ProGolfTips', 'BirdiePicksGolf', 'GolfWisdom'] },
-      { name: 'Brooks Koepka', nationality: 'USA', owgr: null, recentForm: [4, 6, 3, 5, 2, 4, 3], courseHistory: 'T2-1-T4-3-T2-2-1', tipsterPicks: ['OddsSharks', 'TheMastersGuru', 'FairwayFinder', 'SwingTipster'] },
-      { name: 'Xander Schauffele', nationality: 'USA', owgr: null, recentForm: [6, 2, 4, 3, 5, 6, 4], courseHistory: 'T3-T5-T9-T7-T4-T6-T8', tipsterPicks: ['GolfAnalyst', 'GreenJacket', 'GolfWisdom'] },
-      { name: 'Collin Morikawa', nationality: 'USA', owgr: null, recentForm: [7, 5, 6, 8, 4, 7, 5], courseHistory: 'T18-T12-T20-T15-T11-T14-T16', tipsterPicks: ['BettingExpert', 'BirdiePicksGolf'] },
-      { name: 'Patrick Cantlay', nationality: 'USA', owgr: null, recentForm: [8, 4, 7, 6, 7, 8, 6], courseHistory: 'T9-T14-T11-T10-T12-T13-T11', tipsterPicks: ['ProGolfTips', 'SwingTipster'] },
-      { name: 'Tommy Fleetwood', nationality: 'ENG', owgr: null, recentForm: [10, 8, 9, 7, 9, 10, 8], courseHistory: 'T17-T22-T15-T19-T18-T20-T16', tipsterPicks: ['TheMastersGuru'] },
-      { name: 'Jordan Spieth', nationality: 'USA', owgr: null, recentForm: [9, 11, 8, 10, 8, 9, 10], courseHistory: '1-T2-MC-T8-T10-MC-T15', tipsterPicks: ['OddsSharks', 'FairwayFinder', 'GolfWisdom'] },
-      { name: 'Max Homa', nationality: 'USA', owgr: null, recentForm: [11, 9, 10, 12, 11, 11, 9], courseHistory: 'T24-T19-T28-T22-T25-T21-T23', tipsterPicks: ['BirdiePicksGolf'] },
-      { name: 'Cameron Smith', nationality: 'AUS', owgr: null, recentForm: [12, 13, 11, 9, 13, 12, 11], courseHistory: 'T3-T5-T12-T8-T6-T9-T7', tipsterPicks: ['GreenJacket', 'SwingTipster'] },
-      { name: 'Justin Thomas', nationality: 'USA', owgr: null, recentForm: [14, 10, 12, 14, 10, 13, 12], courseHistory: 'T8-T16-T7-T12-T10-T14-T9', tipsterPicks: ['GolfAnalyst'] },
-      { name: 'Hideki Matsuyama', nationality: 'JPN', owgr: null, recentForm: [13, 14, 13, 11, 15, 14, 13], courseHistory: '1-T11-T18-T15-T12-T16-T14', tipsterPicks: ['BettingExpert', 'TheMastersGuru'] },
-      { name: 'Tony Finau', nationality: 'USA', owgr: null, recentForm: [15, 12, 14, 13, 12, 15, 14], courseHistory: 'T5-T10-T21-T18-T15-T19-T17', tipsterPicks: [] },
-      { name: 'Shane Lowry', nationality: 'IRL', owgr: null, recentForm: [16, 15, 17, 18, 14, 16, 15], courseHistory: 'T12-T25-MC-T20-T22-MC-T18', tipsterPicks: ['ProGolfTips'] },
-      { name: 'Tyrrell Hatton', nationality: 'ENG', owgr: null, recentForm: [18, 17, 15, 16, 19, 18, 17], courseHistory: 'T15-T18-T23-T21-T19-T22-T20', tipsterPicks: [] },
-      { name: 'Min Woo Lee', nationality: 'AUS', owgr: null, recentForm: [19, 20, 18, 17, 16, 19, 18], courseHistory: 'MC-T35-T42-T38-T40-MC-T36', tipsterPicks: [] },
-      { name: 'Ludvig Aberg', nationality: 'SWE', owgr: null, recentForm: [2, 5, 3, 7, 6, 4, 5], courseHistory: '\u2014-8-6-10-7-9-8', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'OddsSharks', 'GreenJacket', 'BirdiePicksGolf'] },
-      { name: 'Sahith Theegala', nationality: 'USA', owgr: null, recentForm: [20, 16, 19, 20, 18, 20, 19], courseHistory: 'T19-MC-T31-T28-T25-MC-T29', tipsterPicks: [] },
+      { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1, recentForm: [1, 2, 1, 3, 1, 2, 1], courseHistory: 'T2-1-T5-4-2-T3-1', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'ProGolfTips', 'OddsSharks', 'GreenJacket', 'TheMastersGuru', 'BirdiePicksGolf', 'FairwayFinder'] },
+      { name: 'Rory McIlroy', nationality: 'NIR', owgr: 2, recentForm: [3, 1, 5, 2, 4, 3, 2], courseHistory: 'T5-T7-2-T8-3-T6-4', tipsterPicks: ['GolfAnalyst', 'ProGolfTips', 'GreenJacket', 'BirdiePicksGolf', 'FairwayFinder', 'SwingTipster'] },
+      { name: 'Jon Rahm', nationality: 'ESP', owgr: 3, recentForm: [2, 4, 1, 1, 6, 3, 2], courseHistory: '1-T3-T4-2-1-T5-3', tipsterPicks: ['BettingExpert', 'OddsSharks', 'TheMastersGuru', 'SwingTipster', 'GolfWisdom'] },
+      { name: 'Viktor Hovland', nationality: 'NOR', owgr: 4, recentForm: [5, 3, 2, 4, 3, 5, 4], courseHistory: 'T12-T8-T15-T10-T9-T11-T13', tipsterPicks: ['ProGolfTips', 'BirdiePicksGolf', 'GolfWisdom'] },
+      { name: 'Brooks Koepka', nationality: 'USA', owgr: 5, recentForm: [4, 6, 3, 5, 2, 4, 3], courseHistory: 'T2-1-T4-3-T2-2-1', tipsterPicks: ['OddsSharks', 'TheMastersGuru', 'FairwayFinder', 'SwingTipster'] },
+      { name: 'Xander Schauffele', nationality: 'USA', owgr: 6, recentForm: [6, 2, 4, 3, 5, 6, 4], courseHistory: 'T3-T5-T9-T7-T4-T6-T8', tipsterPicks: ['GolfAnalyst', 'GreenJacket', 'GolfWisdom'] },
+      { name: 'Collin Morikawa', nationality: 'USA', owgr: 7, recentForm: [7, 5, 6, 8, 4, 7, 5], courseHistory: 'T18-T12-T20-T15-T11-T14-T16', tipsterPicks: ['BettingExpert', 'BirdiePicksGolf'] },
+      { name: 'Patrick Cantlay', nationality: 'USA', owgr: 8, recentForm: [8, 4, 7, 6, 7, 8, 6], courseHistory: 'T9-T14-T11-T10-T12-T13-T11', tipsterPicks: ['ProGolfTips', 'SwingTipster'] },
+      { name: 'Tommy Fleetwood', nationality: 'ENG', owgr: 9, recentForm: [10, 8, 9, 7, 9, 10, 8], courseHistory: 'T17-T22-T15-T19-T18-T20-T16', tipsterPicks: ['TheMastersGuru'] },
+      { name: 'Jordan Spieth', nationality: 'USA', owgr: 10, recentForm: [9, 11, 8, 10, 8, 9, 10], courseHistory: '1-T2-MC-T8-T10-MC-T15', tipsterPicks: ['OddsSharks', 'FairwayFinder', 'GolfWisdom'] },
+      { name: 'Max Homa', nationality: 'USA', owgr: 12, recentForm: [11, 9, 10, 12, 11, 11, 9], courseHistory: 'T24-T19-T28-T22-T25-T21-T23', tipsterPicks: ['BirdiePicksGolf'] },
+      { name: 'Cameron Smith', nationality: 'AUS', owgr: 14, recentForm: [12, 13, 11, 9, 13, 12, 11], courseHistory: 'T3-T5-T12-T8-T6-T9-T7', tipsterPicks: ['GreenJacket', 'SwingTipster'] },
+      { name: 'Justin Thomas', nationality: 'USA', owgr: 15, recentForm: [14, 10, 12, 14, 10, 13, 12], courseHistory: 'T8-T16-T7-T12-T10-T14-T9', tipsterPicks: ['GolfAnalyst'] },
+      { name: 'Hideki Matsuyama', nationality: 'JPN', owgr: 11, recentForm: [13, 14, 13, 11, 15, 14, 13], courseHistory: '1-T11-T18-T15-T12-T16-T14', tipsterPicks: ['BettingExpert', 'TheMastersGuru'] },
+      { name: 'Tony Finau', nationality: 'USA', owgr: 16, recentForm: [15, 12, 14, 13, 12, 15, 14], courseHistory: 'T5-T10-T21-T18-T15-T19-T17', tipsterPicks: [] },
+      { name: 'Shane Lowry', nationality: 'IRL', owgr: 18, recentForm: [16, 15, 17, 18, 14, 16, 15], courseHistory: 'T12-T25-MC-T20-T22-MC-T18', tipsterPicks: ['ProGolfTips'] },
+      { name: 'Tyrrell Hatton', nationality: 'ENG', owgr: 20, recentForm: [18, 17, 15, 16, 19, 18, 17], courseHistory: 'T15-T18-T23-T21-T19-T22-T20', tipsterPicks: [] },
+      { name: 'Min Woo Lee', nationality: 'AUS', owgr: 35, recentForm: [19, 20, 18, 17, 16, 19, 18], courseHistory: 'MC-T35-T42-T38-T40-MC-T36', tipsterPicks: [] },
+      { name: 'Ludvig Aberg', nationality: 'SWE', owgr: 13, recentForm: [2, 5, 3, 7, 6, 4, 5], courseHistory: '—-8-6-10-7-9-8', tipsterPicks: ['GolfAnalyst', 'BettingExpert', 'OddsSharks', 'GreenJacket', 'BirdiePicksGolf'] },
+      { name: 'Sahith Theegala', nationality: 'USA', owgr: 25, recentForm: [20, 16, 19, 20, 18, 20, 19], courseHistory: 'T19-MC-T31-T28-T25-MC-T29', tipsterPicks: [] },
     ];
 
     const bookmakerList = [
@@ -341,7 +275,7 @@ const GolfOddsComparison = () => {
       return;
     }
 
-    console.log('\ud83d\udd34 Fetching LIVE odds from The Odds API...');
+    console.log('🔴 Fetching LIVE odds from The Odds API...');
     fetchInProgress.current = true;
     setLoading(true);
 
@@ -352,7 +286,7 @@ const GolfOddsComparison = () => {
       const url = `${ODDS_API_BASE}/sports/${sportKey}/odds/?` +
         `apiKey=${ODDS_API_KEY}&regions=uk&markets=outrights&oddsFormat=decimal`;
 
-      console.log('\ud83c\udf10 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
+      console.log('🌐 API URL:', url.replace(ODDS_API_KEY, 'KEY_HIDDEN'));
 
       const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
 
@@ -373,10 +307,10 @@ const GolfOddsComparison = () => {
       processLiveOdds(data);
       setApiStatus({ isLive: true, lastUpdated: new Date(), error: null });
       setUseMock(false);
-      console.log('\u2705 LIVE DATA loaded!');
+      console.log('✅ LIVE DATA loaded!');
 
     } catch (error) {
-      console.error('\u274c API Error:', error.message);
+      console.error('❌ API Error:', error.message);
       useMockData();
       setApiStatus({ isLive: false, lastUpdated: null, error: error.message });
     } finally {
@@ -389,18 +323,8 @@ const GolfOddsComparison = () => {
     fetchTournamentData(selectedTournament);
   }, [selectedTournament, fetchTournamentData]);
 
-  // ===== MERGE WORLD RANKINGS INTO ODDS DATA =====
-  // When either odds or rankings load/update, hydrate the owgr field on each player.
-  const oddsWithRankings = useMemo(() => {
-    if (!worldRankings) return odds; // Rankings not yet loaded \u2014 show players without rank
-    return odds.map(player => ({
-      ...player,
-      owgr: getWorldRank(worldRankings, player.name) ?? player.owgr
-    }));
-  }, [odds, worldRankings]);
-
   const sortedAndFilteredOdds = useMemo(() => {
-    let filtered = oddsWithRankings.filter(player =>
+    let filtered = odds.filter(player =>
       player.name.toLowerCase().includes(filterText.toLowerCase())
     );
     return filtered.sort((a, b) => {
@@ -422,7 +346,7 @@ const GolfOddsComparison = () => {
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [oddsWithRankings, sortConfig, filterText]);
+  }, [odds, sortConfig, filterText]);
 
   const handleSort = (key) => {
     setSortConfig(prev => ({
@@ -473,12 +397,6 @@ const GolfOddsComparison = () => {
     return 'finish-other';
   };
 
-  const owgrBadge = (rank) => {
-    if (!rank) return <span style={{ color: '#ccc' }}>-</span>;
-    const cls = rank <= 10 ? 'owgr-badge owgr-top10' : rank <= 50 ? 'owgr-badge owgr-top50' : 'owgr-badge owgr-other';
-    return <span className={cls}>#{rank}</span>;
-  };
-
   const togglePlayerExpand = (playerName) => {
     setExpandedPlayer(expandedPlayer === playerName ? null : playerName);
   };
@@ -496,7 +414,7 @@ const GolfOddsComparison = () => {
     >
       {label}
       {sortConfig.key === sortKey && (
-        <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' \u2191' : ' \u2193'}</span>
+        <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>
       )}
     </span>
   );
@@ -785,10 +703,6 @@ const GolfOddsComparison = () => {
 
         .owgr-header div { font-weight: 600; }
 
-        .owgr-badge { display: inline-block; padding: 2px 5px; border-radius: 3px; font-size: 0.78rem; font-weight: 700; line-height: 1.4; }
-        .owgr-top10 { background: #d4edda; color: #155724; }
-        .owgr-top50 { background: #fff3cd; color: #856404; }
-        .owgr-other { background: #f0f0f0; color: #555; }
         .owgr-cell {
           padding: 10px 4px;
           text-align: center;
@@ -797,19 +711,6 @@ const GolfOddsComparison = () => {
           font-size: 0.9rem;
           width: 60px;
         }
-
-        /* World ranking badge colours */
-        .owgr-badge {
-          display: inline-block;
-          padding: 2px 5px;
-          border-radius: 3px;
-          font-size: 0.78rem;
-          font-weight: 700;
-          line-height: 1.4;
-        }
-        .owgr-top10  { background: #d4edda; color: #155724; }
-        .owgr-top50  { background: #fff3cd; color: #856404; }
-        .owgr-other  { background: #f0f0f0; color: #555; }
 
         .tipster-cell { padding: 10px 4px; width: 50px; }
 
@@ -1045,17 +946,17 @@ const GolfOddsComparison = () => {
       </header>
 
       {useMock && (
-        <div className="demo-notice">\ud83d\udca1 Demo data - Live odds available during major tournaments</div>
+        <div className="demo-notice">💡 Demo data - Live odds available during major tournaments</div>
       )}
 
       {!useMock && apiStatus.isLive && (
         <div className="live-notice">
-          \ud83d\udd34 LIVE DATA \u2022 Last updated: {apiStatus.lastUpdated?.toLocaleTimeString() || 'Just now'}
+          🔴 LIVE DATA • Last updated: {apiStatus.lastUpdated?.toLocaleTimeString() || 'Just now'}
         </div>
       )}
 
       {apiStatus.error && (
-        <div className="error-notice">\u26a0\ufe0f {apiStatus.error}</div>
+        <div className="error-notice">⚠️ {apiStatus.error}</div>
       )}
 
       <div className="controls-bar">
@@ -1070,7 +971,7 @@ const GolfOddsComparison = () => {
         </div>
         {USE_LIVE_API && (
           <button className="refresh-button" onClick={handleForceRefresh} disabled={loading} title="Force refresh (uses 1 API credit)">
-            \ud83d\udd04 {loading ? 'Refreshing...' : 'Refresh Odds'}
+            🔄 {loading ? 'Refreshing...' : 'Refresh Odds'}
           </button>
         )}
       </div>
@@ -1092,11 +993,11 @@ const GolfOddsComparison = () => {
                 <th className="owgr-header desktop-only" onClick={() => handleSort('owgr')} style={{ cursor: 'pointer' }}>
                   <div>World</div>
                   <div>Ranking</div>
-                  {sortConfig.key === 'owgr' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' \u2191' : ' \u2193'}</span>}
+                  {sortConfig.key === 'owgr' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>}
                 </th>
                 <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} style={{ cursor: 'pointer' }} title="Tipster Consensus">
-                  \ud83c\udfaf
-                  {sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' \u2191' : ' \u2193'}</span>}
+                  🎯
+                  {sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? ' ↑' : ' ↓'}</span>}
                 </th>
                 {bookmakers.map((bookmaker, idx) => (
                   <th key={idx} style={{ width: '52px', minWidth: '52px', maxWidth: '52px' }}>
@@ -1131,13 +1032,6 @@ const GolfOddsComparison = () => {
                   .filter(o => typeof o === 'number');
                 const bestOdds = playerOutrightOdds.length > 0 ? Math.max(...playerOutrightOdds) : null;
 
-                // World ranking badge helper
-                const rankBadgeClass = player.owgr
-                  ? player.owgr <= 10 ? 'owgr-badge owgr-top10'
-                  : player.owgr <= 50 ? 'owgr-badge owgr-top50'
-                  : 'owgr-badge owgr-other'
-                  : '';
-
                 return (
                   <React.Fragment key={idx}>
                     <tr>
@@ -1147,20 +1041,12 @@ const GolfOddsComparison = () => {
                           <span className="player-name">{player.name}</span>
                         </div>
                       </td>
-                      <td className="owgr-cell desktop-only">
-                        {player.owgr
-                          ? <span className={rankBadgeClass}>#{player.owgr}</span>
-                          : <span style={{ color: '#ccc' }}>-</span>
-                        }
-                      </td>
+                      <td className="owgr-cell desktop-only">{player.owgr || '-'}</td>
                       <td className="tipster-cell desktop-only">
                         {player.tipsterPicks && player.tipsterPicks.length > 0 ? (
                           <div
                             className="tipster-bar-container"
-                            onClick={() => alert(`${player.tipsterPicks.length} tipsters picked ${player.name}:\
-\
-${player.tipsterPicks.join('\
-')}`)}
+                            onClick={() => alert(`${player.tipsterPicks.length} tipsters picked ${player.name}:\n\n${player.tipsterPicks.join('\n')}`)}
                             title={`${player.tipsterPicks.length} tipsters selected this player`}
                           >
                             <div className="tipster-bar" style={{ width: `${Math.min((player.tipsterPicks.length / 8) * 100, 100)}%` }} />
@@ -1206,12 +1092,7 @@ ${player.tipsterPicks.join('\
                                 <div className="desktop-info-card">
                                   <div className="desktop-card-label">World</div>
                                   <div className="desktop-card-label">Ranking</div>
-                                  <div className="desktop-card-value">
-                                    {player.owgr
-                                      ? <span className={rankBadgeClass}>#{player.owgr}</span>
-                                      : 'N/A'
-                                    }
-                                  </div>
+                                  <div className="desktop-card-value">#{player.owgr || 'N/A'}</div>
                                 </div>
                                 {player.recentForm?.length > 0 && (
                                   <div className="desktop-info-card desktop-form-card">
@@ -1324,12 +1205,7 @@ ${player.tipsterPicks.join('\
                                     </div>
                                     <div className="mobile-stat-card">
                                       <div className="mobile-stat-label">World Ranking</div>
-                                      <div className="mobile-stat-value">
-                                        {player.owgr
-                                          ? <span className={rankBadgeClass}>#{player.owgr}</span>
-                                          : 'N/A'
-                                        }
-                                      </div>
+                                      <div className="mobile-stat-value">#{player.owgr || 'N/A'}</div>
                                     </div>
                                     {player.recentForm?.length > 0 && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
@@ -1424,7 +1300,7 @@ ${player.tipsterPicks.join('\
           </div>
 
           <div className="footer-copyright">
-            <p>\u00a9 2025 The Fairway. All rights reserved.</p>
+            <p>© 2025 The Fairway. All rights reserved.</p>
           </div>
         </div>
       </footer>
