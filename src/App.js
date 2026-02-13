@@ -52,6 +52,48 @@ const AFFILIATE_LINKS = {
   '888sport':           'https://www.888sport.com/golf?affiliate=YOUR_888_ID',
 };
 
+// Polymarket implied odds — probability (%) → decimal odds (1/prob)
+// Source: polymarket.com/event/the-masters-winner | Updated: Feb 2026
+const POLYMARKET_ODDS = {
+  "Scottie Scheffler": 4.3,
+  "Rory McIlroy": 11.1,
+  "Bryson DeChambeau": 16.7,
+  "Min Woo Lee": 18.9,
+  "Tommy Fleetwood": 17.2,
+  "Ludvig Aberg": 16.7,
+  "Jon Rahm": 18.5,
+  "Xander Schauffele": 19.2,
+  "Viktor Hovland": 28.6,
+  "Jason Day": 27.0,
+  "Collin Morikawa": 40.0,
+  "Hideki Matsuyama": 41.7,
+  "Jordan Spieth": 52.6,
+  "Patrick Cantlay": 50.0,
+  "Justin Thomas": 62.5,
+  "Tyrrell Hatton": 52.6,
+  "Brooks Koepka": 66.7,
+  "Max Homa": 100.0,
+  "Cameron Smith": 166.7,
+  "Sahith Theegala": 125.0,
+  "Shane Lowry": 125.0,
+  "Tony Finau": 125.0,
+  "Justin Rose": 25.0,
+  "Robert MacIntyre": 55.6,
+  "Joaquin Niemann": 47.6,
+  "Cameron Young": 52.6,
+  "Adam Scott": 50.0,
+  "Akshay Bhatia": 71.4,
+  "Sam Burns": 76.9,
+  "Brian Harman": 76.9,
+  "Tom Kim": 100.0,
+  "Wyndham Clark": 111.1,
+  "Sergio Garcia": 166.7,
+  "Patrick Reed": 17.2,
+  "Matt Fitzpatrick": 62.5,
+  "Russell Henley": 62.5,
+};
+const POLYMARKET_URL = "https://polymarket.com/event/the-masters-winner?slug=the-masters-winner";
+
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
   { name: 'Rory McIlroy',      nationality: 'NIR', owgr: 2,  recentForm: [3,1,5,2,4,3,2], courseHistory: 'T5-T7-2-T8-3-T6-4',         tipsterPicks: ['GolfAnalyst','ProGolfTips','GreenJacket','BirdiePicksGolf','FairwayFinder','SwingTipster'] },
@@ -357,6 +399,9 @@ export default function GolfOddsComparison() {
         av = a.owgr ?? 9999; bv = b.owgr ?? 9999;
       } else if (sortConfig.key === 'tipsterPicks') {
         av = a.tipsterPicks?.length ?? 0; bv = b.tipsterPicks?.length ?? 0;
+      } else if (sortConfig.key === 'polyOdds') {
+        const findPoly = (p) => { const k = Object.keys(POLYMARKET_ODDS).find(k => norm(k) === norm(p.name)); return k ? POLYMARKET_ODDS[k] : 9999; };
+        av = findPoly(a); bv = findPoly(b);
       } else {
         av = a[sortConfig.key] ?? 0; bv = b[sortConfig.key] ?? 0;
       }
@@ -454,6 +499,23 @@ export default function GolfOddsComparison() {
         .sortable-header:hover { opacity: 0.7; }
         .sort-arrow { font-size: 0.8rem; opacity: 0.7; }
         .inline-sort { font-size: 0.75rem; font-weight: 600; }
+
+        /* ── POLYMARKET COLUMN ── */
+        .poly-header {
+          font-size: 0.7rem; padding: 6px 4px; width: 62px; min-width: 62px; max-width: 62px;
+          cursor: pointer; vertical-align: bottom;
+        }
+        .poly-header-inner { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .poly-logo { height: 18px; width: auto; max-width: 50px; object-fit: contain; }
+        .poly-header-label { font-size: 0.6rem; color: #888; font-weight: 600; text-transform: uppercase; }
+        .poly-cell { width: 62px; min-width: 62px; padding: 0 !important; position: relative; height: 48px; }
+        .poly-link {
+          display: flex; align-items: center; justify-content: center;
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+          color: #6046ff; font-weight: 600; font-size: 0.88rem;
+          text-decoration: none; transition: background 0.15s;
+        }
+        .poly-link:hover { background: rgba(96,70,255,0.08); font-weight: 700; }
 
         /* ── OWGR HEADER ── */
         .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; }
@@ -611,9 +673,10 @@ export default function GolfOddsComparison() {
           .odds-matrix tbody td:not(:first-child):not(.best-odds-cell-mobile) { display: none; }
           .desktop-only { display: none !important; }
           .mobile-only  { display: table-cell !important; }
-          .odds-matrix thead th:first-child { width: 70% !important; min-width: unset !important; max-width: unset !important; position: relative; left: 0; }
-          .odds-matrix tbody td:first-child  { min-width: unset !important; max-width: unset !important; }
-          .best-odds-header { display: table-cell !important; width: 30%; text-align: center; }
+          .odds-matrix thead th:first-child { width: auto !important; min-width: unset !important; max-width: unset !important; position: relative; left: 0; }
+          .odds-matrix tbody td:first-child  { min-width: unset !important; max-width: unset !important; width: auto !important; }
+          .best-odds-header { display: table-cell !important; width: 28vw; max-width: 110px; text-align: center; }
+          .odds-matrix { table-layout: fixed; width: 100%; }
           .best-odds-cell-mobile { display: table-cell !important; font-size: 1.1rem; font-weight: 700; cursor: pointer; padding: 0 8px !important; }
 
           .expanded-content { padding: 0 !important; }
@@ -621,9 +684,9 @@ export default function GolfOddsComparison() {
           .expanded-row { display: block !important; }
           .desktop-expanded-view { display: none; }
           .mobile-panes-wrapper { display: block; width: 100vw; overflow: hidden; }
-          .mobile-tabs-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+          .mobile-tabs-container { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
           .mobile-tabs-container::-webkit-scrollbar { display: none; }
-          .mobile-tab-pane { flex: 0 0 100vw; width: 100vw; scroll-snap-align: start; padding: 18px; box-sizing: border-box; }
+          .mobile-tab-pane { flex: 0 0 92vw; width: 92vw; scroll-snap-align: center; padding: 18px 14px; box-sizing: border-box; }
           .mobile-pane-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; text-align: center; }
           .mobile-bookmaker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
           .mobile-bookmaker-card { background: white; border: 2px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
@@ -685,6 +748,7 @@ export default function GolfOddsComparison() {
 
       {/* ── NOTICES ── */}
       {useMock && <div className="notice notice-demo">💡 Demo data — live odds available during major tournaments</div>}
+      {rankingsCount > 0 && <div className="notice notice-rankings">📊 World rankings loaded ({rankingsCount} players)</div>}
 
       {/* ── CONTROLS ── */}
       <div className="controls-bar">
@@ -722,6 +786,16 @@ export default function GolfOddsComparison() {
                 </th>
                 <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} title="Tipster Consensus">
                   🎯{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
+                </th>
+                <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
+                  <div className="poly-header-inner">
+                    <img src="/logos/polymarket.png" alt="Polymarket" className="poly-logo"
+                      onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='inline'; }}
+                    />
+                    <span style={{display:'none', fontSize:'0.65rem', fontWeight:700}}>POLY</span>
+                    <div className="poly-header-label">Mkt Odds</div>
+                  </div>
+                  {sortConfig.key === 'polyOdds' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 {bookmakers.map((bm, i) => (
                   <th key={i} style={{ width: '52px', minWidth: '52px', maxWidth: '52px' }}>
@@ -766,6 +840,21 @@ export default function GolfOddsComparison() {
 
                       {/* owgr */}
                       <td className="owgr-cell desktop-only">{player.owgr ?? '-'}</td>
+
+                      {/* polymarket */}
+                      {(() => {
+                        const polyKey = Object.keys(POLYMARKET_ODDS).find(k => norm(k) === norm(player.name));
+                        const polyVal = polyKey ? POLYMARKET_ODDS[polyKey] : null;
+                        return (
+                          <td className="poly-cell desktop-only">
+                            {polyVal ? (
+                              <a href={POLYMARKET_URL} target="_blank" rel="noopener noreferrer" className="poly-link" title="Trade on Polymarket">
+                                {formatOdds(polyVal)}
+                              </a>
+                            ) : <span style={{color:'#ccc'}}>-</span>}
+                          </td>
+                        );
+                      })()}
 
                       {/* tipster bar */}
                       <td className="tipster-cell desktop-only">
