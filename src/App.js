@@ -128,7 +128,6 @@ const GolfOddsComparison = () => {
   const [worldRankings, setWorldRankings] = useState(null);
 
   // World rankings state
-  const [worldRankings, setWorldRankings] = useState(null); // null = not yet loaded
 
   const fetchInProgress = useRef(false);
 
@@ -137,12 +136,6 @@ const GolfOddsComparison = () => {
     fetchWorldRankings().then(r => { if (r) setWorldRankings(r); });
   }, []);
 
-  // ===== FETCH WORLD RANKINGS ON MOUNT (weekly cache) =====
-  useEffect(() => {
-    fetchWorldRankings().then(map => {
-      if (map) setWorldRankings(map);
-    });
-  }, []);
 
   const getCachedData = useCallback((tournamentId) => {
     try {
