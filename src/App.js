@@ -1141,7 +1141,7 @@ const GolfOddsComparison = () => {
 
       {rankingsStatus.loaded && (
         <div className="rankings-notice">
-          📊 World rankings loaded from DataGolf ({rankingsStatus.count} players)
+          📊 World rankings loaded ({rankingsStatus.count} players)
         </div>
       )}
 
