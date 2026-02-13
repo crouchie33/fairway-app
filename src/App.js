@@ -490,16 +490,14 @@ const GolfOddsComparison = () => {
       }
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTournament]);
+  }, [selectedTournament, fetchRankings, fetchTournamentData]);
 
   // When rankings finish loading *after* odds are already set, re-merge
   useEffect(() => {
     if (rankingsStatus.loaded && odds.length > 0) {
       setOdds((prev) => mergeRankings(prev, rankingsRef.current));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rankingsStatus.loaded]);
+  }, [rankingsStatus.loaded, odds.length, mergeRankings]);
 
   // ── Sorting & filtering ────────────────────────────────────────────────
   const sortedAndFilteredOdds = useMemo(() => {
