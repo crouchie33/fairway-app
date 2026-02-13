@@ -104,6 +104,7 @@ const GolfOddsComparison = () => {
 
   const [odds, setOdds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [rankings, setRankings] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: 'avgOdds', direction: 'asc' });
   const [filterText, setFilterText] = useState('');
   const [expandedPlayer, setExpandedPlayer] = useState(null);
@@ -487,6 +488,36 @@ const GolfOddsComparison = () => {
       await fetchRankings();
       if (!cancelled) {
         fetchTournamentData(selectedTournament);
+        useEffect(() => {
+  const loadRankings = async () => {
+    try {
+      const res = await fetch(
+        "https://script.google.com/macros/s/AKfycbz0AV6lo8WSGm1qFLfKVKW8zbg2NrLaYGd82e20vPvrPFmQqsMUK6sIA0sc5fApVUUx/exec"
+      );
+
+      const data = await res.json();
+      const map = {};
+
+      Object.entries(data.rankings).forEach(([name, rank]) => {
+        const parts = name.split(",");
+        const formatted =
+          parts.length === 2
+            ? `${parts[1].trim()} ${parts[0].trim()}`
+            : name;
+
+        map[formatted.toLowerCase()] = rank;
+      });
+
+      setRankings(map);
+
+    } catch (err) {
+      console.log("Ranking load failed", err);
+    }
+  };
+
+  loadRankings();
+}, []);
+
       }
     })();
     return () => { cancelled = true; };
