@@ -200,8 +200,7 @@ export default function GolfOddsComparison() {
         return rank !== null ? { ...p, owgr: rank } : p;
       })
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rankingsMap]);
+  }, [rankingsMap]); // eslint-disable-line
 
   // ── build mock data ──
   const loadMock = useCallback(() => {
