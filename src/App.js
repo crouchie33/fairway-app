@@ -69,11 +69,6 @@ function getWorldRank(rankings, playerName) {
   return fallback ? rankings[fallback] : null;
 }
 
-// ===== WORLD RANKINGS CONFIGURATION =====
-const RANKINGS_API_KEY = 'de5bc06063msh0b3fa8ba9928231p10c2a7jsn25e0a9e7e6f3';
-const RANKINGS_CACHE_KEY = 'fairway_world_rankings';
-const RANKINGS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days \u2014 rankings update weekly
-
 const MAJORS = [
   { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
   { id: 'pga', name: 'PGA Championship', apiKey: 'golf_pga_championship_winner' },
@@ -103,103 +98,6 @@ const BOOKMAKER_LOGOS = {
 };
 
 // ===== WORLD RANKINGS HELPERS =====
-
-/**
- * Returns a Monday-anchored week string like "2025-W17" for cache busting.
- * Rankings update on Mondays, so two fetches within the same Monday-to-Sunday
- * window reuse the same cache entry.
- */
-function getISOWeekKey() {
-  const now = new Date();
-  const jan4 = new Date(now.getFullYear(), 0, 4); // Jan 4 is always in week 1
-  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1;
-  const weekNum = Math.ceil((dayOfYear + jan4.getDay()) / 7);
-  return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
-}
-
-function getCachedRankings() {
-  try {
-    const raw = localStorage.getItem(RANKINGS_CACHE_KEY);
-    if (!raw) return null;
-    const cached = JSON.parse(raw);
-    const age = Date.now() - cached.timestamp;
-    // Invalidate if older than 7 days OR if it's a new ISO week (Monday refresh)
-    if (age > RANKINGS_CACHE_TTL_MS || cached.weekKey !== getISOWeekKey()) {
-      console.log('\ud83c\udfcc\ufe0f World rankings cache expired \u2014 will refresh');
-      return null;
-    }
-    console.log(`\u2705 Using cached world rankings (${Math.round(age / 1000 / 60 / 60)} hrs old, week ${cached.weekKey})`);
-    return cached.rankingsMap;
-  } catch {
-    return null;
-  }
-}
-
-function setCachedRankings(rankingsMap) {
-  try {
-    localStorage.setItem(RANKINGS_CACHE_KEY, JSON.stringify({
-      rankingsMap,
-      timestamp: Date.now(),
-      weekKey: getISOWeekKey()
-    }));
-  } catch { /* localStorage full \u2014 silently skip */ }
-}
-
-async function fetchWorldRankings() {
-  // Check cache first
-  const cached = getCachedRankings();
-  if (cached) return cached;
-
-  console.log('\ud83c\udf0d Fetching OWGR from Live Golf Data API...');
-  try {
-    const response = await fetch(
-      'https://live-golf-data.p.rapidapi.com/rankings?orgId=1',
-      {
-        headers: {
-          'x-rapidapi-key': RANKINGS_API_KEY,
-          'x-rapidapi-host': 'live-golf-data.p.rapidapi.com'
-        },
-        signal: AbortSignal.timeout(12000)
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Rankings API returned ${response.status}`);
-    }
-
-    const data = await response.json();
-    const entries = data?.rankings ?? [];
-
-    // Build a lookup map: "Full Name" \u2192 rank number
-    const rankingsMap = {};
-    entries.forEach(entry => {
-      if (entry.fullName && entry.rank) {
-        rankingsMap[entry.fullName] = Number(entry.rank);
-      }
-    });
-
-    setCachedRankings(rankingsMap);
-    console.log(`\u2705 OWGR loaded \u2014 ${Object.keys(rankingsMap).length} players cached for week ${getISOWeekKey()}`);
-    return rankingsMap;
-  } catch (err) {
-    console.error('\u274c OWGR fetch failed:', err.message);
-    return null; // Gracefully degrade \u2014 app still works without rankings
-  }
-}
-
-/**
- * Look up a player's world rank. Falls back to a simple last-name partial match
- * to handle minor name discrepancies between APIs (e.g. "Rory McIlroy" vs "McIlroy, Rory").
- */
-function getWorldRank(rankingsMap, playerName) {
-  if (!rankingsMap || !playerName) return null;
-  // Direct match
-  if (rankingsMap[playerName] !== undefined) return rankingsMap[playerName];
-  // Last-name fallback
-  const lastName = playerName.split(' ').slice(-1)[0].toLowerCase();
-  const match = Object.keys(rankingsMap).find(n => n.toLowerCase().endsWith(lastName));
-  return match ? rankingsMap[match] : null;
-}
 
 const GolfOddsComparison = () => {
   const affiliateLinks = {
