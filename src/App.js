@@ -1,15 +1,19 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
 import wordmarkImg from './wordmark.png';
 
-// ===== API CONFIGURATION (single declaration) =====
+// ===== API CONFIGURATION =====
 const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
 const USE_LIVE_API = false;
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
+
+// ===== GOOGLE SHEET RANKINGS =====
+const RANKINGS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2qAxvAZhtF1Cd8gW_7z6jRsUGYRxf10FXfYX_YFRtyvyhibbsm0Am7zo8aprKNz5v3FRYC-59Uiy6/pub?output=csv';
+const RANKINGS_CACHE_KEY = 'rankingsCache';
+const RANKINGS_CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 const MAJORS = [
   { id: 'masters', name: 'The Masters', apiKey: 'golf_masters_tournament_winner' },
@@ -25,7 +29,6 @@ const SPORT_KEYS = {
   'open': 'golf_the_open_championship_winner'
 };
 
-// Map bookmaker names to logo filenames in /public/logos/
 const BOOKMAKER_LOGOS = {
   'Bet365': 'bet365.png',
   'William Hill': 'williamhill.png',
@@ -39,6 +42,52 @@ const BOOKMAKER_LOGOS = {
   '888sport': '888sport.png'
 };
 
+// ===== NAME NORMALISATION HELPERS =====
+// Strips accents, lowercases, and trims so "Ludvig Åberg" matches "Ludvig Aberg"
+const normalizeName = (name) =>
+  name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+// Parse a raw CSV string into an array of objects keyed by the header row.
+// Handles quoted fields that may contain commas.
+const parseCSV = (csvText) => {
+  const lines = csvText.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return [];
+
+  const parseRow = (row) => {
+    const fields = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        fields.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    fields.push(current.trim());
+    return fields;
+  };
+
+  const headers = parseRow(lines[0]).map((h) => h.replace(/"/g, '').trim());
+  return lines.slice(1).map((line) => {
+    const cols = parseRow(line);
+    const obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = (cols[i] || '').replace(/"/g, '').trim();
+    });
+    return obj;
+  });
+};
+
+// ===== COMPONENT =====
 const GolfOddsComparison = () => {
   const affiliateLinks = {
     'Bet365': 'https://www.bet365.com/olp/golf?affiliate=YOUR_BET365_ID',
@@ -65,9 +114,116 @@ const GolfOddsComparison = () => {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [apiStatus, setApiStatus] = useState({ isLive: false, lastUpdated: null, error: null });
+  const [rankingsStatus, setRankingsStatus] = useState({ loaded: false, count: 0, error: null });
 
   const fetchInProgress = useRef(false);
+  // Holds the latest rankings map so we can merge into odds without re-fetching
+  const rankingsRef = useRef({});
 
+  // ── Google Sheet rankings fetcher ──────────────────────────────────────
+  const fetchRankings = useCallback(async () => {
+    // 1. Check local cache first
+    try {
+      const cached = localStorage.getItem(RANKINGS_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const age = Date.now() - parsed.timestamp;
+        if (age < RANKINGS_CACHE_DURATION_MS && parsed.rankings) {
+          console.log(`✅ Using cached rankings (${Math.round(age / 1000 / 60)} mins old)`);
+          rankingsRef.current = parsed.rankings;
+          setRankingsStatus({ loaded: true, count: Object.keys(parsed.rankings).length, error: null });
+          return parsed.rankings;
+        }
+      }
+    } catch (_) { /* ignore cache errors */ }
+
+    // 2. Fetch fresh from published Google Sheet
+    try {
+      console.log('📊 Fetching rankings from Google Sheet…');
+      const response = await fetch(RANKINGS_CSV_URL);
+      if (!response.ok) throw new Error(`Sheet fetch failed: ${response.status}`);
+      const csvText = await response.text();
+      const rows = parseCSV(csvText);
+
+      if (rows.length === 0) throw new Error('Sheet returned no data rows');
+
+      // Build a normalised-name → ranking map.
+      // We auto-detect column names: look for columns containing "name"/"player"
+      // and "rank"/"ranking"/"owgr"/"datagolf" (case-insensitive).
+      const headers = Object.keys(rows[0]);
+      const nameCol = headers.find(
+        (h) => /player|name/i.test(h)
+      );
+      const rankCol = headers.find(
+        (h) => /rank|ranking|owgr|datagolf/i.test(h)
+      );
+      // Also look for a country / nationality column
+      const countryCol = headers.find(
+        (h) => /country|nationality|nation/i.test(h)
+      );
+
+      if (!nameCol || !rankCol) {
+        console.warn('⚠️ Could not auto-detect name/ranking columns. Headers:', headers);
+        throw new Error(
+          `Cannot find name & ranking columns. Found headers: ${headers.join(', ')}`
+        );
+      }
+
+      console.log(`📊 Detected columns – Name: "${nameCol}", Ranking: "${rankCol}"${countryCol ? `, Country: "${countryCol}"` : ''}`);
+
+      const rankings = {};
+      rows.forEach((row) => {
+        const rawName = row[nameCol];
+        const rawRank = row[rankCol];
+        if (!rawName) return;
+        const rank = parseInt(rawRank, 10);
+        const entry = { rank: isNaN(rank) ? null : rank };
+        if (countryCol && row[countryCol]) {
+          entry.country = row[countryCol].trim();
+        }
+        // Store under normalised key for fuzzy matching
+        rankings[normalizeName(rawName)] = entry;
+      });
+
+      const count = Object.keys(rankings).length;
+      console.log(`✅ Loaded ${count} player rankings from sheet`);
+
+      // Cache it
+      try {
+        localStorage.setItem(
+          RANKINGS_CACHE_KEY,
+          JSON.stringify({ rankings, timestamp: Date.now() })
+        );
+      } catch (_) { /* storage full – fine */ }
+
+      rankingsRef.current = rankings;
+      setRankingsStatus({ loaded: true, count, error: null });
+      return rankings;
+    } catch (err) {
+      console.error('❌ Rankings fetch error:', err.message);
+      setRankingsStatus((prev) => ({ ...prev, error: err.message }));
+      return rankingsRef.current; // return whatever we had before
+    }
+  }, []);
+
+  // Helper: merge rankings into an array of player objects
+  const mergeRankings = useCallback((players, rankings) => {
+    if (!rankings || Object.keys(rankings).length === 0) return players;
+    return players.map((player) => {
+      const key = normalizeName(player.name);
+      const match = rankings[key];
+      if (match) {
+        return {
+          ...player,
+          owgr: match.rank ?? player.owgr,
+          nationality: match.country || player.nationality,
+        };
+      }
+      return player;
+    });
+  }, []);
+
+  // ── Odds API helpers ───────────────────────────────────────────────────
   const getCachedData = useCallback((tournamentId) => {
     try {
       const cached = localStorage.getItem('oddsCache');
@@ -94,6 +250,7 @@ const GolfOddsComparison = () => {
     } catch (error) {}
   }, []);
 
+  // ── Countdown ──────────────────────────────────────────────────────────
   useEffect(() => {
     const mastersDate = new Date('2026-04-09T08:00:00-04:00');
     const updateCountdown = () => {
@@ -118,13 +275,13 @@ const GolfOddsComparison = () => {
     if (savedFormat) setOddsFormat(savedFormat);
   }, []);
 
+  // ── Process live API data ──────────────────────────────────────────────
   const processLiveOdds = useCallback((apiData) => {
     const bookmakerSet = new Map();
     const playersMap = new Map();
 
     apiData.forEach(event => {
       event.bookmakers?.forEach(bookmaker => {
-        // Skip Betfair Exchange - only show Betfair Sportsbook
         if (bookmaker.key === 'betfair_ex') return;
 
         const bookmakerName = bookmaker.key === 'betfair' ? 'Betfair Sportsbook'
@@ -163,7 +320,7 @@ const GolfOddsComparison = () => {
       });
     });
 
-    const players = Array.from(playersMap.values()).map(player => {
+    let players = Array.from(playersMap.values()).map(player => {
       const outrightOdds = Object.values(player.bookmakerOdds)
         .map(o => o.outright).filter(o => typeof o === 'number');
       const avgOdds = outrightOdds.length > 0
@@ -171,10 +328,10 @@ const GolfOddsComparison = () => {
       return { ...player, avgOdds };
     });
 
-    const bookmakerList = Array.from(bookmakerSet.values());
+    // Merge Google Sheet rankings if already loaded
+    players = mergeRankings(players, rankingsRef.current);
 
-    // Always include all expected UK bookmakers so logo columns appear
-    // even if the API hasn't returned odds for them yet
+    const bookmakerList = Array.from(bookmakerSet.values());
     const expectedBookmakers = [
       { name: 'Bet365', key: 'bet365', eachWay: { places: '5' } },
       { name: 'William Hill', key: 'williamhill', eachWay: { places: '5' } },
@@ -187,8 +344,6 @@ const GolfOddsComparison = () => {
       { name: 'BoyleSports', key: 'boylesports', eachWay: { places: '5' } },
       { name: '888sport', key: '888sport', eachWay: { places: '5' } },
     ];
-
-    // Merge: live bookmakers first, then add any expected ones not yet live
     const liveKeys = new Set(bookmakerList.map(b => b.key));
     const mergedBookmakers = [
       ...bookmakerList,
@@ -196,8 +351,9 @@ const GolfOddsComparison = () => {
     ];
     setOdds(players);
     setBookmakers(mergedBookmakers);
-  }, []);
+  }, [mergeRankings]);
 
+  // ── Mock data ──────────────────────────────────────────────────────────
   const useMockData = useCallback(() => {
     setUseMock(true);
     const mockPlayers = [
@@ -238,7 +394,7 @@ const GolfOddsComparison = () => {
 
     setBookmakers(bookmakerList);
 
-    const mockOdds = mockPlayers.map(player => {
+    let mockOdds = mockPlayers.map(player => {
       const playerOdds = {};
       const baseOdds = 5 + Math.random() * 45;
       bookmakerList.forEach(book => {
@@ -259,9 +415,13 @@ const GolfOddsComparison = () => {
       return { ...player, bookmakerOdds: playerOdds, avgOdds };
     });
 
-    setOdds(mockOdds);
-  }, []);
+    // Merge Google Sheet rankings (overrides mock OWGR + nationality when available)
+    mockOdds = mergeRankings(mockOdds, rankingsRef.current);
 
+    setOdds(mockOdds);
+  }, [mergeRankings]);
+
+  // ── Main data loader ───────────────────────────────────────────────────
   const fetchTournamentData = useCallback(async (tournament) => {
     if (fetchInProgress.current) return;
     if (!USE_LIVE_API) { useMockData(); return; }
@@ -319,10 +479,29 @@ const GolfOddsComparison = () => {
     }
   }, [getCachedData, setCachedData, processLiveOdds, useMockData]);
 
+  // ── Boot: fetch rankings first, then odds ──────────────────────────────
   useEffect(() => {
-    fetchTournamentData(selectedTournament);
-  }, [selectedTournament, fetchTournamentData]);
+    let cancelled = false;
+    (async () => {
+      // Fetch rankings first so they're available when odds load
+      await fetchRankings();
+      if (!cancelled) {
+        fetchTournamentData(selectedTournament);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTournament]);
 
+  // When rankings finish loading *after* odds are already set, re-merge
+  useEffect(() => {
+    if (rankingsStatus.loaded && odds.length > 0) {
+      setOdds((prev) => mergeRankings(prev, rankingsRef.current));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rankingsStatus.loaded]);
+
+  // ── Sorting & filtering ────────────────────────────────────────────────
   const sortedAndFilteredOdds = useMemo(() => {
     let filtered = odds.filter(player =>
       player.name.toLowerCase().includes(filterText.toLowerCase())
@@ -403,8 +582,13 @@ const GolfOddsComparison = () => {
 
   const handleForceRefresh = () => {
     localStorage.removeItem('oddsCache');
+    localStorage.removeItem(RANKINGS_CACHE_KEY);
     fetchInProgress.current = false;
-    fetchTournamentData(selectedTournament);
+    // Re-fetch rankings then odds
+    (async () => {
+      await fetchRankings();
+      fetchTournamentData(selectedTournament);
+    })();
   };
 
   const SortableHeader = ({ sortKey, label, className = '' }) => (
@@ -544,6 +728,7 @@ const GolfOddsComparison = () => {
         .demo-notice { background: #fff3cd; padding: 12px 30px; border-bottom: 1px solid #ffc107; font-size: 0.85rem; color: #856404; }
         .live-notice { background: #d4edda; padding: 12px 30px; border-bottom: 1px solid #28a745; font-size: 0.85rem; color: #155724; font-weight: 600; }
         .error-notice { background: #f8d7da; padding: 12px 30px; border-bottom: 1px solid #dc3545; font-size: 0.85rem; color: #721c24; }
+        .rankings-notice { background: #d1ecf1; padding: 8px 30px; border-bottom: 1px solid #bee5eb; font-size: 0.8rem; color: #0c5460; }
 
         .odds-matrix-container {
           background: white;
@@ -602,7 +787,6 @@ const GolfOddsComparison = () => {
         .inline-sort:hover { color: #1a1a1a; }
         .header-separator { color: #ccc; font-weight: 400; }
 
-        /* Bookmaker header - logo fills full column like Oddschecker */
         .bookmaker-header {
           display: flex;
           flex-direction: column;
@@ -614,7 +798,6 @@ const GolfOddsComparison = () => {
           width: 100%;
         }
 
-        /* Rotate the wrapper so logo reads bottom-to-top */
         .bookmaker-logo-wrapper {
           flex: 1;
           display: flex;
@@ -626,7 +809,6 @@ const GolfOddsComparison = () => {
           overflow: hidden;
         }
 
-        /* Every logo gets the same fixed box - object-fit scales within it */
         .bookmaker-logo {
           width: 110px;
           height: 32px;
@@ -957,6 +1139,16 @@ const GolfOddsComparison = () => {
 
       {apiStatus.error && (
         <div className="error-notice">⚠️ {apiStatus.error}</div>
+      )}
+
+      {rankingsStatus.loaded && (
+        <div className="rankings-notice">
+          📊 World rankings loaded from DataGolf ({rankingsStatus.count} players)
+        </div>
+      )}
+
+      {rankingsStatus.error && (
+        <div className="error-notice">⚠️ Rankings: {rankingsStatus.error}</div>
       )}
 
       <div className="controls-bar">
