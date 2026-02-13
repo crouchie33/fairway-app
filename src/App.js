@@ -500,20 +500,23 @@ export default function GolfOddsComparison() {
         .tipster-empty { color: #ccc; }
 
         /* ── ODDS CELL — full-cell clickable link ── */
-        .odds-cell { padding: 0 !important; position: relative; }
+        .odds-cell {
+          padding: 0 !important;
+          position: relative;
+          height: 48px;
+        }
         .odds-cell.best-odds { background: #fff8e7; }
 
         .odds-link {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          height: 100%;
-          min-height: 48px;
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
           color: #1a1a1a;
           text-decoration: none;
           font-weight: 500;
-          transition: background 0.15s, font-weight 0.1s;
+          transition: background 0.15s;
         }
         .odds-link:hover {
           background: rgba(0,0,0,0.06);
@@ -586,6 +589,8 @@ export default function GolfOddsComparison() {
 
         /* ── MOBILE ── */
         .desktop-expanded-view { display: block; }
+
+
         .mobile-panes-wrapper  { display: none; }
 
         @media (max-width: 768px) {
