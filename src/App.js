@@ -574,7 +574,7 @@ export default function GolfOddsComparison() {
 
         /* ── NOTICES ── */
         .notice { padding: 10px 30px; border-bottom: 1px solid; font-size: 0.85rem; }
-        .notice-demo     { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .notice-demo     { background: #CBD5E0; border-color: #A0AEC0; color: #2D3748; }
         .notice-live     { background: #d4edda; border-color: #28a745; color: #155724; font-weight: 600; }
         .notice-rankings { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
 
@@ -623,7 +623,7 @@ export default function GolfOddsComparison() {
         .poly-link {
           display: flex; align-items: center; justify-content: center;
           position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          color: #4A5568; font-weight: 600; font-size: 0.88rem;
+          color: #6046ff; font-weight: 600; font-size: 0.88rem;
           text-decoration: none; transition: background 0.15s;
         }
         .poly-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
