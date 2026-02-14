@@ -499,11 +499,9 @@ export default function GolfOddsComparison() {
           background: white;
         }
         .promo-track {
-          display: flex;
-          position: absolute;
-          top: 0; left: 0;
+          position: relative;
+          width: 100%;
           height: 100%;
-          transition: transform 0.5s ease-in-out;
         }
         .promo-card {
           display: flex;
@@ -512,10 +510,19 @@ export default function GolfOddsComparison() {
           padding: 0 16px;
           height: 36px;
           white-space: nowrap;
-          flex-shrink: 0;
           text-decoration: none;
           color: #1a1a1a;
           font-size: 0.85rem;
+          position: absolute;
+          top: 0; left: 0;
+          width: 100%;
+          opacity: 0;
+          transition: opacity 0.5s ease-in-out;
+          pointer-events: none;
+        }
+        .promo-card.promo-active {
+          opacity: 1;
+          pointer-events: auto;
         }
         .promo-card:hover { background: #fafafa; }
         .promo-card-label {
@@ -839,7 +846,7 @@ export default function GolfOddsComparison() {
 
       {/* ── NOTICES ── */}
       {useMock && <div className="notice notice-demo">💡 Demo data — live odds available during major tournaments</div>}
-      {rankingsCount > 0 && <div className="notice notice-rankings">📊 World rankings loaded ({rankingsCount} players)</div>}
+
 
       {/* ── CONTROLS ── */}
       <div className="controls-bar">
@@ -855,18 +862,14 @@ export default function GolfOddsComparison() {
           />
         </div>
         <div className="promo-banner">
-          <div
-            className="promo-track"
-            style={{ transform: `translateX(-${promoIndex * 100}%)`, width: `${PROMO_ITEMS.length * 100}%` }}
-          >
+          <div className="promo-track">
             {PROMO_ITEMS.map((item, i) => (
               <a
                 key={i}
                 href={item.url}
                 target={item.url !== '#' ? '_blank' : '_self'}
                 rel="noopener noreferrer"
-                className="promo-card"
-                style={{ width: `${100 / PROMO_ITEMS.length}%` }}
+                className={`promo-card${promoIndex === i ? ' promo-active' : ''}`}
               >
                 <span className={`promo-card-label ${item.labelClass}`}>{item.label}</span>
                 <span className="promo-card-text">{item.text}</span>
