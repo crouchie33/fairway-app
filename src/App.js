@@ -475,17 +475,17 @@ export default function GolfOddsComparison() {
     <div className="app-container">
       <style>{`
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #fafafa; color: #1a1a1a; overflow-x: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; letter-spacing: -0.01em; background: #F5F7FA; color: #2D3748; overflow-x: hidden; }
 
         .app-container { max-width: 1600px; margin: 0 auto; }
 
         /* ── HEADER ── */
-        header { background: white; border-bottom: 1px solid #e5e5e5; padding: 20px 30px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        header { background: #F5F7FA; border-bottom: 1px solid #CBD5E0; padding: 20px 30px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .header-content { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
         .header-left  { justify-self: start; }
         .header-center{ justify-self: center; }
         .header-right { display: flex; flex-direction: column; align-items: flex-end; }
-        .tagline { font-size: 1.7rem; color: #666; font-weight: 500; padding-top: 8px; }
+        .tagline { font-size: 1.7rem; color: #718096; font-weight: 500; padding-top: 8px; }
         .wordmark { width: 100mm; height: auto; }
         .logo-center { height: 90px; width: auto; }
         .logo-mobile { display: none; }
@@ -493,13 +493,13 @@ export default function GolfOddsComparison() {
 
         /* ── TOURNAMENT TABS ── */
         .tournament-tabs { display: flex; gap: 8px; margin-top: 8px; }
-        .tournament-tab { padding: 8px 16px; background: white; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 0.85rem; font-weight: 500; color: #666; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-        .tournament-tab:hover { color: #1a1a1a; border-color: #1a1a1a; }
-        .tournament-tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; font-weight: 600; }
+        .tournament-tab { padding: 8px 16px; background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.85rem; font-weight: 500; color: #718096; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+        .tournament-tab:hover { color: #2D3748; border-color: #2D3748; }
+        .tournament-tab.active { background: #2D3748; color: white; border-color: #2D3748; font-weight: 600; }
 
         /* ── COUNTDOWN ── */
         .countdown-container { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 0.85rem; }
-        .countdown-label { color: #666; font-weight: 500; }
+        .countdown-label { color: #718096; font-weight: 500; }
         .countdown-time  { font-weight: 700; font-family: 'Courier New', monospace; }
 
         /* ── PROMO BANNER ── */
@@ -509,8 +509,8 @@ export default function GolfOddsComparison() {
           position: relative;
           height: 36px;
           border-radius: 6px;
-          border: 1px solid #e5e5e5;
-          background: white;
+          border: 1px solid #CBD5E0;
+          background: #F5F7FA;
         }
         .promo-track {
           position: relative;
@@ -525,7 +525,7 @@ export default function GolfOddsComparison() {
           height: 36px;
           white-space: nowrap;
           text-decoration: none;
-          color: #1a1a1a;
+          color: #2D3748;
           font-size: 0.85rem;
           position: absolute;
           top: 0; left: 0;
@@ -538,9 +538,9 @@ export default function GolfOddsComparison() {
           opacity: 1;
           pointer-events: auto;
         }
-        .promo-card:hover { background: #fafafa; }
+        .promo-card:hover { background: #F5F7FA; }
         .promo-card-label {
-          background: #1a1a1a;
+          background: #2D3748;
           color: white;
           font-size: 0.65rem;
           font-weight: 700;
@@ -565,7 +565,7 @@ export default function GolfOddsComparison() {
           cursor: pointer;
           transition: background 0.2s;
         }
-        .promo-dot.active { background: #1a1a1a; }
+        .promo-dot.active { background: #2D3748; }
 
         @media (max-width: 768px) {
           .promo-banner { display: none; }
@@ -579,32 +579,32 @@ export default function GolfOddsComparison() {
         .notice-rankings { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
 
         /* ── CONTROLS BAR ── */
-        .controls-bar { background: white; padding: 12px 30px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 16px; }
+        .controls-bar { background: #F5F7FA; padding: 12px 30px; border-bottom: 1px solid #CBD5E0; display: flex; align-items: center; gap: 16px; }
         .search-bar { position: relative; max-width: 300px; flex: 1; }
-        .search-bar input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 0.9rem; }
-        .search-bar input:focus { outline: none; border-color: #1a1a1a; }
-        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999; }
+        .search-bar input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.9rem; }
+        .search-bar input:focus { outline: none; border-color: #2D3748; }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #A0AEC0; }
 
         /* ── TABLE CONTAINER ── */
-        .odds-matrix-container { background: white; overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 160px); }
-        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .odds-matrix-container { background: #F5F7FA; overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 160px); }
+        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid #CBD5E0; }
 
         /* ── THEAD ── */
         .odds-matrix thead th {
-          background: #f8f8f8;
+          background: #EDF0F4;
           padding: 8px 4px;
           text-align: center;
           font-weight: 600;
           font-size: 0.75rem;
-          border-right: 1px solid #e5e5e5;
-          border-bottom: 1px solid #e5e5e5;
+          border-right: 1px solid #CBD5E0;
+          border-bottom: 1px solid #CBD5E0;
           position: sticky; top: 0; z-index: 10;
         }
         .player-header {
           position: sticky; left: 0; top: 0; z-index: 11;
-          background: #f8f8f8; text-align: left; padding: 16px 20px;
+          background: #EDF0F4; text-align: left; padding: 16px 20px;
           font-weight: 600; font-size: 0.75rem;
-          border-right: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5;
+          border-right: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0;
           width: 204px; min-width: 204px; max-width: 204px;
         }
         .player-header-content { display: flex; align-items: center; gap: 8px; }
@@ -623,10 +623,10 @@ export default function GolfOddsComparison() {
         .poly-link {
           display: flex; align-items: center; justify-content: center;
           position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          color: #6046ff; font-weight: 600; font-size: 0.88rem;
+          color: #4A5568; font-weight: 600; font-size: 0.88rem;
           text-decoration: none; transition: background 0.15s;
         }
-        .poly-link:hover { background: rgba(96,70,255,0.08); font-weight: 700; }
+        .poly-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
 
         /* ── OWGR HEADER ── */
         .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; }
@@ -639,35 +639,35 @@ export default function GolfOddsComparison() {
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 120px; padding: 0; overflow: hidden; width: 100%; }
         .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); width: 110px; height: 52px; overflow: hidden; }
         .bookmaker-logo { width: 100px; height: 30px; object-fit: contain; display: block; }
-        .ew-terms { font-size: 0.7rem; font-weight: 600; color: #1a1a1a; padding: 3px 0; }
+        .ew-terms { font-size: 0.7rem; font-weight: 600; color: #2D3748; padding: 3px 0; }
 
         /* ── TBODY ── */
-        .odds-matrix tbody tr { border-bottom: 1px solid #f0f0f0; }
-        .odds-matrix tbody tr:hover { background: #fafafa; }
-        .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #f5f5f5; height: 48px; }
+        .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
+        .odds-matrix tbody tr:hover { background: #F5F7FA; }
+        .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 48px; }
 
         /* sticky player column */
         .odds-matrix tbody td:first-child {
-          position: sticky; left: 0; background: white; z-index: 1;
+          position: sticky; left: 0; background: #F5F7FA; z-index: 1;
           text-align: left; padding: 0 0 0 20px;
-          border-right: 1px solid #e5e5e5;
+          border-right: 1px solid #CBD5E0;
           width: 204px; min-width: 204px; max-width: 204px;
           height: 48px;
         }
-        .odds-matrix tbody tr:hover td:first-child { background: #fafafa; }
+        .odds-matrix tbody tr:hover td:first-child { background: #F5F7FA; }
 
         .player-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; padding: 14px 0; }
-        .expand-icon { color: #999; flex-shrink: 0; }
+        .expand-icon { color: #A0AEC0; flex-shrink: 0; }
         .player-name { white-space: nowrap; }
 
         /* ── OWGR CELL ── */
-        .owgr-cell { width: 56px; font-weight: 600; color: #555; font-size: 0.85rem; }
+        .owgr-cell { width: 56px; font-weight: 600; color: #4A5568; font-size: 0.85rem; }
 
         /* ── TIPSTER CELL ── */
         .tipster-cell { width: 46px; padding: 0 4px !important; }
-        .tipster-bar-container { position: relative; width: 100%; height: 20px; background: #f0f0f0; border-radius: 3px; overflow: hidden; cursor: pointer; }
+        .tipster-bar-container { position: relative; width: 100%; height: 20px; background: #DDE2E8; border-radius: 3px; overflow: hidden; cursor: pointer; }
         .tipster-bar-container:hover { opacity: 0.85; }
-        .tipster-bar { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, #2d5a2d, #4d8a4d); }
+        .tipster-bar { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, #2D3748, #4A5568); }
         .tipster-count { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-weight: 700; }
         .tipster-empty { color: #ccc; }
 
@@ -677,7 +677,7 @@ export default function GolfOddsComparison() {
           position: relative;
           height: 48px;
         }
-        .odds-cell.best-odds { background: #fff8e7; }
+        .odds-cell.best-odds { background: #E8ECF0; }
 
         .odds-link {
           display: flex;
@@ -685,16 +685,16 @@ export default function GolfOddsComparison() {
           justify-content: center;
           position: absolute;
           top: 0; left: 0; right: 0; bottom: 0;
-          color: #1a1a1a;
+          color: #2D3748;
           text-decoration: none;
           font-weight: 500;
           transition: background 0.15s;
         }
         .odds-link:hover {
-          background: rgba(0,0,0,0.06);
+          background: rgba(74,85,104,0.08);
           font-weight: 700;
         }
-        .best-odds .odds-link:hover { background: rgba(212,175,55,0.2); }
+        .best-odds .odds-link:hover { background: rgba(160,174,192,0.25); }
 
         /* ── MOBILE best column ── */
         .best-odds-header { display: none; }
@@ -704,20 +704,20 @@ export default function GolfOddsComparison() {
 
         /* ── EXPANDED ROW ── */
         .expanded-row td { padding: 0 !important; }
-        .expanded-content { padding: 20px 25px; background: #f8f9fa; }
+        .expanded-content { padding: 20px 25px; background: #EDF0F4; }
         .desktop-cards-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 
         .desktop-info-card, .desktop-odds-card {
-          background: white; border: 1px solid #e5e5e5; border-radius: 6px;
+          background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 6px;
           padding: 8px 10px; text-align: center; min-width: 85px;
         }
         .desktop-odds-card-clickable {
           text-decoration: none; color: inherit; cursor: pointer; display: flex; flex-direction: column;
           transition: transform 0.15s, box-shadow 0.15s;
         }
-        .desktop-odds-card-clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #1a1a1a; }
+        .desktop-odds-card-clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #2D3748; }
         .desktop-form-card { min-width: 260px; }
-        .desktop-card-label    { font-size: 0.62rem; color: #999; text-transform: uppercase; font-weight: 600; line-height: 1.2; }
+        .desktop-card-label    { font-size: 0.62rem; color: #A0AEC0; text-transform: uppercase; font-weight: 600; line-height: 1.2; }
         .desktop-card-sublabel { font-size: 0.58rem; color: #bbb; text-transform: uppercase; margin-bottom: 2px; }
         .desktop-card-value    { font-size: 1rem; font-weight: 700; margin-top: 5px; }
         .desktop-card-odds     { font-size: 1.15rem; font-weight: 700; margin-top: 3px; }
@@ -728,36 +728,36 @@ export default function GolfOddsComparison() {
         .form-box:first-child { border-radius: 3px 0 0 3px; }
         .form-box:last-child  { border-right: 1px solid #d0d0d0; border-radius: 0 3px 3px 0; }
         .form-box:only-child  { border-radius: 3px; border-right: 1px solid #d0d0d0; }
-        .form-box.finish-1      { background: #1e3a8a; color: white; }
-        .form-box.finish-2-5    { background: #3b82f6; color: white; }
-        .form-box.finish-6-10   { background: #60a5fa; color: white; }
-        .form-box.finish-11-20  { background: #93c5fd; color: #1a1a1a; }
-        .form-box.finish-21-30  { background: #bfdbfe; color: #1a1a1a; }
-        .form-box.finish-31-50  { background: #dbeafe; color: #1a1a1a; }
+        .form-box.finish-1      { background: #2D3748; color: white; }
+        .form-box.finish-2-5    { background: #4A5568; color: white; }
+        .form-box.finish-6-10   { background: #718096; color: white; }
+        .form-box.finish-11-20  { background: #A0AEC0; color: #2D3748; }
+        .form-box.finish-21-30  { background: #CBD5E0; color: #2D3748; }
+        .form-box.finish-31-50  { background: #E2E8F0; color: #2D3748; }
         .form-box.finish-mc     { background: #f3f4f6; color: #6b7280; }
-        .form-box.finish-other  { background: #f9fafb; color: #1a1a1a; }
+        .form-box.finish-other  { background: #f9fafb; color: #2D3748; }
 
         /* ── LOADING ── */
-        .loading-state { text-align: center; padding: 60px 20px; color: #999; font-size: 1.1rem; }
+        .loading-state { text-align: center; padding: 60px 20px; color: #A0AEC0; font-size: 1.1rem; }
 
         /* ── FOOTER ── */
-        .site-footer { background: #f8f8f8; border-top: 1px solid #e5e5e5; padding: 40px 30px 30px; margin-top: 60px; }
+        .site-footer { background: #EDF0F4; border-top: 1px solid #CBD5E0; padding: 40px 30px 30px; margin-top: 60px; }
         .footer-content { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
-        .responsible-gambling { font-size: 0.9rem; color: #1a1a1a; line-height: 1.6; }
+        .responsible-gambling { font-size: 0.9rem; color: #2D3748; line-height: 1.6; }
         .responsible-gambling strong { color: #d32f2f; }
-        .responsible-gambling a { color: #1a1a1a; font-weight: 600; }
-        .affiliate-notice { font-size: 0.82rem; color: #666; line-height: 1.5; }
+        .responsible-gambling a { color: #2D3748; font-weight: 600; }
+        .affiliate-notice { font-size: 0.82rem; color: #718096; line-height: 1.5; }
         .footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; }
-        .footer-link { color: #1a1a1a; text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+        .footer-link { color: #2D3748; text-decoration: none; font-size: 0.88rem; font-weight: 500; }
         .footer-link:hover { text-decoration: underline; }
         .footer-separator { color: #ccc; }
-        .footer-logos { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 16px 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
+        .footer-logos { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 16px 0; border-top: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0; }
         .gamcare-text { font-size: 0.88rem; font-weight: 600; }
-        .footer-odds-format { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
-        .footer-odds-format label { font-size: 0.88rem; color: #666; font-weight: 500; }
-        .footer-odds-dropdown { padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 0.88rem; background: white; cursor: pointer; }
-        .footer-odds-dropdown:focus { outline: none; border-color: #1a1a1a; }
-        .footer-copyright p { font-size: 0.82rem; color: #999; text-align: center; }
+        .footer-odds-format { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 0; border-top: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0; }
+        .footer-odds-format label { font-size: 0.88rem; color: #718096; font-weight: 500; }
+        .footer-odds-dropdown { padding: 6px 12px; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.88rem; background: #F5F7FA; cursor: pointer; }
+        .footer-odds-dropdown:focus { outline: none; border-color: #2D3748; }
+        .footer-copyright p { font-size: 0.82rem; color: #A0AEC0; text-align: center; }
 
         /* ── MOBILE ── */
         .desktop-expanded-view { display: block; }
@@ -801,24 +801,24 @@ export default function GolfOddsComparison() {
           .mobile-tab-pane { flex: 0 0 92vw; width: 92vw; scroll-snap-align: center; padding: 18px 14px; box-sizing: border-box; }
           .mobile-pane-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; text-align: center; }
           .mobile-bookmaker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .mobile-bookmaker-card { background: white; border: 2px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
-          .mobile-bookmaker-card.best { background: #fff8e7; border-color: #d4af37; border-width: 3px; }
-          .mobile-bookmaker-name { font-size: 0.72rem; color: #666; margin-bottom: 5px; font-weight: 600; }
+          .mobile-bookmaker-card { background: #F5F7FA; border: 2px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
+          .mobile-bookmaker-card.best { background: #E8ECF0; border-color: #d4af37; border-width: 3px; }
+          .mobile-bookmaker-name { font-size: 0.72rem; color: #718096; margin-bottom: 5px; font-weight: 600; }
           .mobile-bookmaker-odds { font-size: 1.35rem; font-weight: 700; margin-bottom: 3px; }
-          .mobile-bookmaker-ew   { font-size: 0.68rem; color: #999; }
+          .mobile-bookmaker-ew   { font-size: 0.68rem; color: #A0AEC0; }
           .mobile-extra-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .mobile-extra-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; }
-          .mobile-extra-label     { font-size: 0.68rem; color: #999; text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
-          .mobile-extra-bookmaker { font-size: 0.68rem; color: #666; margin-bottom: 5px; }
+          .mobile-extra-card { background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; }
+          .mobile-extra-label     { font-size: 0.68rem; color: #A0AEC0; text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
+          .mobile-extra-bookmaker { font-size: 0.68rem; color: #718096; margin-bottom: 5px; }
           .mobile-extra-odds      { font-size: 1.25rem; font-weight: 700; }
           .mobile-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .mobile-stat-card { background: white; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; text-align: center; }
+          .mobile-stat-card { background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; }
           .mobile-stat-full-width { grid-column: 1 / -1; }
-          .mobile-stat-label { font-size: 0.68rem; color: #999; text-transform: uppercase; margin-bottom: 7px; font-weight: 600; }
+          .mobile-stat-label { font-size: 0.68rem; color: #A0AEC0; text-transform: uppercase; margin-bottom: 7px; font-weight: 600; }
           .mobile-stat-value { font-size: 1rem; font-weight: 700; }
-          .mobile-swipe-indicator { display: flex; justify-content: center; gap: 8px; padding: 12px; border-top: 1px solid #f0f0f0; }
+          .mobile-swipe-indicator { display: flex; justify-content: center; gap: 8px; padding: 12px; border-top: 1px solid #DDE2E8; }
           .swipe-dot { width: 8px; height: 8px; border-radius: 50%; background: #d0d0d0; }
-          .swipe-dot.active { background: #666; }
+          .swipe-dot.active { background: #718096; }
 
           .footer-odds-format { flex-direction: column; gap: 10px; }
           .footer-links { flex-direction: column; align-items: center; gap: 10px; }
