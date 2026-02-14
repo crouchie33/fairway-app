@@ -184,6 +184,36 @@ export default function GolfOddsComparison() {
   const [countdown, setCountdown]           = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const fetchingRef = useRef(false);
+  const [promoIndex, setPromoIndex] = useState(0);
+
+  const PROMO_ITEMS = [
+    {
+      label: 'Book',
+      labelClass: 'book',
+      text: "The Trader's Guide to Golf Betting — available on Amazon",
+      url: 'https://www.amazon.co.uk/traders-guide-Golf-Betting-Everything-ebook/dp/B0C9XF1VKH',
+    },
+    {
+      label: 'New',
+      labelClass: '',
+      text: 'Masters 2026 — best odds comparison updated daily',
+      url: '#',
+    },
+    {
+      label: 'Tip',
+      labelClass: '',
+      text: 'Each-way betting: get paid on top 5 or 6 places at major tournaments',
+      url: '#',
+    },
+  ];
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % PROMO_ITEMS.length);
+    }, 4000);
+    return () => clearInterval(id);
+  // eslint-disable-line
+  }, []);
 
   // ── load saved odds format ──
   useEffect(() => {
@@ -457,6 +487,69 @@ export default function GolfOddsComparison() {
         .countdown-container { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 0.85rem; }
         .countdown-label { color: #666; font-weight: 500; }
         .countdown-time  { font-weight: 700; font-family: 'Courier New', monospace; }
+
+        /* ── PROMO BANNER ── */
+        .promo-banner {
+          flex: 1;
+          overflow: hidden;
+          position: relative;
+          height: 36px;
+          border-radius: 6px;
+          border: 1px solid #e5e5e5;
+          background: white;
+        }
+        .promo-track {
+          display: flex;
+          position: absolute;
+          top: 0; left: 0;
+          height: 100%;
+          transition: transform 0.5s ease-in-out;
+        }
+        .promo-card {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 0 16px;
+          height: 36px;
+          white-space: nowrap;
+          flex-shrink: 0;
+          text-decoration: none;
+          color: #1a1a1a;
+          font-size: 0.85rem;
+        }
+        .promo-card:hover { background: #fafafa; }
+        .promo-card-label {
+          background: #1a1a1a;
+          color: white;
+          font-size: 0.65rem;
+          font-weight: 700;
+          padding: 2px 6px;
+          border-radius: 3px;
+          text-transform: uppercase;
+          flex-shrink: 0;
+        }
+        .promo-card-label.book { background: #e07b00; }
+        .promo-card-text { font-weight: 500; }
+        .promo-dots {
+          display: flex;
+          gap: 4px;
+          align-items: center;
+          padding: 0 8px;
+          flex-shrink: 0;
+        }
+        .promo-dot {
+          width: 5px; height: 5px;
+          border-radius: 50%;
+          background: #d0d0d0;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .promo-dot.active { background: #1a1a1a; }
+
+        @media (max-width: 768px) {
+          .promo-banner { display: none; }
+          .promo-dots  { display: none; }
+        }
 
         /* ── NOTICES ── */
         .notice { padding: 10px 30px; border-bottom: 1px solid; font-size: 0.85rem; }
@@ -746,6 +839,7 @@ export default function GolfOddsComparison() {
 
       {/* ── NOTICES ── */}
       {useMock && <div className="notice notice-demo">💡 Demo data — live odds available during major tournaments</div>}
+      {rankingsCount > 0 && <div className="notice notice-rankings">📊 World rankings loaded ({rankingsCount} players)</div>}
 
       {/* ── CONTROLS ── */}
       <div className="controls-bar">
@@ -759,6 +853,35 @@ export default function GolfOddsComparison() {
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
+        </div>
+        <div className="promo-banner">
+          <div
+            className="promo-track"
+            style={{ transform: `translateX(-${promoIndex * 100}%)`, width: `${PROMO_ITEMS.length * 100}%` }}
+          >
+            {PROMO_ITEMS.map((item, i) => (
+              <a
+                key={i}
+                href={item.url}
+                target={item.url !== '#' ? '_blank' : '_self'}
+                rel="noopener noreferrer"
+                className="promo-card"
+                style={{ width: `${100 / PROMO_ITEMS.length}%` }}
+              >
+                <span className={`promo-card-label ${item.labelClass}`}>{item.label}</span>
+                <span className="promo-card-text">{item.text}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="promo-dots">
+          {PROMO_ITEMS.map((_, i) => (
+            <span
+              key={i}
+              className={`promo-dot${promoIndex === i ? ' active' : ''}`}
+              onClick={() => setPromoIndex(i)}
+            />
+          ))}
         </div>
       </div>
 
