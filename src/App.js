@@ -52,9 +52,9 @@ const AFFILIATE_LINKS = {
   '888sport':           'https://www.888sport.com/golf?affiliate=YOUR_888_ID',
 };
 
-// Polymarket implied odds — probability (%) → decimal odds (1/prob)
-// Source: polymarket.com/event/the-masters-winner | Updated: Feb 2026
-const POLYMARKET_ODDS = {
+// Polymarket odds loaded dynamically from Google Sheet
+// Fallback hardcoded values used until sheet loads
+const POLYMARKET_FALLBACK = {
   "Scottie Scheffler": 4.3,
   "Rory McIlroy": 11.1,
   "Bryson DeChambeau": 16.7,
@@ -64,7 +64,6 @@ const POLYMARKET_ODDS = {
   "Jon Rahm": 18.5,
   "Xander Schauffele": 19.2,
   "Viktor Hovland": 28.6,
-  "Jason Day": 27.0,
   "Collin Morikawa": 40.0,
   "Hideki Matsuyama": 41.7,
   "Jordan Spieth": 52.6,
@@ -77,22 +76,11 @@ const POLYMARKET_ODDS = {
   "Sahith Theegala": 125.0,
   "Shane Lowry": 125.0,
   "Tony Finau": 125.0,
-  "Justin Rose": 25.0,
-  "Robert MacIntyre": 55.6,
-  "Joaquin Niemann": 47.6,
-  "Cameron Young": 52.6,
-  "Adam Scott": 50.0,
-  "Akshay Bhatia": 71.4,
-  "Sam Burns": 76.9,
-  "Brian Harman": 76.9,
-  "Tom Kim": 100.0,
-  "Wyndham Clark": 111.1,
-  "Sergio Garcia": 166.7,
-  "Patrick Reed": 17.2,
-  "Matt Fitzpatrick": 62.5,
-  "Russell Henley": 62.5,
 };
 const POLYMARKET_URL = "https://polymarket.com/event/the-masters-winner?slug=the-masters-winner";
+const POLYMARKET_SHEET_URL = "https://script.google.com/macros/s/AKfycbwRfYkS4bBA3uI-BKshmbIBTCSrwAK10-VncZ6D5Rjn9kWXOKX50Q3MtYQhJjRqP9s7/exec";
+const POLYMARKET_CACHE_KEY = 'fairway_polymarket';
+const POLYMARKET_CACHE_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
@@ -184,6 +172,7 @@ export default function GolfOddsComparison() {
   const [countdown, setCountdown]           = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const fetchingRef = useRef(false);
+  const [polyOddsMap, setPolyOddsMap] = useState(POLYMARKET_FALLBACK);
   const [promoIndex, setPromoIndex] = useState(0);
 
   const PROMO_ITEMS = [
@@ -191,7 +180,7 @@ export default function GolfOddsComparison() {
       label: 'Book',
       labelClass: 'book',
       text: "The Trader's Guide to Golf Betting — available on Amazon",
-      url: 'https://www.amazon.co.uk/traders-guide-Golf-Betting-Everything-ebook/dp/B0C9XF1VKH?tag=amzonclix-21',
+      url: 'https://www.amazon.co.uk/traders-guide-Golf-Betting-Everything-ebook/dp/B0C9XF1VKH',
     },
     {
       label: 'New',
@@ -273,6 +262,31 @@ export default function GolfOddsComparison() {
       })
     );
   }, [rankingsMap]); // eslint-disable-line
+
+  // fetch Polymarket odds from Google Sheet — 6hr cache
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(POLYMARKET_CACHE_KEY);
+      if (cached) {
+        const c = JSON.parse(cached);
+        if (Date.now() - c.ts < POLYMARKET_CACHE_MS) {
+          setPolyOddsMap(c.data);
+          return;
+        }
+      }
+    } catch {}
+    fetch(POLYMARKET_SHEET_URL)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.odds && Object.keys(json.odds).length > 0) {
+          setPolyOddsMap(json.odds);
+          try {
+            localStorage.setItem(POLYMARKET_CACHE_KEY, JSON.stringify({ data: json.odds, ts: Date.now() }));
+          } catch {}
+        }
+      })
+      .catch((err) => console.warn('Polymarket sheet unavailable:', err.message));
+  }, []);
 
   // ── build mock data ──
   const loadMock = useCallback(() => {
@@ -430,7 +444,7 @@ export default function GolfOddsComparison() {
       } else if (sortConfig.key === 'tipsterPicks') {
         av = a.tipsterPicks?.length ?? 0; bv = b.tipsterPicks?.length ?? 0;
       } else if (sortConfig.key === 'polyOdds') {
-        const findPoly = (p) => { const k = Object.keys(POLYMARKET_ODDS).find(k => norm(k) === norm(p.name)); return k ? POLYMARKET_ODDS[k] : 9999; };
+        const findPoly = (p) => { const k = Object.keys(polyOddsMap).find(k => norm(k) === norm(p.name)); return k ? polyOddsMap[k] : 9999; };
         av = findPoly(a); bv = findPoly(b);
       } else {
         av = a[sortConfig.key] ?? 0; bv = b[sortConfig.key] ?? 0;
@@ -983,8 +997,8 @@ export default function GolfOddsComparison() {
 
                       {/* polymarket */}
                       {(() => {
-                        const polyKey = Object.keys(POLYMARKET_ODDS).find(k => norm(k) === norm(player.name));
-                        const polyVal = polyKey ? POLYMARKET_ODDS[polyKey] : null;
+                        const polyKey = Object.keys(polyOddsMap).find(k => norm(k) === norm(player.name));
+                        const polyVal = polyKey ? polyOddsMap[polyKey] : null;
                         return (
                           <td className="poly-cell desktop-only">
                             {polyVal ? (
