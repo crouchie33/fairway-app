@@ -191,7 +191,7 @@ export default function GolfOddsComparison() {
       label: 'Book',
       labelClass: 'book',
       text: "The Trader's Guide to Golf Betting — available on Amazon",
-      url: 'https://www.amazon.co.uk/traders-guide-Golf-Betting-Everything-ebook/dp/B0C9XF1VKH',
+      url: 'https://www.amazon.co.uk/traders-guide-Golf-Betting-Everything-ebook/dp/B0C9XF1VKH?tag=amzonclix-21',
     },
     {
       label: 'New',
