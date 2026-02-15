@@ -531,7 +531,9 @@ export default function GolfOddsComparison() {
         .logo-desktop{ display: block; }
 
         /* ── NAV MENU ── */
-        .nav-menu-btn { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 200; }
+        .nav-menu-btn { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; flex-shrink: 0; }
+        .nav-menu-btn-desktop { display: flex; align-self: flex-end; margin-bottom: 2px; }
+        .nav-menu-btn-mobile  { display: none; }
         .nav-menu-btn span { display: block; width: 22px; height: 2px; background: #2D3748; border-radius: 2px; transition: all 0.2s; }
         .nav-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
         .nav-menu-btn.open span:nth-child(2) { opacity: 0; }
@@ -832,8 +834,10 @@ export default function GolfOddsComparison() {
         @media (max-width: 768px) {
           header { padding: 10px 15px !important; }
           .header-content { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+          .nav-menu-btn-desktop { display: none !important; }
+          .nav-menu-btn-mobile  { display: flex !important; margin-left: auto; }
           .tagline { display: none !important; }
-          .header-left { display: flex !important; justify-content: space-between !important; width: 100% !important; }
+          .header-left { display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
           .header-center { display: none !important; }
           .wordmark { height: 26px !important; width: auto !important; }
           .logo-mobile { height: 30px !important; width: auto !important; display: block !important; }
@@ -893,15 +897,6 @@ export default function GolfOddsComparison() {
 
       {/* ── HEADER ── */}
       <header>
-        {/* hamburger button */}
-        <button
-          className={`nav-menu-btn${menuOpen ? ' open' : ''}`}
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menu"
-        >
-          <span /><span /><span />
-        </button>
-
         {/* overlay */}
         <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
 
@@ -921,11 +916,27 @@ export default function GolfOddsComparison() {
           <div className="header-left">
             <img src={wordmarkImg} alt="The Fairway" className="wordmark" />
             <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-mobile" />
+            {/* mobile hamburger - right of logo */}
+            <button
+              className={`nav-menu-btn nav-menu-btn-mobile${menuOpen ? ' open' : ''}`}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu"
+            >
+              <span /><span /><span />
+            </button>
           </div>
           <div className="header-center">
             <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-desktop" />
           </div>
           <div className="header-right">
+            {/* desktop hamburger - top right, above tagline */}
+            <button
+              className={`nav-menu-btn nav-menu-btn-desktop${menuOpen ? ' open' : ''}`}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu"
+            >
+              <span /><span /><span />
+            </button>
             <div className="tagline">Better Odds. Better Bets.</div>
             <div className="countdown-container">
               <span className="countdown-label">Countdown to The Masters:</span>
