@@ -173,6 +173,7 @@ export default function GolfOddsComparison() {
   const [oddsFormat, setOddsFormat]         = useState('fractional');
   const [activeMobilePane, setActiveMobilePane] = useState(0);
   const [countdown, setCountdown]           = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [menuOpen, setMenuOpen]             = useState(false);
 
   const fetchingRef = useRef(false);
   const [polyOddsMap, setPolyOddsMap] = useState(POLYMARKET_FALLBACK);
@@ -518,7 +519,7 @@ export default function GolfOddsComparison() {
         .app-container { max-width: 1600px; margin: 0 auto; }
 
         /* ── HEADER ── */
-        header { background: #F5F7FA; border-bottom: 1px solid #CBD5E0; padding: 20px 30px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        header { background: #F5F7FA; border-bottom: 1px solid #CBD5E0; padding: 20px 30px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; }
         .header-content { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
         .header-left  { justify-self: start; }
         .header-center{ justify-self: center; }
@@ -528,6 +529,31 @@ export default function GolfOddsComparison() {
         .logo-center { height: 90px; width: auto; }
         .logo-mobile { display: none; }
         .logo-desktop{ display: block; }
+
+        /* ── NAV MENU ── */
+        .nav-menu-btn { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); z-index: 200; }
+        .nav-menu-btn span { display: block; width: 22px; height: 2px; background: #2D3748; border-radius: 2px; transition: all 0.2s; }
+        .nav-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .nav-menu-btn.open span:nth-child(2) { opacity: 0; }
+        .nav-menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 150; }
+        .nav-overlay.open { display: block; }
+
+        .nav-drawer {
+          position: fixed; top: 0; right: -280px; width: 280px; height: 100vh;
+          background: white; z-index: 160; transition: right 0.25s ease;
+          box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+          display: flex; flex-direction: column;
+        }
+        .nav-drawer.open { right: 0; }
+        .nav-drawer-header { padding: 20px 24px; border-bottom: 1px solid #CBD5E0; font-weight: 700; font-size: 1rem; color: #2D3748; }
+        .nav-drawer-links { display: flex; flex-direction: column; padding: 12px 0; flex: 1; }
+        .nav-drawer-link { padding: 14px 24px; font-size: 1rem; color: #2D3748; text-decoration: none; font-weight: 500; border-bottom: 1px solid #F5F7FA; transition: background 0.1s; }
+        .nav-drawer-link:hover { background: #F5F7FA; }
+        .nav-drawer-link.active { color: #2D3748; font-weight: 700; }
+        .nav-drawer-section { padding: 10px 24px 4px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #718096; font-weight: 600; margin-top: 8px; }
+        .nav-drawer-footer { padding: 16px 24px; border-top: 1px solid #CBD5E0; font-size: 0.78rem; color: #718096; }
 
         /* ── TOURNAMENT TABS ── */
         .tournament-tabs { display: flex; gap: 8px; margin-top: 8px; }
@@ -867,6 +893,30 @@ export default function GolfOddsComparison() {
 
       {/* ── HEADER ── */}
       <header>
+        {/* hamburger button */}
+        <button
+          className={`nav-menu-btn${menuOpen ? ' open' : ''}`}
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Menu"
+        >
+          <span /><span /><span />
+        </button>
+
+        {/* overlay */}
+        <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
+
+        {/* drawer */}
+        <nav className={`nav-drawer${menuOpen ? ' open' : ''}`}>
+          <div className="nav-drawer-header">The Fairway</div>
+          <div className="nav-drawer-links">
+            <a href="/" className="nav-drawer-link active">&#127931; Odds Comparison</a>
+            <div className="nav-drawer-section">Blog</div>
+            <a href="/blog" className="nav-drawer-link">All Articles</a>
+            <a href="/blog/masters-2026-outsiders" className="nav-drawer-link">Masters 2026 Outsiders</a>
+          </div>
+          <div className="nav-drawer-footer">18+ | BeGambleAware.org</div>
+        </nav>
+
         <div className="header-content">
           <div className="header-left">
             <img src={wordmarkImg} alt="The Fairway" className="wordmark" />
