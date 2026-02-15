@@ -796,9 +796,9 @@ export default function GolfOddsComparison() {
           .expanded-row { display: block !important; }
           .desktop-expanded-view { display: none; }
           .mobile-panes-wrapper { display: block; width: 100vw; overflow: hidden; }
-          .mobile-tabs-container { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+          .mobile-tabs-container { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
           .mobile-tabs-container::-webkit-scrollbar { display: none; }
-          .mobile-tab-pane { flex: 0 0 92vw; width: 92vw; scroll-snap-align: center; padding: 18px 14px; box-sizing: border-box; }
+          .mobile-tab-pane { flex: 0 0 100vw; width: 100vw; scroll-snap-align: start; scroll-snap-stop: always; padding: 18px 16px; box-sizing: border-box; }
           .mobile-pane-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; text-align: center; }
           .mobile-bookmaker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
           .mobile-bookmaker-card { background: #F5F7FA; border: 2px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
