@@ -294,7 +294,14 @@ export default function GolfOddsComparison() {
 
   // fetch major event form when tournament tab changes
   useEffect(() => {
-    const majorName = selectedTournament.name; // e.g. "Masters", "PGA Championship"
+    // Map app tournament names to sheet tab names
+    const nameMap = {
+      'The Masters': 'Masters',
+      'PGA Championship': 'PGA Championship',
+      'US Open': 'US Open',
+      'The Open': 'The Open',
+    };
+    const majorName = nameMap[selectedTournament.name] || selectedTournament.name;
     const cacheKey = 'fairway_form_' + majorName.replace(/\s/g, '_');
     try {
       const cached = localStorage.getItem(cacheKey);
