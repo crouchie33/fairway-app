@@ -531,9 +531,7 @@ export default function GolfOddsComparison() {
         .logo-desktop{ display: block; }
 
         /* ── NAV MENU ── */
-        .nav-menu-btn { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; flex-shrink: 0; }
-        .nav-menu-btn-desktop { display: flex; align-self: flex-end; margin-bottom: 2px; }
-        .nav-menu-btn-mobile  { display: none; }
+        .nav-menu-btn { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; flex-shrink: 0; align-self: flex-end; }
         .nav-menu-btn span { display: block; width: 22px; height: 2px; background: #2D3748; border-radius: 2px; transition: all 0.2s; }
         .nav-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
         .nav-menu-btn.open span:nth-child(2) { opacity: 0; }
@@ -833,13 +831,11 @@ export default function GolfOddsComparison() {
 
         @media (max-width: 768px) {
           header { padding: 10px 15px !important; }
-          .header-content { flex-wrap: wrap; }
-          .header-right { grid-column: 1 / -1 !important; width: 100% !important; align-items: flex-start !important; margin-top: 8px; }
-          .header-content { display: grid !important; grid-template-columns: auto 1fr auto !important; align-items: center !important; gap: 0 !important; width: 100% !important; }
-          .nav-menu-btn-desktop { display: none !important; }
-          .nav-menu-btn-mobile  { display: flex !important; }
+          .header-content { display: grid !important; grid-template-columns: 1fr auto 1fr !important; align-items: center !important; gap: 0 !important; width: 100% !important; }
+          .header-right { display: flex !important; flex-direction: column !important; align-items: flex-end !important; }
+          .tournament-tabs { width: 100vw !important; margin-left: calc(-100vw + 100%) !important; }
           .tagline { display: none !important; }
-          .header-left { display: flex !important; align-items: center !important; justify-content: flex-start !important; width: auto !important; }
+          .header-left { display: flex !important; align-items: center !important; justify-content: flex-start !important; }
           .header-center { display: flex !important; justify-content: center !important; }
           .wordmark { height: 26px !important; width: auto !important; }
           .logo-mobile { height: 30px !important; width: auto !important; display: block !important; }
@@ -917,23 +913,15 @@ export default function GolfOddsComparison() {
         <div className="header-content">
           <div className="header-left">
             <img src={wordmarkImg} alt="The Fairway" className="wordmark" />
-            {/* mobile hamburger - sits left on mobile */}
-            <button
-              className={`nav-menu-btn nav-menu-btn-mobile${menuOpen ? ' open' : ''}`}
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menu"
-            >
-              <span /><span /><span />
-            </button>
           </div>
           <div className="header-center">
             <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-desktop" />
             <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-mobile" />
           </div>
           <div className="header-right">
-            {/* desktop hamburger - top right, above tagline */}
+            {/* desktop: hamburger above tagline. mobile: hamburger only, tabs below */}
             <button
-              className={`nav-menu-btn nav-menu-btn-desktop${menuOpen ? ' open' : ''}`}
+              className={`nav-menu-btn${menuOpen ? ' open' : ''}`}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Menu"
             >
