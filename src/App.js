@@ -82,6 +82,9 @@ const POLYMARKET_SHEET_URL = "https://script.google.com/macros/s/AKfycbwRfYkS4bB
 const POLYMARKET_CACHE_KEY = 'fairway_polymarket';
 const POLYMARKET_CACHE_MS = 6 * 60 * 60 * 1000; // 6 hours
 
+const MAJORS_FORM_URL = "https://script.google.com/macros/s/AKfycbwjUK-2zF8GYa8eFevPCWTdUJOeCRA-J5TCXdneuF8b22y2RQexnJL76uxqWr3wBCFw/exec";
+const MAJORS_FORM_CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
   { name: 'Rory McIlroy',      nationality: 'NIR', owgr: 2,  recentForm: [3,1,5,2,4,3,2], courseHistory: 'T5-T7-2-T8-3-T6-4',         tipsterPicks: ['GolfAnalyst','ProGolfTips','GreenJacket','BirdiePicksGolf','FairwayFinder','SwingTipster'] },
@@ -173,6 +176,7 @@ export default function GolfOddsComparison() {
 
   const fetchingRef = useRef(false);
   const [polyOddsMap, setPolyOddsMap] = useState(POLYMARKET_FALLBACK);
+  const [majorFormMap, setMajorFormMap] = useState({});
   const [promoIndex, setPromoIndex] = useState(0);
 
   const PROMO_ITEMS = [
@@ -287,6 +291,33 @@ export default function GolfOddsComparison() {
       })
       .catch((err) => console.warn('Polymarket sheet unavailable:', err.message));
   }, []);
+
+  // fetch major event form when tournament tab changes
+  useEffect(() => {
+    const majorName = selectedTournament.name; // e.g. "Masters", "PGA Championship"
+    const cacheKey = 'fairway_form_' + majorName.replace(/\s/g, '_');
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const c = JSON.parse(cached);
+        if (Date.now() - c.ts < MAJORS_FORM_CACHE_MS) {
+          setMajorFormMap(c.data);
+          return;
+        }
+      }
+    } catch {}
+    fetch(MAJORS_FORM_URL + '?major=' + encodeURIComponent(majorName))
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.form && Object.keys(json.form).length > 0) {
+          setMajorFormMap(json.form);
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ data: json.form, ts: Date.now() }));
+          } catch {}
+        }
+      })
+      .catch((err) => console.warn('Majors form unavailable:', err.message));
+  }, [selectedTournament]); // eslint-disable-line
 
   // ── build mock data ──
   const loadMock = useCallback(() => {
@@ -1066,13 +1097,18 @@ export default function GolfOddsComparison() {
                                 )}
                                 {player.courseHistory && (
                                   <div className="desktop-info-card desktop-form-card">
-                                    <div className="desktop-card-label">Course History</div>
+                                    <div className="desktop-card-label">Event Form</div>
                                     <div className="form-boxes">
-                                      {player.courseHistory.split('-').map((p, i) => (
-                                        <span key={i} className={`form-box ${getFinishClass(p)}`}>
-                                          {String(p).replace('T','')}
-                                        </span>
-                                      ))}
+                                      {(() => {
+                                        const key = Object.keys(majorFormMap).find(k => norm(k) === norm(player.name));
+                                        const results = key ? majorFormMap[key] : [];
+                                        if (!results || results.length === 0) return <span style={{color:'#A0AEC0', fontSize:'0.75rem'}}>No data</span>;
+                                        return results.map((p, i) => (
+                                          <span key={i} className={`form-box ${getFinishClass(p)}`}>
+                                            {String(p).replace('T','')}
+                                          </span>
+                                        ));
+                                      })()}
                                     </div>
                                   </div>
                                 )}
@@ -1171,15 +1207,19 @@ export default function GolfOddsComparison() {
                                         </div>
                                       </div>
                                     )}
-                                    {player.courseHistory && (
+                                    {Object.keys(majorFormMap).find(k => norm(k) === norm(player.name)) && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
-                                        <div className="mobile-stat-label">Course History</div>
+                                        <div className="mobile-stat-label">Event Form</div>
                                         <div className="form-boxes">
-                                          {player.courseHistory.split('-').map((p, i) => (
-                                            <span key={i} className={`form-box ${getFinishClass(p)}`}>
-                                              {String(p).replace('T','')}
-                                            </span>
-                                          ))}
+                                          {(() => {
+                                            const key = Object.keys(majorFormMap).find(k => norm(k) === norm(player.name));
+                                            const results = key ? majorFormMap[key] : [];
+                                            return results.map((p, i) => (
+                                              <span key={i} className={`form-box ${getFinishClass(p)}`}>
+                                                {String(p).replace('T','')}
+                                              </span>
+                                            ));
+                                          })()}
                                         </div>
                                       </div>
                                     )}
