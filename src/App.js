@@ -1109,19 +1109,22 @@ export default function GolfOddsComparison() {
                                 onScroll={(e) => setActiveMobilePane(Math.round(e.target.scrollLeft / e.target.offsetWidth))}>
 
                                 <div className="mobile-tab-pane">
-                                  <h3 className="mobile-pane-title">Outright Winner Odds</h3>
+                                  <h3 className="mobile-pane-title">Best Prices</h3>
                                   <div className="mobile-bookmaker-grid">
-                                    {bookmakers.map((bm, i) => {
-                                      const v = player.bookmakerOdds?.[bm.name]?.outright;
-                                      return (
+                                    {bookmakers
+                                      .map((bm) => ({ bm, v: player.bookmakerOdds?.[bm.name]?.outright }))
+                                      .filter(({ v }) => v && Number.isFinite(v))
+                                      .sort((a, b) => b.v - a.v)
+                                      .slice(0, 6)
+                                      .map(({ bm, v }, i) => (
                                         <a key={i} href={AFFILIATE_LINKS[bm.name]} target="_blank" rel="noopener noreferrer"
                                            className={`mobile-bookmaker-card${v === bestOdds ? ' best' : ''}`}>
                                           <div className="mobile-bookmaker-name">{bm.name}</div>
                                           <div className="mobile-bookmaker-odds">{formatOdds(v)}</div>
                                           <div className="mobile-bookmaker-ew">{bm.ew} places</div>
                                         </a>
-                                      );
-                                    })}
+                                      ))
+                                    }
                                   </div>
                                 </div>
 
