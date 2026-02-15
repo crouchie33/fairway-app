@@ -833,12 +833,14 @@ export default function GolfOddsComparison() {
 
         @media (max-width: 768px) {
           header { padding: 10px 15px !important; }
-          .header-content { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+          .header-content { flex-wrap: wrap; }
+          .header-right { grid-column: 1 / -1 !important; width: 100% !important; align-items: flex-start !important; margin-top: 8px; }
+          .header-content { display: grid !important; grid-template-columns: auto 1fr auto !important; align-items: center !important; gap: 0 !important; width: 100% !important; }
           .nav-menu-btn-desktop { display: none !important; }
-          .nav-menu-btn-mobile  { display: flex !important; margin-left: auto; }
+          .nav-menu-btn-mobile  { display: flex !important; }
           .tagline { display: none !important; }
-          .header-left { display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
-          .header-center { display: none !important; }
+          .header-left { display: flex !important; align-items: center !important; justify-content: flex-start !important; width: auto !important; }
+          .header-center { display: flex !important; justify-content: center !important; }
           .wordmark { height: 26px !important; width: auto !important; }
           .logo-mobile { height: 30px !important; width: auto !important; display: block !important; }
           .logo-desktop { display: none !important; }
@@ -915,8 +917,7 @@ export default function GolfOddsComparison() {
         <div className="header-content">
           <div className="header-left">
             <img src={wordmarkImg} alt="The Fairway" className="wordmark" />
-            <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-mobile" />
-            {/* mobile hamburger - right of logo */}
+            {/* mobile hamburger - sits left on mobile */}
             <button
               className={`nav-menu-btn nav-menu-btn-mobile${menuOpen ? ' open' : ''}`}
               onClick={() => setMenuOpen(!menuOpen)}
@@ -927,6 +928,7 @@ export default function GolfOddsComparison() {
           </div>
           <div className="header-center">
             <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-desktop" />
+            <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-mobile" />
           </div>
           <div className="header-right">
             {/* desktop hamburger - top right, above tagline */}
