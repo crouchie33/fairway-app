@@ -193,10 +193,10 @@ export default function GolfOddsComparison() {
       url: '#',
     },
     {
-      label: 'Tip',
+      label: 'New',
       labelClass: '',
-      text: 'Each-way betting: get paid on top 5 or 6 places at major tournaments',
-      url: '#',
+      text: 'Outsiders to back now - 8 weeks out from The Masters',
+      url: '/blog/masters-2026-outsiders',
     },
   ];
 
