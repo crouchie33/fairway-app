@@ -854,7 +854,9 @@ export default function GolfOddsComparison() {
           .countdown-container { display: none; }
           .controls-bar { padding: 10px 15px; }
           .search-bar { max-width: 100%; }
-          .odds-matrix thead th { position: static !important; }
+          .odds-matrix-container { max-height: none !important; overflow-y: visible !important; }
+          .odds-matrix thead th { position: static !important; top: auto !important; }
+          .player-header { position: static !important; top: auto !important; left: auto !important; }
 
           .odds-matrix thead th:not(:first-child):not(.best-odds-header) { display: none; }
           .odds-matrix tbody td:not(:first-child):not(.best-odds-cell-mobile) { display: none; }
