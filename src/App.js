@@ -846,7 +846,7 @@ export default function GolfOddsComparison() {
           .tournament-tab { padding: 6px 10px !important; font-size: 0.7rem !important; flex-shrink: 0 !important; }
           .tagline { display: none !important; }
           .countdown-container { display: none !important; }
-          .wordmark { height: auto !important; max-width: 320px !important; }
+          .wordmark { height: auto !important; max-width: 128px !important; }
           .logo-mobile { height: 32px !important; width: auto !important; display: block !important; }
           .logo-desktop { display: none !important; }
           .tournament-tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; }
