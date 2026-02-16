@@ -1221,7 +1221,7 @@ export default function GolfOddsComparison() {
                                       {(() => {
                                         const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
                                         const raw = key ? currentFormMap[key] : [];
-                                        const played = raw.filter(p => p !== '-' && p !== '');
+                                        const played = raw.filter(p => p !== '-' && p !== '').reverse();
                                         const first7 = played.slice(0, 7);
                                         while (first7.length < 7) first7.push('-');
                                         const last7 = first7;
@@ -1341,7 +1341,7 @@ export default function GolfOddsComparison() {
                                           {(() => {
                                             const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
                                             const raw = key ? currentFormMap[key] : [];
-                                            const played = raw.filter(p => p !== '-' && p !== '');
+                                            const played = raw.filter(p => p !== '-' && p !== '').reverse();
                                             const first7 = played.slice(0, 7);
                                             while (first7.length < 7) first7.push('-');
                                             const last7 = first7;
