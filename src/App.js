@@ -520,7 +520,8 @@ export default function GolfOddsComparison() {
 
         /* ── HEADER ── */
         header { background: #F5F7FA; border-bottom: 1px solid #CBD5E0; padding: 20px 30px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; }
-        .header-content { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
+        .header-content { display: flex; flex-direction: column; gap: 0; }
+        .header-top-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; width: 100%; }
         .header-left  { justify-self: start; }
         .header-center{ justify-self: center; }
         .header-right { display: flex; flex-direction: column; align-items: flex-end; }
@@ -556,7 +557,9 @@ export default function GolfOddsComparison() {
         .nav-drawer-footer { padding: 16px 24px; border-top: 1px solid #CBD5E0; font-size: 0.78rem; color: #718096; }
 
         /* ── TOURNAMENT TABS ── */
-        .tournament-tabs { display: flex; gap: 8px; margin-top: 8px; }
+        .tournament-tabs { display: flex; gap: 8px; }
+        .tabs-row-desktop { display: flex; gap: 8px; margin-top: 8px; }
+        .tabs-row-mobile  { display: none; }
         .tournament-tab { padding: 8px 16px; background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.85rem; font-weight: 500; color: #718096; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
         .tournament-tab:hover { color: #2D3748; border-color: #2D3748; }
         .tournament-tab.active { background: #2D3748; color: white; border-color: #2D3748; font-weight: 600; }
@@ -830,21 +833,28 @@ export default function GolfOddsComparison() {
         .mobile-panes-wrapper  { display: none; }
 
         @media (max-width: 768px) {
-          header { padding: 10px 15px !important; }
-          .header-content { display: grid !important; grid-template-columns: 1fr auto 1fr !important; align-items: center !important; gap: 0 !important; width: 100% !important; }
-          .header-right { display: flex !important; flex-direction: column !important; align-items: flex-end !important; }
-          .tournament-tabs { width: 100vw !important; margin-left: calc(-100vw + 100%) !important; }
+          header { padding: 10px 15px 0 15px !important; }
+          /* Row 1: wordmark | logo | hamburger */
+          .header-content { display: flex !important; flex-direction: column !important; gap: 0 !important; width: 100% !important; }
+          .header-top-row { display: flex !important; align-items: center !important; width: 100% !important; padding-bottom: 10px !important; }
+          .header-left  { flex: 1 !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; }
+          .header-center { flex: 0 !important; display: flex !important; justify-content: center !important; }
+          .header-right { flex: 1 !important; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-end !important; }
+          /* Row 2: tabs centred */
+          .tabs-row-mobile  { display: flex !important; width: 100% !important; justify-content: center !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; padding: 0 0 10px !important; gap: 4px !important; }
+          .tabs-row-desktop { display: none !important; }
+          .tournament-tab { padding: 6px 10px !important; font-size: 0.7rem !important; flex-shrink: 0 !important; }
           .tagline { display: none !important; }
-          .header-left { display: flex !important; align-items: center !important; justify-content: flex-start !important; }
-          .header-center { display: flex !important; justify-content: center !important; }
-          .wordmark { height: 26px !important; width: auto !important; }
-          .logo-mobile { height: 30px !important; width: auto !important; display: block !important; }
+          .countdown-container { display: none !important; }
+          .wordmark { height: 22px !important; width: auto !important; }
+          .logo-mobile { height: 32px !important; width: auto !important; display: block !important; }
           .logo-desktop { display: none !important; }
           .tournament-tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; }
           .tournament-tab { padding: 6px 10px; font-size: 0.7rem; flex-shrink: 0; }
           .countdown-container { display: none; }
           .controls-bar { padding: 10px 15px; }
           .search-bar { max-width: 100%; }
+          .odds-matrix thead th { position: static !important; }
 
           .odds-matrix thead th:not(:first-child):not(.best-odds-header) { display: none; }
           .odds-matrix tbody td:not(:first-child):not(.best-odds-cell-mobile) { display: none; }
@@ -852,7 +862,7 @@ export default function GolfOddsComparison() {
           .mobile-only  { display: table-cell !important; }
           .odds-matrix thead th:first-child { width: auto !important; min-width: unset !important; max-width: unset !important; position: relative; left: 0; }
           .odds-matrix tbody td:first-child  { min-width: unset !important; max-width: unset !important; width: auto !important; }
-          .best-odds-header { display: table-cell !important; width: 28vw; max-width: 110px; text-align: center; }
+          .best-odds-header { display: table-cell !important; width: 28vw; max-width: 110px; text-align: center; position: static !important; }
           .odds-matrix { table-layout: fixed; width: 100%; min-width: unset !important; }
           .odds-matrix-container { overflow-x: hidden; }
           .best-odds-cell-mobile { display: table-cell !important; font-size: 1.1rem; font-weight: 700; cursor: pointer; padding: 0 8px !important; }
@@ -911,38 +921,51 @@ export default function GolfOddsComparison() {
         </nav>
 
         <div className="header-content">
-          <div className="header-left">
-            <img src={wordmarkImg} alt="The Fairway" className="wordmark" />
-          </div>
-          <div className="header-center">
-            <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-desktop" />
-            <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-mobile" />
-          </div>
-          <div className="header-right">
-            {/* desktop: hamburger above tagline. mobile: hamburger only, tabs below */}
-            <button
-              className={`nav-menu-btn${menuOpen ? ' open' : ''}`}
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menu"
-            >
-              <span /><span /><span />
-            </button>
-            <div className="tagline">Better Odds. Better Bets.</div>
-            <div className="countdown-container">
-              <span className="countdown-label">Countdown to The Masters:</span>
-              <span className="countdown-time">
-                {countdown.days}d {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
-              </span>
+          {/* Row 1: wordmark | logo | hamburger */}
+          <div className="header-top-row">
+            <div className="header-left">
+              <img src={wordmarkImg} alt="The Fairway" className="wordmark" />
             </div>
-            <div className="tournament-tabs">
-              {MAJORS.map((m) => (
-                <button
-                  key={m.id}
-                  className={`tournament-tab${selectedTournament.id === m.id ? ' active' : ''}`}
-                  onClick={() => setSelectedTournament(m)}
-                >{m.name}</button>
-              ))}
+            <div className="header-center">
+              <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-desktop" />
+              <img src={logoImg} alt="The Fairway Logo" className="logo-center logo-mobile" />
             </div>
+            <div className="header-right">
+              <button
+                className={`nav-menu-btn${menuOpen ? ' open' : ''}`}
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Menu"
+              >
+                <span /><span /><span />
+              </button>
+              <div className="tagline">Better Odds. Better Bets.</div>
+              <div className="countdown-container">
+                <span className="countdown-label">Countdown to The Masters:</span>
+                <span className="countdown-time">
+                  {countdown.days}d {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
+                </span>
+              </div>
+              <div className="tabs-row-desktop">
+                {MAJORS.map((m) => (
+                  <button
+                    key={m.id}
+                    className={`tournament-tab${selectedTournament.id === m.id ? ' active' : ''}`}
+                    onClick={() => setSelectedTournament(m)}
+                  >{m.name}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Row 2: tournament tabs — mobile only, desktop tabs are inside header-right */}
+          <div className="tabs-row-mobile">
+            {MAJORS.map((m) => (
+              <button
+                key={m.id}
+                className={`tournament-tab${selectedTournament.id === m.id ? ' active' : ''}`}
+                onClick={() => setSelectedTournament(m)}
+              >{m.name}</button>
+            ))}
+          </div>
           </div>
         </div>
       </header>
