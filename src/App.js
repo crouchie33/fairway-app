@@ -526,7 +526,7 @@ export default function GolfOddsComparison() {
         .header-center{ justify-self: center; }
         .header-right { display: flex; flex-direction: column; align-items: flex-end; }
         .tagline { font-size: 1.7rem; color: #718096; font-weight: 500; padding-top: 8px; }
-        .wordmark { width: 100mm; height: auto; }
+        .wordmark { width: 200mm; height: auto; }
         .logo-center { height: 90px; width: auto; }
         .logo-mobile { display: none; }
         .logo-desktop{ display: block; }
