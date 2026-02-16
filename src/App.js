@@ -526,7 +526,7 @@ export default function GolfOddsComparison() {
         .header-center{ justify-self: center; }
         .header-right { display: flex; flex-direction: column; align-items: flex-end; }
         .tagline { font-size: 1.7rem; color: #718096; font-weight: 500; padding-top: 8px; }
-        .wordmark { width: 200mm; height: auto; }
+        .wordmark { width: 100mm; height: auto; }
         .logo-center { height: 90px; width: auto; }
         .logo-mobile { display: none; }
         .logo-desktop{ display: block; }
@@ -846,7 +846,7 @@ export default function GolfOddsComparison() {
           .tournament-tab { padding: 6px 10px !important; font-size: 0.7rem !important; flex-shrink: 0 !important; }
           .tagline { display: none !important; }
           .countdown-container { display: none !important; }
-          .wordmark { height: 22px !important; width: auto !important; }
+          .wordmark { height: auto !important; max-width: 320px !important; }
           .logo-mobile { height: 32px !important; width: auto !important; display: block !important; }
           .logo-desktop { display: none !important; }
           .tournament-tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; }
