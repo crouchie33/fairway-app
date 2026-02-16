@@ -968,7 +968,6 @@ export default function GolfOddsComparison() {
               >{m.name}</button>
             ))}
           </div>
-          </div>
         </div>
       </header>
 
