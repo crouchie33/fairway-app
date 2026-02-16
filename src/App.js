@@ -1202,8 +1202,9 @@ export default function GolfOddsComparison() {
                                       {(() => {
                                         const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
                                         const raw = key ? currentFormMap[key] : [];
-                                        const last7 = raw.slice(-7);
-                                        while (last7.length < 7) last7.push('-');
+                                        const first7 = raw.slice(0, 7);
+                                        while (first7.length < 7) first7.push('-');
+                                        const last7 = first7;
                                         return last7.map((p, i) => (
                                           <span key={i} className={`form-box ${getFinishClass(p)}`}>
                                             {p === '-' ? '-' : String(p).replace('T','')}
@@ -1320,8 +1321,9 @@ export default function GolfOddsComparison() {
                                           {(() => {
                                             const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
                                             const raw = key ? currentFormMap[key] : [];
-                                            const last7 = raw.slice(-7);
-                                            while (last7.length < 7) last7.push('-');
+                                            const first7 = raw.slice(0, 7);
+                                            while (first7.length < 7) first7.push('-');
+                                            const last7 = first7;
                                             return last7.map((p, i) => (
                                               <span key={i} className={`form-box ${getFinishClass(p)}`}>
                                                 {p === '-' ? '-' : String(p).replace('T','')}
