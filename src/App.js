@@ -182,6 +182,7 @@ export default function GolfOddsComparison() {
   const [polyOddsMap, setPolyOddsMap] = useState(POLYMARKET_FALLBACK);
   const [majorFormMap, setMajorFormMap]     = useState({});
   const [currentFormMap, setCurrentFormMap] = useState({});
+  const [isUS, setIsUS]                       = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
 
   const PROMO_ITEMS = [
@@ -355,6 +356,14 @@ export default function GolfOddsComparison() {
         }
       })
       .catch((err) => console.warn('Current form unavailable:', err.message));
+  }, []); // eslint-disable-line
+
+  // ── detect US users for Polymarket geoblock ──
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(d => { if (d.country_code === 'US') setIsUS(true); })
+      .catch(() => setIsUS(false));
   }, []); // eslint-disable-line
 
   // ── build mock data ──
@@ -1145,9 +1154,19 @@ export default function GolfOddsComparison() {
                         return (
                           <td className="poly-cell desktop-only">
                             {polyVal ? (
-                              <a href={POLYMARKET_URL} target="_blank" rel="noopener noreferrer" className="poly-link" title="Trade on Polymarket">
-                                {formatOdds(polyVal)}
-                              </a>
+                              isUS ? (
+                                <a href={POLYMARKET_URL} target="_blank" rel="noopener noreferrer" className="poly-link" title="Trade on Polymarket">
+                                  {formatOdds(polyVal)}
+                                </a>
+                              ) : (
+                                <span
+                                  className="poly-link"
+                                  title="Polymarket is only available to US residents"
+                                  style={{cursor:'default', opacity:0.6}}
+                                >
+                                  {formatOdds(polyVal)}
+                                </span>
+                              )
                             ) : <span style={{color:'#ccc'}}>-</span>}
                           </td>
                         );
