@@ -85,6 +85,9 @@ const POLYMARKET_CACHE_MS = 6 * 60 * 60 * 1000; // 6 hours
 const MAJORS_FORM_URL = "https://script.google.com/macros/s/AKfycbwjUK-2zF8GYa8eFevPCWTdUJOeCRA-J5TCXdneuF8b22y2RQexnJL76uxqWr3wBCFw/exec";
 const MAJORS_FORM_CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+const CURRENT_FORM_URL      = "https://script.google.com/macros/s/AKfycbzFo29_upCpM4_qg_WiB-ncdqwTMxqoMbsMs7LdHMEw_FnqZNAimPnipv3cTrWPlSuJ/exec";
+const CURRENT_FORM_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
   { name: 'Rory McIlroy',      nationality: 'NIR', owgr: 2,  recentForm: [3,1,5,2,4,3,2], courseHistory: 'T5-T7-2-T8-3-T6-4',         tipsterPicks: ['GolfAnalyst','ProGolfTips','GreenJacket','BirdiePicksGolf','FairwayFinder','SwingTipster'] },
@@ -177,7 +180,8 @@ export default function GolfOddsComparison() {
 
   const fetchingRef = useRef(false);
   const [polyOddsMap, setPolyOddsMap] = useState(POLYMARKET_FALLBACK);
-  const [majorFormMap, setMajorFormMap] = useState({});
+  const [majorFormMap, setMajorFormMap]     = useState({});
+  const [currentFormMap, setCurrentFormMap] = useState({});
   const [promoIndex, setPromoIndex] = useState(0);
 
   const PROMO_ITEMS = [
@@ -326,6 +330,32 @@ export default function GolfOddsComparison() {
       })
       .catch((err) => console.warn('Majors form unavailable:', err.message));
   }, [selectedTournament]); // eslint-disable-line
+
+  // ── fetch current form 2026 ──
+  useEffect(() => {
+    const cacheKey = 'currentForm2026';
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (Date.now() - ts < CURRENT_FORM_CACHE_MS && data && Object.keys(data).length > 0) {
+          setCurrentFormMap(data);
+          return;
+        }
+      }
+    } catch {}
+    fetch(CURRENT_FORM_URL)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.players && Object.keys(json.players).length > 0) {
+          setCurrentFormMap(json.players);
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() }));
+          } catch {}
+        }
+      })
+      .catch((err) => console.warn('Current form unavailable:', err.message));
+  }, []); // eslint-disable-line
 
   // ── build mock data ──
   const loadMock = useCallback(() => {
@@ -1169,11 +1199,17 @@ export default function GolfOddsComparison() {
                                   <div className="desktop-info-card desktop-form-card">
                                     <div className="desktop-card-label">Recent Form</div>
                                     <div className="form-boxes">
-                                      {player.recentForm.map((p, i) => (
-                                        <span key={i} className={`form-box ${getFinishClass(p)}`}>
-                                          {typeof p === 'number' ? p : String(p).replace('T','')}
-                                        </span>
-                                      ))}
+                                      {(() => {
+                                        const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
+                                        const raw = key ? currentFormMap[key] : [];
+                                        const last7 = raw.slice(-7);
+                                        while (last7.length < 7) last7.unshift('-');
+                                        return last7.map((p, i) => (
+                                          <span key={i} className={`form-box ${getFinishClass(p)}`}>
+                                            {p === '-' ? '-' : String(p).replace('T','')}
+                                          </span>
+                                        ));
+                                      })()}
                                     </div>
                                   </div>
                                 )}
@@ -1281,11 +1317,17 @@ export default function GolfOddsComparison() {
                                       <div className="mobile-stat-card mobile-stat-full-width">
                                         <div className="mobile-stat-label">Recent Form</div>
                                         <div className="form-boxes">
-                                          {player.recentForm.map((p, i) => (
-                                            <span key={i} className={`form-box ${getFinishClass(p)}`}>
-                                              {typeof p === 'number' ? p : String(p).replace('T','')}
-                                            </span>
-                                          ))}
+                                          {(() => {
+                                            const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
+                                            const raw = key ? currentFormMap[key] : [];
+                                            const last7 = raw.slice(-7);
+                                            while (last7.length < 7) last7.unshift('-');
+                                            return last7.map((p, i) => (
+                                              <span key={i} className={`form-box ${getFinishClass(p)}`}>
+                                                {p === '-' ? '-' : String(p).replace('T','')}
+                                              </span>
+                                            ));
+                                          })()}
                                         </div>
                                       </div>
                                     )}
