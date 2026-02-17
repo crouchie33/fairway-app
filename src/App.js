@@ -716,11 +716,15 @@ export default function GolfOddsComparison() {
         /* ── TIPSTER MODAL ── */
         /* ── MOBILE TIPSTER BALL ── */
         .tipster-ball {
-          display: inline-flex; align-items: center; justify-content: center;
+          display: none;
+          align-items: center; justify-content: center;
           width: 31px; height: 31px; border-radius: 50%;
           background: #2D3748; color: white;
           font-size: 0.8rem; font-weight: 700;
           flex-shrink: 0; margin-left: auto; margin-right: 8px; cursor: pointer;
+        }
+        @media (max-width: 768px) {
+          .tipster-ball { display: inline-flex; }
         }
 
         .tipster-modal-overlay {
