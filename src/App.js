@@ -717,10 +717,10 @@ export default function GolfOddsComparison() {
         /* ── MOBILE TIPSTER BALL ── */
         .tipster-ball {
           display: inline-flex; align-items: center; justify-content: center;
-          width: 22px; height: 22px; border-radius: 50%;
+          width: 31px; height: 31px; border-radius: 50%;
           background: #2D3748; color: white;
-          font-size: 0.65rem; font-weight: 700;
-          flex-shrink: 0; margin-left: auto; cursor: pointer;
+          font-size: 0.8rem; font-weight: 700;
+          flex-shrink: 0; margin-left: auto; margin-right: 8px; cursor: pointer;
         }
 
         .tipster-modal-overlay {
@@ -1245,7 +1245,7 @@ export default function GolfOddsComparison() {
                     <tr>
                       {/* player name */}
                       <td>
-                        <div className="player-cell" style={{display:'flex', alignItems:'center', gap:'6px'}} onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}>
+                        <div className="player-cell" onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}>
                           {expandedPlayer === player.name
                             ? <ChevronUp   className="expand-icon" size={16} />
                             : <ChevronDown className="expand-icon" size={16} />}
