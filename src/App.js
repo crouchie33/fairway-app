@@ -1062,7 +1062,7 @@ export default function GolfOddsComparison() {
         <nav className={`nav-drawer${menuOpen ? ' open' : ''}`}>
           <div className="nav-drawer-header">
             <img src={wordmarkImg} alt="The Fairway" style={{height:'28px', width:'auto'}} />
-            <button className="nav-drawer-close" onClick={() => setIsMenuOpen(false)}>✕</button>
+            <button className="nav-drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
           </div>
           <div className="nav-drawer-links">
             <a href="/" className="nav-drawer-link active">Odds Comparison</a>
