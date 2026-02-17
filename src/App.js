@@ -90,7 +90,7 @@ const CURRENT_FORM_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const TIPSTER_PICKS_URL      = "https://script.google.com/macros/s/AKfycbzv6t7xDMj9cYtSHQTVoh6qLnU-igRB5vSsb2sVrnFQ7dnhLm-mf3I11VOfluqqrIzz/exec";
 const TIPSTER_PICKS_CACHE_MS    = 2 * 60 * 60 * 1000; // 2 hours
-const INCLUDED_TIPSTER_COUNT    = 23; // total tipsters in our selection
+const INCLUDED_TIPSTER_COUNT    = 17; // total tipsters in our selection
 
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
@@ -187,6 +187,7 @@ export default function GolfOddsComparison() {
   const [majorFormMap, setMajorFormMap]     = useState({});
   const [currentFormMap, setCurrentFormMap]   = useState({});
   const [tipsterPicksMap, setTipsterPicksMap] = useState({});
+  const [maxTipsterPicks, setMaxTipsterPicks]   = useState(23);
   const [tipsterModal, setTipsterModal]       = useState(null); // { name, picks }
   const [isUS, setIsUS]                       = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
@@ -390,6 +391,8 @@ export default function GolfOddsComparison() {
       .then(json => {
         if (json && Object.keys(json).length > 0) {
           setTipsterPicksMap(json);
+          const max = Math.max(...Object.values(json).map(picks => picks.length));
+          setMaxTipsterPicks(max > 0 ? max : 23);
           try {
             localStorage.setItem(cacheKey, JSON.stringify({ data: json, ts: Date.now() }));
           } catch {}
@@ -1292,8 +1295,13 @@ export default function GolfOddsComparison() {
                               onClick={() => setTipsterModal({ name: player.name, picks })}
                               title="Number of selected tipsters backing this player"
                             >
-                              <div className="tipster-bar" style={{ width: `${Math.min((picks.length / INCLUDED_TIPSTER_COUNT) * 100, 100)}%` }} />
-                              <span className="tipster-count">{picks.length}</span>
+                              <div className="tipster-bar" style={{ width: `${Math.min((picks.length / maxTipsterPicks) * 100, 100)}%` }} />
+                              <span 
+                                className="tipster-count" 
+                                style={{ color: (picks.length / maxTipsterPicks) >= 0.7 ? 'white' : '#2D3748' }}
+                              >
+                                {picks.length}
+                              </span>
                             </div>
                           ) : <div className="tipster-empty">-</div>;
                         })()}
