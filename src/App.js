@@ -802,7 +802,7 @@ export default function GolfOddsComparison() {
 
         /* ── TABLE CONTAINER ── */
         .odds-matrix-container { background: #F5F7FA; overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 160px); }
-        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid #CBD5E0; }
+        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid #CBD5E0; table-layout: fixed; }
 
         /* ── THEAD ── */
         .odds-matrix thead th {
