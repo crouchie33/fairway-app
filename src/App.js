@@ -678,6 +678,19 @@ export default function GolfOddsComparison() {
           .promo-dots  { display: none; }
         }
 
+        /* ── PICKS CTA ── */
+        .picks-cta { display: flex; align-items: center; flex-shrink: 0; }
+        .picks-cta-btn {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: #2D3748; color: white;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 0.78rem; font-weight: 700;
+          padding: 0 14px; height: 36px; border-radius: 6px;
+          text-decoration: none; white-space: nowrap;
+          transition: opacity 0.15s;
+        }
+        .picks-cta-btn:hover { opacity: 0.85; }
+
         /* ── NOTICES ── */
         .notice { padding: 10px 30px; border-bottom: 1px solid; font-size: 0.85rem; }
         .notice-demo     { background: #CBD5E0; border-color: #A0AEC0; color: #2D3748; }
@@ -1042,6 +1055,11 @@ export default function GolfOddsComparison() {
               </a>
             ))}
           </div>
+        </div>
+        <div className="picks-cta">
+          <a href="/picks" className="picks-cta-btn">
+            Get picks &#8250;
+          </a>
         </div>
         <div className="promo-dots">
           {PROMO_ITEMS.map((_, i) => (
