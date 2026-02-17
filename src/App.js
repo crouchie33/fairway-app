@@ -187,6 +187,7 @@ export default function GolfOddsComparison() {
   const [majorFormMap, setMajorFormMap]     = useState({});
   const [currentFormMap, setCurrentFormMap]   = useState({});
   const [tipsterPicksMap, setTipsterPicksMap] = useState({});
+  const [tipsterModal, setTipsterModal]       = useState(null); // { name, picks }
   const [isUS, setIsUS]                       = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
 
@@ -709,6 +710,46 @@ export default function GolfOddsComparison() {
           .promo-dots  { display: none; }
         }
 
+        /* ── TIPSTER MODAL ── */
+        .tipster-modal-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+          z-index: 300; display: flex; align-items: center; justify-content: center;
+          padding: 20px;
+        }
+        .tipster-modal {
+          background: white; border-radius: 12px;
+          padding: 28px 32px; max-width: 360px; width: 100%;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+          position: relative;
+        }
+        .tipster-modal-close {
+          position: absolute; top: 14px; right: 16px;
+          background: none; border: none; cursor: pointer;
+          font-size: 1.2rem; color: #A0AEC0; line-height: 1;
+          padding: 4px;
+        }
+        .tipster-modal-close:hover { color: #2D3748; }
+        .tipster-modal-title {
+          font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.1em; color: #A0AEC0; margin-bottom: 6px;
+        }
+        .tipster-modal-player {
+          font-family: Georgia, serif; font-size: 1.3rem; font-weight: 700;
+          color: #2D3748; margin-bottom: 4px;
+        }
+        .tipster-modal-count {
+          font-size: 0.85rem; color: #718096; margin-bottom: 20px;
+        }
+        .tipster-modal-count span { font-weight: 700; color: #2D3748; }
+        .tipster-modal-list {
+          display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .tipster-modal-handle {
+          background: #F5F7FA; border: 1px solid #CBD5E0;
+          border-radius: 20px; padding: 5px 12px;
+          font-size: 0.8rem; font-weight: 600; color: #2D3748;
+        }
+
         /* ── PICKS CTA ── */
         .picks-cta { display: flex; align-items: center; flex-shrink: 0; }
         .picks-cta-btn {
@@ -1089,6 +1130,25 @@ export default function GolfOddsComparison() {
             ))}
           </div>
         </div>
+        {/* ── tipster modal ── */}
+        {tipsterModal && (
+          <div className="tipster-modal-overlay" onClick={() => setTipsterModal(null)}>
+            <div className="tipster-modal" onClick={e => e.stopPropagation()}>
+              <button className="tipster-modal-close" onClick={() => setTipsterModal(null)}>✕</button>
+              <div className="tipster-modal-title">Tipster Consensus</div>
+              <div className="tipster-modal-player">{tipsterModal.name}</div>
+              <div className="tipster-modal-count">
+                Tipped by <span>{tipsterModal.picks.length} tipster{tipsterModal.picks.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="tipster-modal-list">
+                {tipsterModal.picks.map((handle, i) => (
+                  <span key={i} className="tipster-modal-handle">{handle}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="picks-cta">
           <a href="/picks" className="picks-cta-btn">
             Get picks &#8250;
@@ -1192,7 +1252,7 @@ export default function GolfOddsComparison() {
                           return picks.length > 0 ? (
                             <div
                               className="tipster-bar-container"
-                              onClick={() => alert(`${picks.length} tipster${picks.length > 1 ? 's' : ''} picked ${player.name}:\n\n${picks.join('\n')}`)}
+                              onClick={() => setTipsterModal({ name: player.name, picks })}
                               title="Number of selected tipsters backing this player"
                             >
                               <div className="tipster-bar" style={{ width: `${Math.min((picks.length / INCLUDED_TIPSTER_COUNT) * 100, 100)}%` }} />
