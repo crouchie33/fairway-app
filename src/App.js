@@ -966,7 +966,7 @@ export default function GolfOddsComparison() {
         <nav className={`nav-drawer${menuOpen ? ' open' : ''}`}>
           <div className="nav-drawer-header">The Fairway</div>
           <div className="nav-drawer-links">
-            <a href="/" className="nav-drawer-link active">&#127931; Odds Comparison</a>
+            <a href="/" className="nav-drawer-link active">Odds Comparison</a>
             <div className="nav-drawer-section">Blog</div>
             <a href="/blog" className="nav-drawer-link">All Articles</a>
             <a href="/blog/masters-2026-outsiders" className="nav-drawer-link">Masters 2026 Outsiders</a>
@@ -1352,7 +1352,7 @@ export default function GolfOddsComparison() {
                                       <div className="mobile-stat-label">World Ranking</div>
                                       <div className="mobile-stat-value">{player.owgr ?? 'N/A'}</div>
                                     </div>
-                                    {player.recentForm?.length > 0 && (
+                                    {(() => { const _rfKey = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name)); return _rfKey; })() && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
                                         <div className="mobile-stat-label">Recent Form</div>
                                         <div className="form-boxes">
