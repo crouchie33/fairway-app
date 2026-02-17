@@ -90,7 +90,7 @@ const CURRENT_FORM_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const TIPSTER_PICKS_URL      = "https://script.google.com/macros/s/AKfycbzv6t7xDMj9cYtSHQTVoh6qLnU-igRB5vSsb2sVrnFQ7dnhLm-mf3I11VOfluqqrIzz/exec";
 const TIPSTER_PICKS_CACHE_MS    = 2 * 60 * 60 * 1000; // 2 hours
-const INCLUDED_TIPSTER_COUNT    = 17; // total tipsters in our selection
+const INCLUDED_TIPSTER_COUNT    = 23; // total tipsters in our selection
 
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
