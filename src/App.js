@@ -622,7 +622,15 @@ export default function GolfOddsComparison() {
           display: flex; flex-direction: column;
         }
         .nav-drawer.open { right: 0; }
-        .nav-drawer-header { padding: 20px 24px; border-bottom: 1px solid #CBD5E0; font-weight: 700; font-size: 1rem; color: #2D3748; }
+        .nav-drawer-header { padding: 20px 24px; border-bottom: 1px solid #CBD5E0; font-weight: 700; font-size: 1rem; color: #2D3748; position: relative; }
+        .nav-drawer-close {
+          position: absolute; top: 20px; right: 20px;
+          background: none; border: none; cursor: pointer;
+          font-size: 1.3rem; color: #A0AEC0; line-height: 1;
+          padding: 0; width: 24px; height: 24px;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .nav-drawer-close:hover { color: #2D3748; }
         .nav-drawer-links { display: flex; flex-direction: column; padding: 12px 0; flex: 1; }
         .nav-drawer-link { padding: 14px 24px; font-size: 1rem; color: #2D3748; text-decoration: none; font-weight: 500; border-bottom: 1px solid #F5F7FA; transition: background 0.1s; }
         .nav-drawer-link:hover { background: #F5F7FA; }
@@ -1054,6 +1062,7 @@ export default function GolfOddsComparison() {
         <nav className={`nav-drawer${menuOpen ? ' open' : ''}`}>
           <div className="nav-drawer-header">
             <img src={wordmarkImg} alt="The Fairway" style={{height:'28px', width:'auto'}} />
+            <button className="nav-drawer-close" onClick={() => setIsMenuOpen(false)}>✕</button>
           </div>
           <div className="nav-drawer-links">
             <a href="/" className="nav-drawer-link active">Odds Comparison</a>
