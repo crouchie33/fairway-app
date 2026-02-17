@@ -6,7 +6,7 @@ import wordmarkImg from './wordmark.png';
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
 const USE_LIVE_API = false;
-const ODDS_API_KEY = 'f68c6ebed30010a80949e68b3e57c825';
+// const ODDS_API_KEY = 'REMOVED'; // not in use
 const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
 const ODDS_CACHE_KEY = 'fairway_odds';
 const ODDS_CACHE_MS = 60 * 60 * 1000; // 1 hour
@@ -488,7 +488,7 @@ export default function GolfOddsComparison() {
     setLoading(true);
 
     const url = `${ODDS_API_BASE}/sports/${selectedTournament.sportKey}/odds/?`
-      + `apiKey=${ODDS_API_KEY}&regions=uk&markets=outrights&oddsFormat=decimal`;
+      // + `apiKey=${ODDS_API_KEY}&regions=uk&markets=outrights&oddsFormat=decimal`; // removed
 
     fetch(url, { signal: AbortSignal.timeout(15000) })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
