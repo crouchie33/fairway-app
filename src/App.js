@@ -802,7 +802,7 @@ export default function GolfOddsComparison() {
 
         /* ── TABLE CONTAINER ── */
         .odds-matrix-container { background: #F5F7FA; overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 160px); }
-        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid #CBD5E0; table-layout: fixed; }
+        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid #CBD5E0; }
 
         /* ── THEAD ── */
         .odds-matrix thead th {
@@ -853,7 +853,7 @@ export default function GolfOddsComparison() {
         /* ── BOOKMAKER HEADER ── */
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 120px; padding: 0; overflow: hidden; width: 100%; }
         .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); width: 110px; height: 52px; overflow: hidden; }
-        .bookmaker-logo { width: 90px; height: 24px; object-fit: contain; display: block; }
+        .bookmaker-logo { width: 100px; height: 30px; object-fit: contain; display: block; }
         .ew-terms { font-size: 0.7rem; font-weight: 600; color: #2D3748; padding: 3px 0; }
 
         /* ── TBODY ── */
@@ -1196,13 +1196,6 @@ export default function GolfOddsComparison() {
       ) : (
         <div className="odds-matrix-container">
           <table className="odds-matrix">
-            <colgroup>
-              <col style={{width: '180px'}} /> {/* player */}
-              <col style={{width: '50px'}} />  {/* owgr */}
-              <col style={{width: '80px'}} />  {/* tipster */}
-              <col style={{width: '80px'}} />  {/* polymarket */}
-              {bookmakers.map((bm, i) => <col key={i} style={{width: '70px'}} />)}
-            </colgroup>
             <thead>
               <tr>
                 <th className="player-header">
