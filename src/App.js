@@ -88,6 +88,10 @@ const MAJORS_FORM_CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const CURRENT_FORM_URL      = "https://script.google.com/macros/s/AKfycbzFo29_upCpM4_qg_WiB-ncdqwTMxqoMbsMs7LdHMEw_FnqZNAimPnipv3cTrWPlSuJ/exec";
 const CURRENT_FORM_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+const TIPSTER_PICKS_URL      = "https://script.google.com/macros/s/AKfycbzv6t7xDMj9cYtSHQTVoh6qLnU-igRB5vSsb2sVrnFQ7dnhLm-mf3I11VOfluqqrIzz/exec";
+const TIPSTER_PICKS_CACHE_MS    = 2 * 60 * 60 * 1000; // 2 hours
+const INCLUDED_TIPSTER_COUNT    = 17; // total tipsters in our selection
+
 const MOCK_PLAYERS = [
   { name: 'Scottie Scheffler', nationality: 'USA', owgr: 1,  recentForm: [1,2,1,3,1,2,1], courseHistory: 'T2-1-T5-4-2-T3-1',         tipsterPicks: ['GolfAnalyst','BettingExpert','ProGolfTips','OddsSharks','GreenJacket','TheMastersGuru','BirdiePicksGolf','FairwayFinder'] },
   { name: 'Rory McIlroy',      nationality: 'NIR', owgr: 2,  recentForm: [3,1,5,2,4,3,2], courseHistory: 'T5-T7-2-T8-3-T6-4',         tipsterPicks: ['GolfAnalyst','ProGolfTips','GreenJacket','BirdiePicksGolf','FairwayFinder','SwingTipster'] },
@@ -181,7 +185,8 @@ export default function GolfOddsComparison() {
   const fetchingRef = useRef(false);
   const [polyOddsMap, setPolyOddsMap] = useState(POLYMARKET_FALLBACK);
   const [majorFormMap, setMajorFormMap]     = useState({});
-  const [currentFormMap, setCurrentFormMap] = useState({});
+  const [currentFormMap, setCurrentFormMap]   = useState({});
+  const [tipsterPicksMap, setTipsterPicksMap] = useState({});
   const [isUS, setIsUS]                       = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
 
@@ -364,6 +369,32 @@ export default function GolfOddsComparison() {
       .then(r => r.json())
       .then(d => { if (d.country_code === 'US') setIsUS(true); })
       .catch(() => setIsUS(false));
+  }, []); // eslint-disable-line
+
+  // ── fetch tipster picks ──
+  useEffect(() => {
+    const cacheKey = 'tipsterPicks';
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (Date.now() - ts < TIPSTER_PICKS_CACHE_MS && data && Object.keys(data).length > 0) {
+          setTipsterPicksMap(data);
+          return;
+        }
+      }
+    } catch {}
+    fetch(TIPSTER_PICKS_URL)
+      .then(r => r.json())
+      .then(json => {
+        if (json && Object.keys(json).length > 0) {
+          setTipsterPicksMap(json);
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ data: json, ts: Date.now() }));
+          } catch {}
+        }
+      })
+      .catch(err => console.warn('Tipster picks unavailable:', err.message));
   }, []); // eslint-disable-line
 
   // ── build mock data ──
@@ -1155,16 +1186,20 @@ export default function GolfOddsComparison() {
 
                       {/* tipster bar */}
                       <td className="tipster-cell desktop-only">
-                        {player.tipsterPicks?.length > 0 ? (
-                          <div
-                            className="tipster-bar-container"
-                            onClick={() => alert(`${player.tipsterPicks.length} tipsters picked ${player.name}:\n\n${player.tipsterPicks.join('\n')}`)}
-                            title={`${player.tipsterPicks.length} tipsters`}
-                          >
-                            <div className="tipster-bar" style={{ width: `${Math.min((player.tipsterPicks.length / 8) * 100, 100)}%` }} />
-                            <span className="tipster-count">{player.tipsterPicks.length}</span>
-                          </div>
-                        ) : <div className="tipster-empty">-</div>}
+                        {{(() => {
+                          const tKey = Object.keys(tipsterPicksMap).find(k => norm(k) === norm(player.name));
+                          const picks = tKey ? tipsterPicksMap[tKey] : [];
+                          return picks.length > 0 ? (
+                            <div
+                              className="tipster-bar-container"
+                              onClick={() => alert(`${picks.length} tipster${picks.length > 1 ? 's' : ''} picked ${player.name}:\n\n${picks.join('\n')}`)}
+                              title="Number of selected tipsters backing this player"
+                            >
+                              <div className="tipster-bar" style={{ width: `${Math.min((picks.length / INCLUDED_TIPSTER_COUNT) * 100, 100)}%` }} />
+                              <span className="tipster-count">{picks.length}</span>
+                            </div>
+                          ) : <div className="tipster-empty">-</div>;
+                        })()}
                       </td>
 
                       {/* polymarket */}
