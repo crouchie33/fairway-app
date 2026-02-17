@@ -552,7 +552,10 @@ export default function GolfOddsComparison() {
       } else if (sortConfig.key === 'owgr') {
         av = a.owgr ?? 9999; bv = b.owgr ?? 9999;
       } else if (sortConfig.key === 'tipsterPicks') {
-        av = a.tipsterPicks?.length ?? 0; bv = b.tipsterPicks?.length ?? 0;
+        const tKeyA = Object.keys(tipsterPicksMap).find(k => norm(k) === norm(a.name));
+        const tKeyB = Object.keys(tipsterPicksMap).find(k => norm(k) === norm(b.name));
+        av = tKeyA ? tipsterPicksMap[tKeyA].length : 0;
+        bv = tKeyB ? tipsterPicksMap[tKeyB].length : 0;
       } else if (sortConfig.key === 'polyOdds') {
         const findPoly = (p) => { const k = Object.keys(polyOddsMap).find(k => norm(k) === norm(p.name)); return k ? polyOddsMap[k] : 9999; };
         av = findPoly(a); bv = findPoly(b);
@@ -711,6 +714,15 @@ export default function GolfOddsComparison() {
         }
 
         /* ── TIPSTER MODAL ── */
+        /* ── MOBILE TIPSTER BALL ── */
+        .tipster-ball {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 22px; height: 22px; border-radius: 50%;
+          background: #2D3748; color: white;
+          font-size: 0.65rem; font-weight: 700;
+          flex-shrink: 0; margin-left: auto; cursor: pointer;
+        }
+
         .tipster-modal-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.45);
           z-index: 300; display: flex; align-items: center; justify-content: center;
@@ -1233,11 +1245,23 @@ export default function GolfOddsComparison() {
                     <tr>
                       {/* player name */}
                       <td>
-                        <div className="player-cell" onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}>
+                        <div className="player-cell" style={{display:'flex', alignItems:'center', gap:'6px'}} onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}>
                           {expandedPlayer === player.name
                             ? <ChevronUp   className="expand-icon" size={16} />
                             : <ChevronDown className="expand-icon" size={16} />}
                           <span className="player-name">{player.name}</span>
+                          {(() => {
+                            const tKey = Object.keys(tipsterPicksMap).find(k => norm(k) === norm(player.name));
+                            const picks = tKey ? tipsterPicksMap[tKey] : [];
+                            return picks.length > 0 ? (
+                              <span
+                                className="tipster-ball"
+                                onClick={e => { e.stopPropagation(); setTipsterModal({ name: player.name, picks }); }}
+                              >
+                                {picks.length}
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
                       </td>
 
