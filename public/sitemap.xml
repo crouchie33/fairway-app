@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+
+  <!-- Main app -->
+  <url>
+    <loc>https://thefairway.app/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+  <!-- Email signup -->
+  <url>
+    <loc>https://thefairway.app/picks</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+  <!-- Blog index -->
+  <url>
+    <loc>https://thefairway.app/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+  <!-- Blog articles -->
+  <url>
+    <loc>https://thefairway.app/blog/masters-2026-outsiders</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-02-17</lastmod>
+    <news:news>
+      <news:publication>
+        <news:name>The Fairway</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-17T00:00:00Z</news:publication_date>
+      <news:title>Outsiders to Back Now - 8 Weeks Out from The Masters</news:title>
+      <news:keywords>Masters 2026, golf betting, each way tips, Justin Rose, Tommy Fleetwood</news:keywords>
+    </news:news>
+  </url>
+
+  <!-- Policy pages -->
+  <url>
+    <loc>https://thefairway.app/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+  <url>
+    <loc>https://thefairway.app/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+  <url>
+    <loc>https://thefairway.app/responsible-gambling</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+  <url>
+    <loc>https://thefairway.app/contact</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <lastmod>2026-02-17</lastmod>
+  </url>
+
+</urlset>
