@@ -964,7 +964,9 @@ export default function GolfOddsComparison() {
 
         {/* drawer */}
         <nav className={`nav-drawer${menuOpen ? ' open' : ''}`}>
-          <div className="nav-drawer-header">The Fairway</div>
+          <div className="nav-drawer-header">
+            <img src={wordmarkImg} alt="The Fairway" style={{height:'28px', width:'auto'}} />
+          </div>
           <div className="nav-drawer-links">
             <a href="/" className="nav-drawer-link active">Odds Comparison</a>
             <div className="nav-drawer-section">Blog</div>
