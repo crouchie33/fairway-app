@@ -1186,7 +1186,7 @@ export default function GolfOddsComparison() {
 
                       {/* tipster bar */}
                       <td className="tipster-cell desktop-only">
-                        {{(() => {
+                          {(() => {
                           const tKey = Object.keys(tipsterPicksMap).find(k => norm(k) === norm(player.name));
                           const picks = tKey ? tipsterPicksMap[tKey] : [];
                           return picks.length > 0 ? (
