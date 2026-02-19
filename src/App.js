@@ -423,7 +423,7 @@ export default function GolfOddsComparison() {
         if (json && Object.keys(json).length > 0 && !json.error) {
           setOddsCheckerMap(json);
           try {
-            localStorage.setItem(oddsCacheKey + '_' + tournamentId, JSON.stringify({ data: json, ts: Date.now() }));
+            localStorage.setItem(oddsCacheKey, JSON.stringify({ data: json, ts: Date.now() }));
           } catch {}
         }
       })
