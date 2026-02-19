@@ -17,9 +17,9 @@ const RANKINGS_CACHE_MS = 24 * 60 * 60 * 1000;
 // ── SHEET PRICES — paste your 4 deployed Apps Script URLs here ────────────────
 const SHEET_PRICES_URLS = {
   masters: 'https://script.google.com/macros/s/AKfycbw1w-GVUGobfw3NHMjDdyB0v8ZLZuHe79k0zYFEV_SWv_SzFIoJfIa693eQYGVQd6VN/exec',
-  pga:     'https://script.google.com/macros/s/REPLACE_WITH_PGA_URL/exec',
-  usopen:  'https://script.google.com/macros/s/REPLACE_WITH_USOPEN_URL/exec',
-  open:    'https://script.google.com/macros/s/REPLACE_WITH_OPEN_URL/exec',
+  pga:     'https://script.google.com/macros/s/AKfycbwk6W89Wn1pjq0zpOu6JKdh-qEcXi_-Gu03LjymwNRs-KF9BIl7j2kYmiwOyzmYH9m3/exec',
+  usopen:  'https://script.google.com/macros/s/AKfycbzsCWHaIyPu4cRKE9vYAgTe5bX7RXl5QWGBioNGeYyWViLvSSWzgDC4RSMR1wlCzHOKoA/exec',
+  open:    'https://script.google.com/macros/s/AKfycbwNw5qTNLMqmE7n_3K7M5NaJG7z70qD6coxj2nKrIGH7cRc6QjRgltot3xgwt310wMh/exec',
 };
 const SHEET_PRICES_CACHE_MS = 30 * 60 * 1000; // 30 minutes
 
