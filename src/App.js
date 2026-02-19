@@ -1089,7 +1089,13 @@ export default function GolfOddsComparison() {
                                           <div className="mobile-extra-bookmaker">{best.name}</div>
                                           <div className="mobile-extra-odds">{formatOdds(best.odds)}</div>
                                         </a>
-                                      ) : null;
+                                      ) : (
+                                        <div key={mi} className="mobile-extra-card" style={{opacity:0.4}}>
+                                          <div className="mobile-extra-label">{LABELS[mkt]}</div>
+                                          <div className="mobile-extra-bookmaker">-</div>
+                                          <div className="mobile-extra-odds">N/A</div>
+                                        </div>
+                                      );
                                     })}
                                   </div>
                                 </div>
