@@ -151,12 +151,23 @@ function setRankingsCache(map) {
   } catch {}
 }
 
+// Maps sheet bookmaker names to app bookmaker names
+const BM_NAME_MAP = {
+  'bet365':       'Bet365',
+  'boyle sports': 'BoyleSports',
+  'boylesports':  'BoyleSports',
+  'skybet':       'Sky Bet',
+  'sky bet':      'Sky Bet',
+  'betfair':      'Betfair Sportsbook',
+};
+const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
+
 // Converts sheet odds response into the player array the table expects
 function buildPlayersFromSheet(oddsData) {
   return Object.entries(oddsData).map(([name, bookOdds]) => {
     const bookmakerOdds = {};
     Object.entries(bookOdds).forEach(([bmName, dec]) => {
-      bookmakerOdds[bmName] = {
+      bookmakerOdds[normBmName(bmName)] = {
         outright: typeof dec === 'number' ? dec : parseFloat(dec),
         top5: 'N/A', top10: 'N/A', top20: 'N/A',
         top30: 'N/A', top40: 'N/A', r1Leader: 'N/A',
