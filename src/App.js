@@ -296,7 +296,12 @@ export default function GolfOddsComparison() {
       if (cached) {
         const { data, ewData, ts } = JSON.parse(cached);
         if (Date.now() - ts < SHEET_PRICES_CACHE_MS && data && Object.keys(data).length > 0) {
-          setPlayers(buildPlayersFromSheet(data));
+          const builtPlayers = buildPlayersFromSheet(data);
+          const withRankings = builtPlayers.map((p) => {
+            const rank = lookupRank(rankingsMap, p.name);
+            return rank !== null ? { ...p, owgr: rank } : p;
+          });
+          setPlayers(withRankings);
           setBookmakers(BOOKMAKERS);
           if (ewData) setEwTermsMap(ewData);
           setUseMock(false);
@@ -317,7 +322,12 @@ export default function GolfOddsComparison() {
 
         if (!oddsData || Object.keys(oddsData).length === 0) throw new Error('Empty response');
 
-        setPlayers(buildPlayersFromSheet(oddsData));
+        const builtPlayers = buildPlayersFromSheet(oddsData);
+        const withRankings = builtPlayers.map((p) => {
+          const rank = lookupRank(rankingsMap, p.name);
+          return rank !== null ? { ...p, owgr: rank } : p;
+        });
+        setPlayers(withRankings);
         setBookmakers(BOOKMAKERS);
         if (ewData) setEwTermsMap(ewData);
         setUseMock(false);
