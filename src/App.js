@@ -1301,11 +1301,9 @@ export default function GolfOddsComparison() {
                               onClick={() => setTipsterModal({ name: player.name, picks })}
                               title="Number of selected tipsters backing this player"
                             >
-                              <div className="tipster-bar" style={{ width: `${Math.min((picks.length / maxTipsterPicks) * 100, 100)}%` }} />
-<span 
+<div className="tipster-bar" style={{ width: `${Math.min((picks.length / derivedMaxTips) * 70, 70)}%` }} /><span 
   className="tipster-count" 
-  style={{ color: (picks.length / maxTipsterPicks) >= 0.7 ? 'white' : '#2D3748' }}
->
+style={{ color: '#2D3748' }}>
                                 {picks.length}
                               </span>
                             </div>
