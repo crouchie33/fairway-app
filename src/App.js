@@ -417,7 +417,6 @@ export default function GolfOddsComparison() {
         }
       }
     } catch {}
-    const tournamentId = selectedTournament?.id || 'masters';
     fetch(ODDSCHECKER_URL + '?tournament=' + tournamentId)
       .then(r => r.json())
       .then(json => {
