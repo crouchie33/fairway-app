@@ -409,8 +409,7 @@ export default function GolfOddsComparison() {
         loadMock();
       })
       .finally(() => setSheetPricesLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTournament]);
+  }, [selectedTournament]); // eslint-disable-line
 
   // fetch Polymarket odds — 6hr cache
   useEffect(() => {
