@@ -40,7 +40,6 @@ const BOOKMAKERS = [
   { name: 'Ladbrokes',         key: 'ladbrokes',    logo: 'ladbrokes.png',   ew: '5' },
   { name: 'Paddy Power',       key: 'paddypower',   logo: 'paddypower.png',  ew: '6' },
   { name: 'Sky Bet',           key: 'skybet',       logo: 'skybet.png',      ew: '5' },
-  { name: 'Betfair Sportsbook',key: 'betfair',      logo: 'betfair.png',     ew: '5' },
   { name: 'BoyleSports',       key: 'boylesports',  logo: 'boylesports.png', ew: '5' },
   { name: '888sport',          key: '888sport',     logo: '888sport.png',    ew: '5' },
 ];
