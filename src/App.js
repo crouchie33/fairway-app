@@ -21,7 +21,12 @@ const RANKINGS_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
 // Expected response shape (per tab / major):
 //   { "Scottie Scheffler": { "Bet365": 6.0, "William Hill": 5.5, ... }, ... }
 // The script should accept ?major=Masters|PGA%20Championship|US%20Open|The%20Open
-const SHEET_PRICES_URL   = 'https://script.google.com/macros/s/AKfycbzFa2uZ_GUuZZz7B9jcCkp2l2fGEKEcsRBMAuwIYUAAM1-ZIC-SwDZtJkbt1cCMc_bC/exec';
+const SHEET_PRICES_URLS = {
+  masters: 'https://script.google.com/macros/s/AKfycbzFa2uZ_GUuZZz7B9jcCkp2l2fGEKEcsRBMAuwIYUAAM1-ZIC-SwDZtJkbt1cCMc_bC/exec?major=Masters',
+  pga:     'https://script.google.com/macros/s/AKfycbzFa2uZ_GUuZZz7B9jcCkp2l2fGEKEcsRBMAuwIYUAAM1-ZIC-SwDZtJkbt1cCMc_bC/exec?major=PGA%20Championship',
+  usopen:  'https://script.google.com/macros/s/AKfycbzFa2uZ_GUuZZz7B9jcCkp2l2fGEKEcsRBMAuwIYUAAM1-ZIC-SwDZtJkbt1cCMc_bC/exec?major=US%20Open',
+  open:    'https://script.google.com/macros/s/AKfycbzFa2uZ_GUuZZz7B9jcCkp2l2fGEKEcsRBMAuwIYUAAM1-ZIC-SwDZtJkbt1cCMc_bC/exec?major=The%20Open',
+};
 const SHEET_PRICES_CACHE_MS = 30 * 60 * 1000; // 30 minutes
 
 // Map from MAJORS id → sheet tab name (adjust if your tab names differ)
