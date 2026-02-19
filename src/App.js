@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -89,10 +90,7 @@ const CURRENT_FORM_URL      = "https://script.google.com/macros/s/AKfycbzFo29_up
 const CURRENT_FORM_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const TIPSTER_PICKS_URL      = "https://script.google.com/macros/s/AKfycbzv6t7xDMj9cYtSHQTVoh6qLnU-igRB5vSsb2sVrnFQ7dnhLm-mf3I11VOfluqqrIzz/exec";
-const TIPSTER_PICKS_CACHE_MS = 2 * 60 * 60 * 1000; // 2 hours
-
-const ODDSCHECKER_URL        = "https://script.google.com/macros/s/AKfycbzFa2uZ_GUuZZz7B9jcCkp2l2fGEKEcsRBMAuwIYUAAM1-ZIC-SwDZtJkbt1cCMc_bC/exec";
-const ODDSCHECKER_CACHE_MS   = 6 * 60 * 60 * 1000; // 6 hours
+const TIPSTER_PICKS_CACHE_MS    = 2 * 60 * 60 * 1000; // 2 hours
 const INCLUDED_TIPSTER_COUNT    = 17; // total tipsters in our selection
 
 const MOCK_PLAYERS = [
@@ -191,7 +189,6 @@ export default function GolfOddsComparison() {
   const [currentFormMap, setCurrentFormMap]   = useState({});
   const [tipsterPicksMap, setTipsterPicksMap] = useState({});
   const [maxTipsterPicks, setMaxTipsterPicks]   = useState(23);
-  const [oddsCheckerMap, setOddsCheckerMap]     = useState({});
   const [tipsterModal, setTipsterModal]       = useState(null); // { name, picks }
   const [isUS, setIsUS]                       = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
@@ -403,68 +400,33 @@ export default function GolfOddsComparison() {
         }
       })
       .catch(err => console.warn('Tipster picks unavailable:', err.message));
-
-    // Fetch Oddschecker live odds
-    const tournamentId = selectedTournament?.id || 'masters';
-    const oddsCacheKey = 'oddsChecker_v1_' + tournamentId;
-    try {
-      const cached = localStorage.getItem(oddsCacheKey);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < ODDSCHECKER_CACHE_MS && data && Object.keys(data).length > 0) {
-          setOddsCheckerMap(data);
-          return;
-        }
-      }
-    } catch {}
-    fetch(ODDSCHECKER_URL + '?tournament=' + tournamentId)
-      .then(r => r.json())
-      .then(json => {
-        if (json && Object.keys(json).length > 0 && !json.error) {
-          setOddsCheckerMap(json);
-          try {
-            localStorage.setItem(oddsCacheKey, JSON.stringify({ data: json, ts: Date.now() }));
-          } catch {}
-        }
-      })
-      .catch(err => console.warn('Oddschecker data unavailable:', err.message));
-  }, [selectedTournament]); // eslint-disable-line
+  }, []); // eslint-disable-line
 
   // ── build mock data ──
   const loadMock = useCallback(() => {
     setUseMock(true);
     const result = MOCK_PLAYERS.map((p) => {
-      // Try to get live Oddschecker odds for this player
-      const playerKey = Object.keys(oddsCheckerMap).find(k => norm(k) === norm(p.name));
-      const liveOdds = playerKey ? oddsCheckerMap[playerKey] : null;
-      
+      const base = 5 + Math.random() * 45;
       const bOdds = {};
-      if (liveOdds && Object.keys(liveOdds).length > 0) {
-        // Use live Oddschecker data
-        BOOKMAKERS.forEach((b) => {
-          const oddsVal = liveOdds[b.name];
-          if (oddsVal) {
-            bOdds[b.name] = {
-              outright: oddsVal,
-              top5:  +(oddsVal * 0.25).toFixed(1),
-              top10: +(oddsVal * 0.15).toFixed(1),
-              top20: +(oddsVal * 0.08).toFixed(1),
-              top30: +(oddsVal * 0.06).toFixed(1),
-              top40: +(oddsVal * 0.05).toFixed(1),
-              r1Leader: +(oddsVal * 0.4).toFixed(1),
-            };
-          }
-        });
-      }
-      
-      // No fallback to mock - if no live odds, leave blank
+      BOOKMAKERS.forEach((b) => {
+        const v = +(base + (Math.random() - 0.5) * 3).toFixed(1);
+        bOdds[b.name] = {
+          outright: v,
+          top5:  +(v * 0.25).toFixed(1),
+          top10: +(v * 0.15).toFixed(1),
+          top20: +(v * 0.08).toFixed(1),
+          top30: +(v * 0.06).toFixed(1),
+          top40: +(v * 0.05).toFixed(1),
+          r1Leader: +(v * 0.4).toFixed(1),
+        };
+      });
       const vals = BOOKMAKERS.map((b) => bOdds[b.name].outright);
       const avgOdds = vals.reduce((a, b) => a + b, 0) / vals.length;
       return { ...p, bookmakerOdds: bOdds, avgOdds };
     });
     setPlayers(result);
     setBookmakers(BOOKMAKERS);
-  }, [oddsCheckerMap]);;
+  }, []);
 
   // ── build live data from Odds API response ──
   const processLive = useCallback((apiData) => {
