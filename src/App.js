@@ -283,7 +283,7 @@ export default function GolfOddsComparison() {
         return rank !== null ? { ...p, owgr: rank } : p;
       })
     );
-  }, [rankingsMap]); // eslint-disable-line
+  }, [rankingsMap, selectedTournament]); // eslint-disable-line
 
   // ── fetch sheet prices whenever tournament changes ──
   useEffect(() => {
