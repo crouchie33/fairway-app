@@ -16,7 +16,7 @@ const RANKINGS_CACHE_MS = 24 * 60 * 60 * 1000;
 
 // ── SHEET PRICES — paste your 4 deployed Apps Script URLs here ────────────────
 const SHEET_PRICES_URLS = {
-  masters: 'https://script.google.com/macros/s/AKfycbzT2CH_E09F0lYWOkEJECla_uHiaZGMzZFizX6I9yalvtbyBVZvYcgGraDxZluGftyG/exec',
+  masters: 'https://script.google.com/macros/s/AKfycbw1w-GVUGobfw3NHMjDdyB0v8ZLZuHe79k0zYFEV_SWv_SzFIoJfIa693eQYGVQd6VN/exec',
   pga:     'https://script.google.com/macros/s/REPLACE_WITH_PGA_URL/exec',
   usopen:  'https://script.google.com/macros/s/REPLACE_WITH_USOPEN_URL/exec',
   open:    'https://script.google.com/macros/s/REPLACE_WITH_OPEN_URL/exec',
