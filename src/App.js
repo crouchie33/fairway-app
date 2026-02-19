@@ -190,6 +190,10 @@ export default function GolfOddsComparison() {
   const [currentFormMap, setCurrentFormMap]   = useState({});
   const [tipsterPicksMap, setTipsterPicksMap] = useState({});
   const [maxTipsterPicks, setMaxTipsterPicks]   = useState(23);
+  const derivedMaxTips = useMemo(() => {
+  const vals = Object.values(tipsterPicksMap).map(p => p.length);
+  return vals.length ? Math.max(...vals) : 1;
+}, [tipsterPicksMap]);
   const [tipsterModal, setTipsterModal]       = useState(null); // { name, picks }
   const [isUS, setIsUS]                       = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
@@ -1298,10 +1302,10 @@ export default function GolfOddsComparison() {
                               title="Number of selected tipsters backing this player"
                             >
                               <div className="tipster-bar" style={{ width: `${Math.min((picks.length / maxTipsterPicks) * 100, 100)}%` }} />
-                              <span 
-                                className="tipster-count" 
-                                style={{ color: (picks.length / maxTipsterPicks) >= 0.7 ? 'white' : '#2D3748' }}
-                              >
+<span 
+  className="tipster-count" 
+  style={{ color: (picks.length / maxTipsterPicks) >= 0.7 ? 'white' : '#2D3748' }}
+>
                                 {picks.length}
                               </span>
                             </div>
