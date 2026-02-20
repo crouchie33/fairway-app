@@ -13,7 +13,7 @@ const ODDS_CACHE_MS = 60 * 60 * 1000;
 const RANKINGS_URL = 'https://script.google.com/macros/s/AKfycbz0AV6lo8WSGm1qFLfKVKW8zbg2NrLaYGd82e20vPvrPFmQqsMUK6sIA0sc5fApVUUx/exec';
 const NATIONALITY_URL       = 'https://script.google.com/macros/s/AKfycbzQweWv_6kEsGShpITxBKLpo4U81F3TmzSUkolKsW6AXx1vrj0s7JCy_7mt-Qe8eV3ieQ/exec';
 const NATIONALITY_CACHE_KEY = 'fairway_nationalities';
-const NATIONALITY_CACHE_MS  = 7 * 24 * 60 * 60 * 1000; // 7 days
+const NATIONALITY_CACHE_MS  = 30 * 24 * 60 * 60 * 1000; // 30 days
 const RANKINGS_CACHE_KEY = 'fairway_rankings';
 const RANKINGS_CACHE_MS = 24 * 60 * 60 * 1000;
 
