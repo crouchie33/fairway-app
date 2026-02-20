@@ -1009,14 +1009,12 @@ export default function GolfOddsComparison() {
                   🎯{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',height:'150px',overflow:'hidden',width:'100%'}}>
-                    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',transform:'rotate(270deg)',width:'100%',overflow:'hidden',padding:'0 1px'}}>
+                  <div className="bookmaker-header">
+                    <div className="bookmaker-logo-wrapper">
                       <img src="/logos/polymarket.png" alt="Polymarket" className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
                       <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>POLY</span>
                     </div>
-                    <div style={{height:'32px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.6rem',color:'#888',borderTop:'1px solid #E2E8F0',width:'100%'}}>
-                      {sortConfig.key === 'polyOdds' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-                    </div>
+
                   </div>
                 </th>
                 {bookmakers.map((bm, i) => (
