@@ -742,10 +742,11 @@ export default function GolfOddsComparison() {
         .bookmaker-logo { width: 100px; height: 30px; object-fit: contain; display: block; }
         .ew-terms { font-size: 0.7rem; font-weight: 600; color: #2D3748; padding: 3px 0; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
-        .odds-matrix tbody tr:hover { background: #F5F7FA; }
+        .odds-matrix tbody tr:hover { background: #E8ECF0; }
         .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
         .odds-matrix tbody td:first-child { position: sticky; left: 0; background: #F5F7FA; z-index: 1; text-align: left; padding: 0 0 0 20px; border-right: 1px solid #CBD5E0; width: 204px; min-width: 204px; max-width: 204px; height: 36px; }
-        .odds-matrix tbody tr:hover td:first-child { background: #F5F7FA; }
+        .odds-matrix tbody tr:hover td:first-child { background: #E8ECF0; }
+        .odds-matrix tbody tr:hover td.odds-cell.best-odds { background: #D8DDE4; }
         .player-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; padding: 8px 0; }
         .expand-icon { color: #A0AEC0; flex-shrink: 0; }
         .player-name { white-space: nowrap; }
