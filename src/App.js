@@ -731,7 +731,7 @@ export default function GolfOddsComparison() {
         .sort-arrow { font-size: 0.8rem; opacity: 0.7; }
         .inline-sort { font-size: 0.75rem; font-weight: 600; }
         .poly-header { padding: 8px 4px; width: 52px; min-width: 52px; max-width: 52px; cursor: pointer; vertical-align: bottom; }
-        .poly-cell { width: 52px; min-width: 52px; max-width: 52px; padding: 0 !important; position: relative; height: 48px; }
+        .poly-cell { width: 52px; min-width: 52px; max-width: 52px; padding: 0 !important; position: relative; height: 36px; }
         .poly-link { display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #6046ff; font-weight: 600; font-size: 0.88rem; text-decoration: none; transition: background 0.15s; }
         .poly-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
         .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; }
@@ -743,10 +743,10 @@ export default function GolfOddsComparison() {
         .ew-terms { font-size: 0.7rem; font-weight: 600; color: #2D3748; padding: 3px 0; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
         .odds-matrix tbody tr:hover { background: #F5F7FA; }
-        .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 48px; }
-        .odds-matrix tbody td:first-child { position: sticky; left: 0; background: #F5F7FA; z-index: 1; text-align: left; padding: 0 0 0 20px; border-right: 1px solid #CBD5E0; width: 204px; min-width: 204px; max-width: 204px; height: 48px; }
+        .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
+        .odds-matrix tbody td:first-child { position: sticky; left: 0; background: #F5F7FA; z-index: 1; text-align: left; padding: 0 0 0 20px; border-right: 1px solid #CBD5E0; width: 204px; min-width: 204px; max-width: 204px; height: 36px; }
         .odds-matrix tbody tr:hover td:first-child { background: #F5F7FA; }
-        .player-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; padding: 14px 0; }
+        .player-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; padding: 8px 0; }
         .expand-icon { color: #A0AEC0; flex-shrink: 0; }
         .player-name { white-space: nowrap; }
         .owgr-cell { width: 56px; font-weight: 600; color: #4A5568; font-size: 0.85rem; }
@@ -756,7 +756,7 @@ export default function GolfOddsComparison() {
         .tipster-bar { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, #2D3748, #4A5568); }
         .tipster-count { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-weight: 700; }
         .tipster-empty { color: #ccc; }
-        .odds-cell { padding: 0 !important; position: relative; height: 48px; }
+        .odds-cell { padding: 0 !important; position: relative; height: 36px; }
         .odds-cell.best-odds { background: #E8ECF0; box-shadow: inset 0 0 0 2.5px #2D3748; border-radius: 4px; z-index: 2; position: relative; }
         .best-odds .odds-link { font-weight: 700; border-radius: 4px; }
         .odds-link { display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #2D3748; text-decoration: none; font-weight: 500; transition: background 0.15s; }
