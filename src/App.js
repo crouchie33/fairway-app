@@ -752,8 +752,8 @@ export default function GolfOddsComparison() {
         .owgr-header div { font-weight: 600; }
         .tipster-header { font-size: 1.4rem; cursor: pointer; padding: 12px 6px; width: 46px; min-width: 46px; max-width: 46px; }
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; height: 150px; padding: 0; overflow: hidden; width: 100%; }
-        .bookmaker-logo-wrapper { height: 118px; width: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); overflow: hidden; padding: 0 1px; }
-        .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .bookmaker-logo-wrapper { width: 118px; height: 42px; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); overflow: hidden; padding: 0; }
+        .bookmaker-logo { width: 100%; height: 100%; object-fit: cover; display: block; }
         .ew-terms { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; color: #2D3748; border-top: 1px solid #E2E8F0; width: 100%; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
         .odds-matrix tbody tr:hover { background: #E8ECF0; }
@@ -1010,11 +1010,10 @@ export default function GolfOddsComparison() {
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
                   <div className="bookmaker-header">
-                    <div className="bookmaker-logo-wrapper">
+                    <div className="bookmaker-logo-wrapper" style={{height:'150px', width:'150px'}}>
                       <img src="/logos/polymarket.png" alt="Polymarket" className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
                       <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>POLY</span>
                     </div>
-
                   </div>
                 </th>
                 {bookmakers.map((bm, i) => (
