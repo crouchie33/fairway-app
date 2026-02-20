@@ -456,15 +456,7 @@ export default function GolfOddsComparison() {
     fetch(NATIONALITY_URL)
       .then(r => r.json())
       .then(json => {
-        // DataGolf returns an array of player objects
-        // each has: player_name, country, country_code, dg_id etc.
-        const map = {};
-        const players = Array.isArray(json) ? json : (json.players || []);
-        players.forEach(p => {
-          const name = p.player_name || p.name;
-          const country = p.country || p.country_code;
-          if (name && country) map[name] = country;
-        });
+        const map = json.nationalities || {};
         if (Object.keys(map).length > 0) {
           setNationalityMap(map);
           try { localStorage.setItem(NATIONALITY_CACHE_KEY, JSON.stringify({ data: map, ts: Date.now() })); } catch {}
