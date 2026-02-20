@@ -738,9 +738,9 @@ export default function GolfOddsComparison() {
         .owgr-header div { font-weight: 600; }
         .tipster-header { font-size: 1.4rem; cursor: pointer; padding: 12px 6px; width: 46px; min-width: 46px; max-width: 46px; }
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 120px; padding: 0; overflow: hidden; width: 100%; }
-        .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); width: 110px; height: 52px; overflow: hidden; }
+        .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); width: 110px; height: 52px; overflow: hidden; padding: 0 1px; }
         .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
-        .ew-terms { font-size: 0.68rem; font-weight: 600; color: #2D3748; padding: 2px 0; flex-shrink: 0; }
+        .ew-terms { font-size: 1rem; font-weight: 700; color: #2D3748; padding: 4px 0; flex-shrink: 0; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
         .odds-matrix tbody tr:hover { background: #E8ECF0; }
         .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
