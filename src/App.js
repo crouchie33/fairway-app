@@ -188,15 +188,20 @@ const BM_NAME_MAP = {
 const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
 
 // Player name aliases — maps alternate names to canonical name
-const PLAYER_NAME_ALIASES = {
-  'christopher gotterup': 'Chris Gotterup',
-  'chris gotterup':       'Chris Gotterup',
-};
-const normPlayerName = (name) => {
-  if (!name) return name;
-  const key = name.toLowerCase().trim();
-  return PLAYER_NAME_ALIASES[key] || name;
-};
+// Resolve a sheet player name to canonical DataGolf name by surname matching
+// dgNames = Object.keys(nationalityMap) — passed in at call time
+function resolvePlayerName(sheetName, dgNames) {
+  if (!sheetName || !dgNames || dgNames.length === 0) return sheetName;
+  const cleaned = sheetName.replace(/\(a\)/gi, '').trim();
+  const normCleaned = norm(cleaned);
+  // Exact match first
+  const exact = dgNames.find(n => norm(n) === normCleaned);
+  if (exact) return exact;
+  // Surname match — last word of sheet name vs last word of DG name
+  const sheetSurname = normCleaned.split(' ').slice(-1)[0];
+  const hit = dgNames.find(n => norm(n).split(' ').slice(-1)[0] === sheetSurname);
+  return hit || sheetName;
+}
 const lookupNationality = (map, name) => {
   if (!map || !name) return 'TBD';
   const n = norm(name);
@@ -205,9 +210,9 @@ const lookupNationality = (map, name) => {
 };
 
 // Converts sheet odds response into the player array the table expects
-function buildPlayersFromSheet(oddsData) {
+function buildPlayersFromSheet(oddsData, dgNames = []) {
   return Object.entries(oddsData).map(([name, bookOdds]) => {
-    const canonicalName = normPlayerName(name);
+    const canonicalName = resolvePlayerName(name, dgNames);
     const bookmakerOdds = {};
     Object.entries(bookOdds).forEach(([bmName, dec]) => {
       bookmakerOdds[normBmName(bmName)] = {
@@ -342,7 +347,7 @@ export default function GolfOddsComparison() {
       if (cached) {
         const { data, ewData, ts } = JSON.parse(cached);
         if (Date.now() - ts < SHEET_PRICES_CACHE_MS && data && Object.keys(data).length > 0) {
-          const builtPlayers = buildPlayersFromSheet(data);
+          const builtPlayers = buildPlayersFromSheet(data, Object.keys(nationalityMap));
           const withRankings = builtPlayers.map((p) => {
             const rank = lookupRank(rankingsMap, p.name);
             return rank !== null ? { ...p, owgr: rank } : p;
@@ -368,7 +373,7 @@ export default function GolfOddsComparison() {
 
         if (!oddsData || Object.keys(oddsData).length === 0) throw new Error('Empty response');
 
-        const builtPlayers = buildPlayersFromSheet(oddsData);
+        const builtPlayers = buildPlayersFromSheet(oddsData, Object.keys(nationalityMap));
         const withRankings = builtPlayers.map((p) => {
           const rank = lookupRank(rankingsMap, p.name);
           return rank !== null ? { ...p, owgr: rank } : p;
@@ -609,7 +614,8 @@ export default function GolfOddsComparison() {
 
   // ── sort + filter ──
   const sorted = useMemo(() => {
-    const normConfirmed = (n) => norm(normPlayerName(n.replace(/\(a\)/gi, '').trim()));
+    const dgNames = Object.keys(nationalityMap);
+    const normConfirmed = (n) => norm(resolvePlayerName(n.replace(/\(a\)/gi, '').trim(), dgNames));
     const confirmedSet = confirmedPlayers.length > 0
       ? new Set(confirmedPlayers.map(n => normConfirmed(n)))
       : null;
