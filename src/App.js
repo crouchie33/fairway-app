@@ -583,11 +583,12 @@ export default function GolfOddsComparison() {
 
   // ── sort + filter ──
   const sorted = useMemo(() => {
+    const normConfirmed = (n) => norm(n.replace(/\(a\)/gi, '').trim());
     const confirmedSet = confirmedPlayers.length > 0
-      ? new Set(confirmedPlayers.map(n => norm(n)))
+      ? new Set(confirmedPlayers.map(n => normConfirmed(n)))
       : null;
     const filtered = players.filter((p) => {
-      if (confirmedSet && !confirmedSet.has(norm(p.name))) return false;
+      if (confirmedSet && !confirmedSet.has(normConfirmed(p.name))) return false;
       return p.name.toLowerCase().includes(filterText.toLowerCase());
     });
     return filtered.sort((a, b) => {
