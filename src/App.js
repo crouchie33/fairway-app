@@ -45,6 +45,11 @@ const BOOKMAKERS = [
   { name: 'Sky Bet',           key: 'skybet',       logo: 'skybet.png',      ew: '5' },
   { name: 'BoyleSports',       key: 'boylesports',  logo: 'boylesports.png', ew: '5' },
   { name: '888sport',          key: '888sport',     logo: '888sport.png',    ew: '5' },
+  { name: 'Star Sports',        key: 'starsports',   logo: 'starsports.png',  ew: '5' },
+  { name: 'Spreadex',           key: 'spreadex',     logo: 'spreadex.png',    ew: '5' },
+  { name: 'AK Bets',            key: 'akbets',       logo: 'akbets.png',      ew: '5' },
+  { name: '10bet',              key: '10bet',         logo: '10bet.png',       ew: '5' },
+  { name: 'BetVictor',          key: 'betvictor',    logo: 'betvictor.png',   ew: '5' },
 ];
 
 const AFFILIATE_LINKS = {
@@ -58,6 +63,11 @@ const AFFILIATE_LINKS = {
   'Betfair Sportsbook': 'https://www.betfair.com/sport/golf?pid=YOUR_BETFAIR_ID',
   'BoyleSports':        'https://www.boylesports.com/golf?aff=YOUR_BOYLE_ID',
   '888sport':           'https://www.888sport.com/golf?affiliate=YOUR_888_ID',
+  'Star Sports':        'https://www.starsports.bet/?aff=YOUR_STARSPORTS_ID',
+  'Spreadex':           'https://www.spreadex.com/sports/golf?aff=YOUR_SPREADEX_ID',
+  'AK Bets':            'https://www.akbets.com/?aff=YOUR_AKBETS_ID',
+  '10bet':              'https://www.10bet.co.uk/sports/golf/?aff=YOUR_10BET_ID',
+  'BetVictor':          'https://www.betvictor.com/sports/golf?aff=YOUR_BETVICTOR_ID',
 };
 
 const POLYMARKET_FALLBACK = {
@@ -170,6 +180,10 @@ const BM_NAME_MAP = {
   'skybet':       'Sky Bet',
   'sky bet':      'Sky Bet',
   'betfair':      'Betfair Sportsbook',
+  'star sports':  'Star Sports',
+  'ak bets':      'AK Bets',
+  '10bet':        '10bet',
+  'betvictor':    'BetVictor',
 };
 const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
 const lookupNationality = (map, name) => {
@@ -740,7 +754,7 @@ export default function GolfOddsComparison() {
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 120px; padding: 0; overflow: hidden; width: 100%; }
         .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); width: 110px; height: 52px; overflow: hidden; padding: 0 1px; }
         .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
-        .ew-terms { font-size: 1rem; font-weight: 700; color: #2D3748; padding: 4px 0; flex-shrink: 0; }
+        .ew-terms { font-size: 1rem; font-weight: 700; color: #2D3748; padding: 5px 0 3px; flex-shrink: 0; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
         .odds-matrix tbody tr:hover { background: #E8ECF0; }
         .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
@@ -1010,7 +1024,7 @@ export default function GolfOddsComparison() {
                     <div className="bookmaker-header">
                       <div className="bookmaker-logo-wrapper">
                         <img src={`/logos/${bm.logo}`} alt={bm.name} className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                        <span style={{display:'none',fontSize:'0.55rem',fontWeight:600,textAlign:'center',lineHeight:'1.2'}}>{bm.name}</span>
+                        <span style={{display:'none',fontSize:'0.55rem',fontWeight:700,textAlign:'center',lineHeight:'1.2',color:'#2D3748',writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'nowrap'}}>{bm.name}</span>
                       </div>
                       <div className="ew-terms">{getEwTerms(bm.name)}</div>
                     </div>
