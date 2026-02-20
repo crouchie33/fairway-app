@@ -751,10 +751,10 @@ export default function GolfOddsComparison() {
         .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; }
         .owgr-header div { font-weight: 600; }
         .tipster-header { font-size: 1.4rem; cursor: pointer; padding: 12px 6px; width: 46px; min-width: 46px; max-width: 46px; }
-        .bookmaker-header { display: flex; flex-direction: column; align-items: center; height: 120px; padding: 0; overflow: hidden; width: 100%; }
-        .bookmaker-logo-wrapper { height: 88px; width: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); overflow: hidden; padding: 0 1px; }
+        .bookmaker-header { display: flex; flex-direction: column; align-items: center; height: 150px; padding: 0; overflow: hidden; width: 100%; }
+        .bookmaker-logo-wrapper { height: 118px; width: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); overflow: hidden; padding: 0 1px; }
         .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
-        .ew-terms { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #2D3748; border-top: 1px solid #E2E8F0; width: 100%; }
+        .ew-terms { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; color: #2D3748; border-top: 1px solid #E2E8F0; width: 100%; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
         .odds-matrix tbody tr:hover { background: #E8ECF0; }
         .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
@@ -1009,12 +1009,12 @@ export default function GolfOddsComparison() {
                   🎯{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
-                  <div className="bookmaker-header">
-                    <div className="bookmaker-logo-wrapper">
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',height:'150px',overflow:'hidden',width:'100%'}}>
+                    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',transform:'rotate(270deg)',width:'100%',overflow:'hidden',padding:'0 1px'}}>
                       <img src="/logos/polymarket.png" alt="Polymarket" className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
                       <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>POLY</span>
                     </div>
-                    <div className="ew-terms" style={{fontSize:'0.6rem',color:'#888'}}>
+                    <div style={{height:'32px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.6rem',color:'#888',borderTop:'1px solid #E2E8F0',width:'100%'}}>
                       {sortConfig.key === 'polyOdds' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                     </div>
                   </div>
