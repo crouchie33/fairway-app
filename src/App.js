@@ -730,17 +730,17 @@ export default function GolfOddsComparison() {
         .sortable-header:hover { opacity: 0.7; }
         .sort-arrow { font-size: 0.8rem; opacity: 0.7; }
         .inline-sort { font-size: 0.75rem; font-weight: 600; }
-        .poly-header { padding: 8px 4px; width: 52px; min-width: 52px; max-width: 52px; cursor: pointer; vertical-align: bottom; }
-        .poly-cell { width: 52px; min-width: 52px; max-width: 52px; padding: 0 !important; position: relative; height: 36px; }
+        .poly-header { padding: 8px 4px; width: 42px; min-width: 42px; max-width: 42px; cursor: pointer; vertical-align: bottom; }
+        .poly-cell { width: 42px; min-width: 42px; max-width: 42px; padding: 0 !important; position: relative; height: 36px; }
         .poly-link { display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #6046ff; font-weight: 600; font-size: 0.88rem; text-decoration: none; transition: background 0.15s; }
         .poly-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
         .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; }
         .owgr-header div { font-weight: 600; }
         .tipster-header { font-size: 1.4rem; cursor: pointer; padding: 12px 6px; width: 46px; min-width: 46px; max-width: 46px; }
-        .bookmaker-header { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 120px; padding: 0; overflow: hidden; width: 100%; }
-        .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); width: 110px; height: 52px; overflow: hidden; }
-        .bookmaker-logo { width: 100px; height: 30px; object-fit: contain; display: block; }
-        .ew-terms { font-size: 0.7rem; font-weight: 600; color: #2D3748; padding: 3px 0; }
+        .bookmaker-header { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80px; padding: 4px 1px 2px; overflow: hidden; width: 100%; }
+        .bookmaker-logo-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; overflow: hidden; }
+        .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .ew-terms { font-size: 0.68rem; font-weight: 600; color: #2D3748; padding: 2px 0; flex-shrink: 0; }
         .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
         .odds-matrix tbody tr:hover { background: #E8ECF0; }
         .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
@@ -998,7 +998,7 @@ export default function GolfOddsComparison() {
                   <div className="bookmaker-header">
                     <div className="bookmaker-logo-wrapper">
                       <img src="/logos/polymarket.png" alt="Polymarket" className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                      <span style={{display:'none',writingMode:'vertical-rl',transform:'rotate(180deg)',fontSize:'0.72rem',fontWeight:700}}>POLY</span>
+                      <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>POLY</span>
                     </div>
                     <div className="ew-terms" style={{fontSize:'0.6rem',color:'#888'}}>
                       {sortConfig.key === 'polyOdds' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
@@ -1006,11 +1006,11 @@ export default function GolfOddsComparison() {
                   </div>
                 </th>
                 {bookmakers.map((bm, i) => (
-                  <th key={i} style={{width:'52px',minWidth:'52px',maxWidth:'52px'}}>
+                  <th key={i} style={{width:'42px',minWidth:'42px',maxWidth:'42px'}}>
                     <div className="bookmaker-header">
                       <div className="bookmaker-logo-wrapper">
                         <img src={`/logos/${bm.logo}`} alt={bm.name} className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                        <span style={{display:'none',writingMode:'vertical-rl',transform:'rotate(180deg)',fontSize:'0.72rem',fontWeight:600}}>{bm.name}</span>
+                        <span style={{display:'none',fontSize:'0.55rem',fontWeight:600,textAlign:'center',lineHeight:'1.2'}}>{bm.name}</span>
                       </div>
                       <div className="ew-terms">{getEwTerms(bm.name)}</div>
                     </div>
