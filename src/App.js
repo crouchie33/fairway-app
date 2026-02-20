@@ -11,6 +11,9 @@ const ODDS_CACHE_KEY = 'fairway_odds';
 const ODDS_CACHE_MS = 60 * 60 * 1000;
 
 const RANKINGS_URL = 'https://script.google.com/macros/s/AKfycbz0AV6lo8WSGm1qFLfKVKW8zbg2NrLaYGd82e20vPvrPFmQqsMUK6sIA0sc5fApVUUx/exec';
+const NATIONALITY_URL       = 'https://script.google.com/macros/s/AKfycbzQweWv_6kEsGShpITxBKLpo4U81F3TmzSUkolKsW6AXx1vrj0s7JCy_7mt-Qe8eV3ieQ/exec';
+const NATIONALITY_CACHE_KEY = 'fairway_nationalities';
+const NATIONALITY_CACHE_MS  = 7 * 24 * 60 * 60 * 1000; // 7 days
 const RANKINGS_CACHE_KEY = 'fairway_rankings';
 const RANKINGS_CACHE_MS = 24 * 60 * 60 * 1000;
 
@@ -160,6 +163,12 @@ const BM_NAME_MAP = {
   'betfair':      'Betfair Sportsbook',
 };
 const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
+const lookupNationality = (map, name) => {
+  if (!map || !name) return 'TBD';
+  const n = norm(name);
+  const key = Object.keys(map).find(k => norm(k) === n);
+  return key ? map[key] : 'TBD';
+};
 
 // Converts sheet odds response into the player array the table expects
 function buildPlayersFromSheet(oddsData) {
@@ -211,6 +220,7 @@ export default function GolfOddsComparison() {
   const fetchingRef                               = useRef(false);
   const [polyOddsMap, setPolyOddsMap]             = useState(POLYMARKET_FALLBACK);
   const [majorFormMap, setMajorFormMap]           = useState({});
+  const [nationalityMap, setNationalityMap]       = useState({});
   const [currentFormMap, setCurrentFormMap]       = useState({});
   const [tipsterPicksMap, setTipsterPicksMap]     = useState({});
   const [maxTipsterPicks, setMaxTipsterPicks]     = useState(23);
@@ -365,11 +375,21 @@ export default function GolfOddsComparison() {
       .catch((err) => console.warn('Polymarket unavailable:', err.message));
   }, []);
 
-  // ── fetch major event form ──
+  // ── fetch major event form + nationalities ──
   useEffect(() => {
     const nameMap = { 'The Masters': 'Masters', 'PGA Championship': 'PGA Championship', 'US Open': 'US Open', 'The Open': 'The Open' };
     const majorName = nameMap[selectedTournament.name] || selectedTournament.name;
     const cacheKey = 'fairway_form_' + majorName.replace(/\s/g, '_');
+
+    // Check nationality cache (shared across all tournaments)
+    try {
+      const cachedNat = localStorage.getItem('fairway_nationalities');
+      if (cachedNat) {
+        const c = JSON.parse(cachedNat);
+        if (Date.now() - c.ts < MAJORS_FORM_CACHE_MS) setNationalityMap(c.data);
+      }
+    } catch {}
+
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -383,6 +403,10 @@ export default function GolfOddsComparison() {
         if (json.form && Object.keys(json.form).length > 0) {
           setMajorFormMap(json.form);
           try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.form, ts: Date.now() })); } catch {}
+        }
+        if (json.nationalities && Object.keys(json.nationalities).length > 0) {
+          setNationalityMap(json.nationalities);
+          try { localStorage.setItem('fairway_nationalities', JSON.stringify({ data: json.nationalities, ts: Date.now() })); } catch {}
         }
       })
       .catch((err) => console.warn('Majors form unavailable:', err.message));
@@ -415,6 +439,38 @@ export default function GolfOddsComparison() {
       .then(r => r.json())
       .then(d => { if (d.country_code === 'US') setIsUS(true); })
       .catch(() => setIsUS(false));
+  }, []); // eslint-disable-line
+
+  // ── fetch nationalities from DataGolf player list ──
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(NATIONALITY_CACHE_KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (Date.now() - ts < NATIONALITY_CACHE_MS && data && Object.keys(data).length > 0) {
+          setNationalityMap(data);
+          return;
+        }
+      }
+    } catch {}
+    fetch(NATIONALITY_URL)
+      .then(r => r.json())
+      .then(json => {
+        // DataGolf returns an array of player objects
+        // each has: player_name, country, country_code, dg_id etc.
+        const map = {};
+        const players = Array.isArray(json) ? json : (json.players || []);
+        players.forEach(p => {
+          const name = p.player_name || p.name;
+          const country = p.country || p.country_code;
+          if (name && country) map[name] = country;
+        });
+        if (Object.keys(map).length > 0) {
+          setNationalityMap(map);
+          try { localStorage.setItem(NATIONALITY_CACHE_KEY, JSON.stringify({ data: map, ts: Date.now() })); } catch {}
+        }
+      })
+      .catch(err => console.warn('Nationality fetch unavailable:', err.message));
   }, []); // eslint-disable-line
 
   // ── fetch tipster picks ──
@@ -998,7 +1054,7 @@ export default function GolfOddsComparison() {
                               <div className="desktop-cards-grid">
                                 <div className="desktop-info-card">
                                   <div className="desktop-card-label">Nationality</div>
-                                  <div className="desktop-card-value">{player.nationality}</div>
+                                  <div className="desktop-card-value">{lookupNationality(nationalityMap, player.name)}</div>
                                 </div>
                                 <div className="desktop-info-card">
                                   <div className="desktop-card-label">World Ranking</div>
@@ -1104,7 +1160,7 @@ export default function GolfOddsComparison() {
                                   <div className="mobile-stats-grid">
                                     <div className="mobile-stat-card">
                                       <div className="mobile-stat-label">Nationality</div>
-                                      <div className="mobile-stat-value">{player.nationality}</div>
+                                      <div className="mobile-stat-value">{lookupNationality(nationalityMap, player.name)}</div>
                                     </div>
                                     <div className="mobile-stat-card">
                                       <div className="mobile-stat-label">World Ranking</div>
