@@ -1001,7 +1001,7 @@ export default function GolfOddsComparison() {
                       <span className="header-separator">|</span>
                       <SortBtn sortKey="avgOdds" label="Price"  className="inline-sort" />
                     </div>
-                    <span className="mobile-only">
+                    <span className="mobile-only" style={{marginRight:'8px'}}>
                       <SortBtn sortKey="tipsterPicks" label="🎯" className="inline-sort" />
                     </span>
                   </div>
