@@ -24,7 +24,7 @@ const SHEET_PRICES_URLS = {
   usopen:  'https://script.google.com/macros/s/AKfycbzsCWHaIyPu4cRKE9vYAgTe5bX7RXl5QWGBioNGeYyWViLvSSWzgDC4RSMR1wlCzHOKoA/exec',
   open:    'https://script.google.com/macros/s/AKfycbwNw5qTNLMqmE7n_3K7M5NaJG7z70qD6coxj2nKrIGH7cRc6QjRgltot3xgwt310wMh/exec',
 };
-const SHEET_PRICES_CACHE_MS = 30 * 60 * 1000; // 30 minutes
+const SHEET_PRICES_CACHE_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────────────
 
@@ -895,10 +895,7 @@ export default function GolfOddsComparison() {
       </header>
 
       {/* ── NOTICES ── */}
-      {sheetLoading && <div className="notice notice-loading">⏳ Loading latest prices…</div>}
-      {sheetError   && <div className="notice notice-error">⚠️ Could not load live prices — showing demo data</div>}
-      {!sheetLoading && !sheetError && !useMock && <div className="notice notice-live">✅ Live prices — {players.length} players loaded</div>}
-      {useMock && !sheetError && <div className="notice notice-demo">💡 Demo data — paste your Apps Script URL into SHEET_PRICES_URLS to go live</div>}
+
 
       {/* ── CONTROLS ── */}
       <div className="controls-bar">
