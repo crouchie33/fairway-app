@@ -935,7 +935,7 @@ export default function GolfOddsComparison() {
                   <React.Fragment key={idx}>
                     <tr>
                       <td>
-                        <div className="player-cell" onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}>
+                        <div className="player-cell" onClick={() => { setExpandedPlayer(expandedPlayer === player.name ? null : player.name); setActiveMobilePane(0); }}>
                           {expandedPlayer === player.name ? <ChevronUp className="expand-icon" size={16} /> : <ChevronDown className="expand-icon" size={16} />}
                           <span className="player-name">{player.name}</span>
                           {(() => {
@@ -985,7 +985,7 @@ export default function GolfOddsComparison() {
                           </td>
                         );
                       })}
-                      <td className="odds-cell best-odds-cell-mobile" onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}>
+                      <td className="odds-cell best-odds-cell-mobile" onClick={() => { setExpandedPlayer(expandedPlayer === player.name ? null : player.name); setActiveMobilePane(0); }}>
                         {formatOdds(bestOdds)}
                       </td>
                     </tr>
