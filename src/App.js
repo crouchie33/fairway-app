@@ -75,6 +75,15 @@ const POLYMARKET_CACHE_KEY = 'fairway_polymarket';
 const POLYMARKET_CACHE_MS = 6 * 60 * 60 * 1000;
 
 const MAJORS_FORM_URL = "https://script.google.com/macros/s/AKfycbwjUK-2zF8GYa8eFevPCWTdUJOeCRA-J5TCXdneuF8b22y2RQexnJL76uxqWr3wBCFw/exec";
+
+// Confirmed players per event — add URLs as each field is confirmed
+const CONFIRMED_URLS = {
+  masters: 'https://script.google.com/macros/s/AKfycbxeH8CQ3I1xKGOwEq6TOwzULNuqp5C__ug4mlWdhrKwGf3_MG3KhyK2HUoNObIqdOua/exec',
+  pga:     null,
+  usopen:  null,
+  open:    null,
+};
+const CONFIRMED_CACHE_MS = 12 * 60 * 60 * 1000; // 12 hours
 const MAJORS_FORM_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const CURRENT_FORM_URL = "https://script.google.com/macros/s/AKfycbzFo29_upCpM4_qg_WiB-ncdqwTMxqoMbsMs7LdHMEw_FnqZNAimPnipv3cTrWPlSuJ/exec";
@@ -221,6 +230,7 @@ export default function GolfOddsComparison() {
   const [polyOddsMap, setPolyOddsMap]             = useState(POLYMARKET_FALLBACK);
   const [majorFormMap, setMajorFormMap]           = useState({});
   const [nationalityMap, setNationalityMap]       = useState({});
+  const [confirmedPlayers, setConfirmedPlayers]   = useState([]);
   const [currentFormMap, setCurrentFormMap]       = useState({});
   const [tipsterPicksMap, setTipsterPicksMap]     = useState({});
   const [maxTipsterPicks, setMaxTipsterPicks]     = useState(23);
@@ -441,6 +451,33 @@ export default function GolfOddsComparison() {
       .catch(() => setIsUS(false));
   }, []); // eslint-disable-line
 
+  // ── fetch confirmed players for current tournament ──
+  useEffect(() => {
+    const url = CONFIRMED_URLS[selectedTournament.id];
+    if (!url) { setConfirmedPlayers([]); return; }
+    const cacheKey = 'fairway_confirmed_' + selectedTournament.id;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (Date.now() - ts < CONFIRMED_CACHE_MS && data && data.length > 0) {
+          setConfirmedPlayers(data);
+          return;
+        }
+      }
+    } catch {}
+    fetch(url)
+      .then(r => r.json())
+      .then(json => {
+        const list = json.confirmed || [];
+        if (list.length > 0) {
+          setConfirmedPlayers(list);
+          try { localStorage.setItem(cacheKey, JSON.stringify({ data: list, ts: Date.now() })); } catch {}
+        }
+      })
+      .catch(err => console.warn('Confirmed players unavailable:', err.message));
+  }, [selectedTournament]); // eslint-disable-line
+
   // ── fetch nationalities from DataGolf player list ──
   useEffect(() => {
     try {
@@ -546,7 +583,13 @@ export default function GolfOddsComparison() {
 
   // ── sort + filter ──
   const sorted = useMemo(() => {
-    const filtered = players.filter((p) => p.name.toLowerCase().includes(filterText.toLowerCase()));
+    const confirmedSet = confirmedPlayers.length > 0
+      ? new Set(confirmedPlayers.map(n => norm(n)))
+      : null;
+    const filtered = players.filter((p) => {
+      if (confirmedSet && !confirmedSet.has(norm(p.name))) return false;
+      return p.name.toLowerCase().includes(filterText.toLowerCase());
+    });
     return filtered.sort((a, b) => {
       let av, bv;
       if (sortConfig.key === 'name') { av = a.name.split(' ').slice(-1)[0]; bv = b.name.split(' ').slice(-1)[0]; }
@@ -564,7 +607,7 @@ export default function GolfOddsComparison() {
       if (av > bv) return sortConfig.direction === 'asc' ?  1 : -1;
       return 0;
     });
-  }, [players, sortConfig, filterText, tipsterPicksMap, polyOddsMap]);
+  }, [players, sortConfig, filterText, tipsterPicksMap, polyOddsMap, confirmedPlayers]);
 
   const handleSort = (key) => setSortConfig((prev) => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
 
