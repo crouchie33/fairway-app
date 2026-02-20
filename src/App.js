@@ -713,8 +713,8 @@ export default function GolfOddsComparison() {
         .tipster-count { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-weight: 700; }
         .tipster-empty { color: #ccc; }
         .odds-cell { padding: 0 !important; position: relative; height: 48px; }
-        .odds-cell.best-odds { background: #E8ECF0; outline: 3px solid #2D3748; outline-offset: -3px; z-index: 2; position: relative; }
-        .best-odds .odds-link { font-weight: 700; }
+        .odds-cell.best-odds { background: #E8ECF0; box-shadow: inset 0 0 0 2.5px #2D3748; border-radius: 4px; z-index: 2; position: relative; }
+        .best-odds .odds-link { font-weight: 700; border-radius: 4px; }
         .odds-link { display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #2D3748; text-decoration: none; font-weight: 500; transition: background 0.15s; }
         .odds-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
         .best-odds .odds-link:hover { background: rgba(160,174,192,0.25); }
