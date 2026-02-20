@@ -687,7 +687,7 @@ export default function GolfOddsComparison() {
         @media (max-width: 768px) { .promo-banner { display: none; } .promo-dots { display: none; } }
 
         /* ── TIPSTER MODAL ── */
-        .tipster-ball { display: none; align-items: center; justify-content: center; width: 31px; height: 31px; border-radius: 50%; background: #2D3748; color: white; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-left: auto; margin-right: 8px; cursor: pointer; }
+        .tipster-ball { display: none; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #2D3748; color: white; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-left: auto; margin-right: 8px; cursor: pointer; }
         @media (max-width: 768px) { .tipster-ball { display: inline-flex; } }
         .tipster-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .tipster-modal { background: white; border-radius: 12px; padding: 28px 32px; max-width: 360px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
