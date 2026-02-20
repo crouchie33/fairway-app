@@ -186,6 +186,17 @@ const BM_NAME_MAP = {
   'betvictor':    'BetVictor',
 };
 const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
+
+// Player name aliases — maps alternate names to canonical name
+const PLAYER_NAME_ALIASES = {
+  'christopher gotterup': 'Chris Gotterup',
+  'chris gotterup':       'Chris Gotterup',
+};
+const normPlayerName = (name) => {
+  if (!name) return name;
+  const key = name.toLowerCase().trim();
+  return PLAYER_NAME_ALIASES[key] || name;
+};
 const lookupNationality = (map, name) => {
   if (!map || !name) return 'TBD';
   const n = norm(name);
@@ -196,6 +207,7 @@ const lookupNationality = (map, name) => {
 // Converts sheet odds response into the player array the table expects
 function buildPlayersFromSheet(oddsData) {
   return Object.entries(oddsData).map(([name, bookOdds]) => {
+    const canonicalName = normPlayerName(name);
     const bookmakerOdds = {};
     Object.entries(bookOdds).forEach(([bmName, dec]) => {
       bookmakerOdds[normBmName(bmName)] = {
@@ -207,7 +219,7 @@ function buildPlayersFromSheet(oddsData) {
     const vals = Object.values(bookmakerOdds).map((o) => o.outright).filter(Number.isFinite);
     const avgOdds = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 999;
     return {
-      name,
+      name: canonicalName,
       nationality: 'TBD',
       owgr: null,
       recentForm: [1], // non-empty so form card renders
@@ -597,7 +609,7 @@ export default function GolfOddsComparison() {
 
   // ── sort + filter ──
   const sorted = useMemo(() => {
-    const normConfirmed = (n) => norm(n.replace(/\(a\)/gi, '').trim());
+    const normConfirmed = (n) => norm(normPlayerName(n.replace(/\(a\)/gi, '').trim()));
     const confirmedSet = confirmedPlayers.length > 0
       ? new Set(confirmedPlayers.map(n => normConfirmed(n)))
       : null;
