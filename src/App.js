@@ -197,10 +197,12 @@ function resolvePlayerName(sheetName, dgNames) {
   // Exact match first
   const exact = dgNames.find(n => norm(n) === normCleaned);
   if (exact) return exact;
-  // Surname match — last word of sheet name vs last word of DG name
+  // Surname match — only use if exactly ONE player in DG list has that surname
   const sheetSurname = normCleaned.split(' ').slice(-1)[0];
-  const hit = dgNames.find(n => norm(n).split(' ').slice(-1)[0] === sheetSurname);
-  return hit || sheetName;
+  const matches = dgNames.filter(n => norm(n).split(' ').slice(-1)[0] === sheetSurname);
+  if (matches.length === 1) return matches[0];
+  // Multiple players share surname — don't guess, keep original
+  return sheetName;
 }
 const lookupNationality = (map, name) => {
   if (!map || !name) return 'TBD';
