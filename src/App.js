@@ -338,6 +338,22 @@ export default function GolfOddsComparison() {
     );
   }, [rankingsMap, selectedTournament]); // eslint-disable-line
 
+  // ── re-resolve player names when nationalityMap loads ──
+  // Prices may load from cache before nationalityMap is ready, leaving bookmaker
+  // name variants (e.g. "Christopher Gotterup") unresolved. Re-run once DG names arrive.
+  useEffect(() => {
+    const dgNames = Object.keys(nationalityMap);
+    if (dgNames.length === 0 || players.length === 0) return;
+    setPlayers((prev) =>
+      prev.map((p) => {
+        const resolved = resolvePlayerName(p.name, dgNames);
+        if (resolved === p.name) return p;
+        const rank = lookupRank(rankingsMap, resolved);
+        return { ...p, name: resolved, owgr: rank !== null ? rank : p.owgr };
+      })
+    );
+  }, [nationalityMap]); // eslint-disable-line
+
   // ── fetch sheet prices whenever tournament changes ──
   useEffect(() => {
     const url      = SHEET_PRICES_URLS[selectedTournament.id];
