@@ -136,8 +136,8 @@ function lookupRank(map, playerName) {
   const n = norm(playerName);
   if (map[n] !== undefined) return map[n];
   const last = n.split(' ').slice(-1)[0];
-  const hit = Object.keys(map).find((k) => k.endsWith(last));
-  return hit ? map[hit] : null;
+  const hits = Object.keys(map).filter((k) => k.endsWith(last));
+  return hits.length === 1 ? map[hits[0]] : null;
 }
 
 function getOddsCache() {
@@ -188,20 +188,33 @@ const BM_NAME_MAP = {
 const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
 
 // Player name aliases — maps alternate names to canonical name
-// Resolve a sheet player name to canonical DataGolf name by surname matching
+// Known irregular names that can't be resolved by surname matching
+// Key = any known variant (lowercase), Value = canonical DataGolf name
+const PLAYER_ALIASES = {
+  // Only needed where the bookmaker name is genuinely different to DataGolf
+  'siwoo kim':       'Si Woo Kim',       // spacing variant
+  'tom kim':         'Joohyung Kim',     // nickname vs real name
+  'kh lee':          'K.H. Lee',         // initials without dots
+  'kyoung-hoon lee': 'K.H. Lee',         // full name vs initials
+  'byeonghun an':    'Byeong Hun An',    // spacing variant
+  'harold varner':   'Harold Varner III',// missing suffix
+};
 // dgNames = Object.keys(nationalityMap) — passed in at call time
 function resolvePlayerName(sheetName, dgNames) {
-  if (!sheetName || !dgNames || dgNames.length === 0) return sheetName;
+  if (!sheetName) return sheetName;
   const cleaned = sheetName.replace(/\(a\)/gi, '').trim();
   const normCleaned = norm(cleaned);
-  // Exact match first
+  // 1. Check static aliases first — handles known irregular names
+  if (PLAYER_ALIASES[normCleaned]) return PLAYER_ALIASES[normCleaned];
+  if (!dgNames || dgNames.length === 0) return sheetName;
+  // 2. Exact match against DataGolf names
   const exact = dgNames.find(n => norm(n) === normCleaned);
   if (exact) return exact;
-  // Surname match — only use if exactly ONE player in DG list has that surname
+  // 3. Surname match — only use if exactly ONE player in DG list has that surname
   const sheetSurname = normCleaned.split(' ').slice(-1)[0];
   const matches = dgNames.filter(n => norm(n).split(' ').slice(-1)[0] === sheetSurname);
   if (matches.length === 1) return matches[0];
-  // Multiple players share surname — don't guess, keep original
+  // 4. Multiple players share surname — don't guess, keep original
   return sheetName;
 }
 const lookupNationality = (map, name) => {
