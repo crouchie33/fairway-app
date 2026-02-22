@@ -190,31 +190,66 @@ const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim
 // Player name aliases — maps alternate names to canonical name
 // Known irregular names that can't be resolved by surname matching
 // Key = any known variant (lowercase), Value = canonical DataGolf name
+// ─── PLAYER NAME ALIASES ─────────────────────────────────────────────────────
+// Manual overrides for names that can't be auto-resolved.
+// Key = any known bookmaker variant (lowercase), Value = canonical DataGolf name.
+// Add entries here whenever you find a player with a non-matching name.
 const PLAYER_ALIASES = {
-  // Only needed where the bookmaker name is genuinely different to DataGolf
-  'siwoo kim':       'Si Woo Kim',       // spacing variant
-  'joohyung kim':    'Tom Kim',          // real name vs DataGolf nickname
-  'kh lee':          'K.H. Lee',         // initials without dots
-  'kyoung-hoon lee': 'K.H. Lee',         // full name vs initials
-  'byeonghun an':    'Byeong Hun An',    // spacing variant
-  'harold varner':   'Harold Varner III',// missing suffix
+  'siwoo kim':       'Si Woo Kim',        // spacing variant
+  'joohyung kim':    'Tom Kim',           // real name vs DataGolf nickname
+  'kh lee':          'K.H. Lee',          // initials without dots
+  'kyoung-hoon lee': 'K.H. Lee',          // full name vs initials
+  'byeonghun an':    'Byeong Hun An',     // spacing variant
+  'harold varner':   'Harold Varner III', // missing suffix
+  'hao tong li':     'Haotong Li',        // spacing variant
+  'li haotong':      'Haotong Li',        // surname first variant
+  'daniel brown':    'Dan Brown',         // full name vs shortened
+  'shaun norris':    'Shaun Norris',      // duplicate surname — pin exact name
 };
-// dgNames = Object.keys(nationalityMap) — passed in at call time
+
+// ─── NAME RESOLUTION PIPELINE ────────────────────────────────────────────────
+// Resolves a bookmaker player name to canonical DataGolf name.
+// Steps:
+//   1. Manual aliases  — handles known irregular names
+//   2. Exact match     — norm comparison against DataGolf list
+//   3. Unique surname  — only when one player has that surname
+//   4. First initial + surname — e.g. "D. Brown" matches "Dan Brown" if unique
+//   5. Fallback        — keep original, log unmatched name for audit
 function resolvePlayerName(sheetName, dgNames) {
   if (!sheetName) return sheetName;
-  const cleaned = sheetName.replace(/\(a\)/gi, '').trim();
+  const cleaned     = sheetName.replace(/\(a\)/gi, '').trim();
   const normCleaned = norm(cleaned);
-  // 1. Check static aliases first — handles known irregular names
+
+  // 1. Manual aliases
   if (PLAYER_ALIASES[normCleaned]) return PLAYER_ALIASES[normCleaned];
+
   if (!dgNames || dgNames.length === 0) return sheetName;
-  // 2. Exact match against DataGolf names
+
+  // 2. Exact match
   const exact = dgNames.find(n => norm(n) === normCleaned);
   if (exact) return exact;
-  // 3. Surname match — only use if exactly ONE player in DG list has that surname
-  const sheetSurname = normCleaned.split(' ').slice(-1)[0];
-  const matches = dgNames.filter(n => norm(n).split(' ').slice(-1)[0] === sheetSurname);
-  if (matches.length === 1) return matches[0];
-  // 4. Multiple players share surname — don't guess, keep original
+
+  const parts   = normCleaned.split(' ');
+  const surname = parts.slice(-1)[0];
+
+  // 3. Unique surname match
+  const surnameMatches = dgNames.filter(n => norm(n).split(' ').slice(-1)[0] === surname);
+  if (surnameMatches.length === 1) return surnameMatches[0];
+
+  // 4. First initial + surname match — e.g. "d. brown" or "d brown" → "Dan Brown"
+  if (parts.length >= 2) {
+    const initial = parts[0].replace(/\./g, ''); // strip dots from initial
+    if (initial.length === 1) {
+      const initialMatches = surnameMatches.filter(n => {
+        const dgFirst = norm(n).split(' ')[0];
+        return dgFirst.startsWith(initial);
+      });
+      if (initialMatches.length === 1) return initialMatches[0];
+    }
+  }
+
+  // 5. Fallback — keep original and log for audit
+  console.warn(\`[Name unmatched] "\${sheetName}" — add to PLAYER_ALIASES if incorrect\`);
   return sheetName;
 }
 const lookupNationality = (map, name) => {
