@@ -193,7 +193,7 @@ const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim
 const PLAYER_ALIASES = {
   // Only needed where the bookmaker name is genuinely different to DataGolf
   'siwoo kim':       'Si Woo Kim',       // spacing variant
-  'tom kim':         'Joohyung Kim',     // nickname vs real name
+  'joohyung kim':    'Tom Kim',          // real name vs DataGolf nickname
   'kh lee':          'K.H. Lee',         // initials without dots
   'kyoung-hoon lee': 'K.H. Lee',         // full name vs initials
   'byeonghun an':    'Byeong Hun An',    // spacing variant
