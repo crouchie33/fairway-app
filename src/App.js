@@ -211,6 +211,20 @@ const lookupNationality = (map, name) => {
   return key ? map[key] : 'TBD';
 };
 
+// Lookup a player in any map — tries exact norm match first, then surname-only match
+// Handles cases like "Jayden Schaper" matching "Jayden Trey Schaper"
+function lookupByName(map, playerName) {
+  if (!map || !playerName) return null;
+  const n = norm(playerName);
+  const surname = n.split(' ').slice(-1)[0];
+  // Exact match
+  let key = Object.keys(map).find(k => norm(k) === n);
+  if (key) return key;
+  // Surname match — only if unique
+  const hits = Object.keys(map).filter(k => norm(k).split(' ').slice(-1)[0] === surname);
+  return hits.length === 1 ? hits[0] : null;
+}
+
 // Converts sheet odds response into the player array the table expects
 function buildPlayersFromSheet(oddsData, dgNames = []) {
   return Object.entries(oddsData).map(([name, bookOdds]) => {
@@ -1156,7 +1170,7 @@ export default function GolfOddsComparison() {
                                     <div className="desktop-card-label">Recent Form</div>
                                     <div className="form-boxes">
                                       {(() => {
-                                        const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
+                                        const key = lookupByName(currentFormMap, player.name);
                                         const raw = key ? currentFormMap[key] : [];
                                         const played = raw.filter(p => p !== '-' && p !== '').reverse();
                                         const first7 = played.slice(0, 7);
@@ -1173,7 +1187,7 @@ export default function GolfOddsComparison() {
                                     <div className="desktop-card-label">Event Form</div>
                                     <div className="form-boxes">
                                       {(() => {
-                                        const key = Object.keys(majorFormMap).find(k => norm(k) === norm(player.name));
+                                        const key = lookupByName(majorFormMap, player.name);
                                         const results = key ? majorFormMap[key] : [];
                                         if (!results || results.length === 0) return <span style={{color:'#A0AEC0',fontSize:'0.75rem'}}>No data</span>;
                                         return results.map((p, i) => (
@@ -1257,12 +1271,12 @@ export default function GolfOddsComparison() {
                                       <div className="mobile-stat-label">World Ranking</div>
                                       <div className="mobile-stat-value">{player.owgr ?? 'N/A'}</div>
                                     </div>
-                                    {Object.keys(currentFormMap).find(k => norm(k) === norm(player.name)) && (
+                                    {lookupByName(currentFormMap, player.name) && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
                                         <div className="mobile-stat-label">Recent Form</div>
                                         <div className="form-boxes">
                                           {(() => {
-                                            const key = Object.keys(currentFormMap).find(k => norm(k) === norm(player.name));
+                                            const key = lookupByName(currentFormMap, player.name);
                                             const raw = key ? currentFormMap[key] : [];
                                             const played = raw.filter(p => p !== '-' && p !== '').reverse();
                                             const first7 = played.slice(0, 7);
@@ -1274,12 +1288,12 @@ export default function GolfOddsComparison() {
                                         </div>
                                       </div>
                                     )}
-                                    {Object.keys(majorFormMap).find(k => norm(k) === norm(player.name)) && (
+                                    {lookupByName(majorFormMap, player.name) && (
                                       <div className="mobile-stat-card mobile-stat-full-width">
                                         <div className="mobile-stat-label">Event Form</div>
                                         <div className="form-boxes">
                                           {(() => {
-                                            const key = Object.keys(majorFormMap).find(k => norm(k) === norm(player.name));
+                                            const key = lookupByName(majorFormMap, player.name);
                                             const results = key ? majorFormMap[key] : [];
                                             return results.map((p, i) => (
                                               <span key={i} className={`form-box ${getFinishClass(p)}`}>{String(p).replace('T','')}</span>
