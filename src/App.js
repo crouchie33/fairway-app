@@ -338,12 +338,14 @@ export default function GolfOddsComparison() {
     );
   }, [rankingsMap, selectedTournament]); // eslint-disable-line
 
-  // ── re-resolve player names when nationalityMap loads ──
+  // ── re-resolve player names when nationalityMap or players change ──
   // Prices may load from cache before nationalityMap is ready, leaving bookmaker
-  // name variants (e.g. "Christopher Gotterup") unresolved. Re-run once DG names arrive.
+  // name variants (e.g. "Christopher Gotterup") unresolved. Re-run whenever either changes.
   useEffect(() => {
     const dgNames = Object.keys(nationalityMap);
     if (dgNames.length === 0 || players.length === 0) return;
+    const needsUpdate = players.some(p => resolvePlayerName(p.name, dgNames) !== p.name);
+    if (!needsUpdate) return;
     setPlayers((prev) =>
       prev.map((p) => {
         const resolved = resolvePlayerName(p.name, dgNames);
@@ -352,7 +354,7 @@ export default function GolfOddsComparison() {
         return { ...p, name: resolved, owgr: rank !== null ? rank : p.owgr };
       })
     );
-  }, [nationalityMap]); // eslint-disable-line
+  }, [nationalityMap, players.length]); // eslint-disable-line
 
   // ── fetch sheet prices whenever tournament changes ──
   useEffect(() => {
