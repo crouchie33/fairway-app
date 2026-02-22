@@ -991,7 +991,7 @@ export default function GolfOddsComparison() {
       <div className="controls-bar">
         <div className="search-bar">
           <Search className="search-icon" size={16} />
-          <input id="player-search" name="player-search" type="text" placeholder="Search players..." value={filterText} onChange={(e) => setFilterText(e.target.value)} />
+          <input id="player-search" name="player-search" type="text" placeholder={`Search ${sorted.length} players...`} value={filterText} onChange={(e) => setFilterText(e.target.value)} />
         </div>
         <div className="promo-banner">
           <div className="promo-track">
