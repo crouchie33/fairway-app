@@ -304,7 +304,7 @@ export default function GolfOddsComparison() {
   const [sortConfig, setSortConfig]               = useState({ key: 'avgOdds', direction: 'asc' });
   const [filterText, setFilterText]               = useState('');
   const [expandedPlayer, setExpandedPlayer]       = useState(null);
-  const [oddsFormat, setOddsFormat]               = useState('fractional');
+  const [oddsFormat, setOddsFormat]               = useState('decimal');
   const [activeMobilePane, setActiveMobilePane]   = useState(0);
   const [countdown, setCountdown]                 = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [menuOpen, setMenuOpen]                   = useState(false);
@@ -974,6 +974,23 @@ export default function GolfOddsComparison() {
         .nav-theme-icon-btn:hover { transform: scale(1.15); }
         .nav-theme-icon-btn.active { border-color: var(--accent-primary); }
 
+        /* ── ODDS FORMAT TOGGLE (inline in drawer header) ── */
+        .nav-odds-btns {
+          display: flex; border: 1.5px solid var(--border-main); border-radius: 6px; overflow: hidden;
+        }
+        .nav-odds-btn {
+          flex: 1; background: none; border: none; border-right: 1px solid var(--border-main);
+          padding: 5px 10px; font-size: 0.75rem; font-weight: 600;
+          color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          letter-spacing: 0.01em;
+        }
+        .nav-odds-btn:last-child { border-right: none; }
+        .nav-odds-btn:hover { background: var(--bg-base); color: var(--text-primary); }
+        .nav-odds-btn.active {
+          background: var(--accent-primary); color: var(--tab-active-color);
+        }
+
         /* ── TABS ── */
         .tabs-row-desktop { display: flex; gap: 8px; margin-top: 8px; }
         .tabs-row-mobile  { display: none; }
@@ -1332,7 +1349,7 @@ export default function GolfOddsComparison() {
             <img src={wordmarkImg} alt="The Fairway" style={{height:'28px',width:'auto',filter:'var(--wordmark-filter)'}} />
             <button className="nav-drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
             <div className="nav-theme-row">
-              <span className="nav-theme-word">Mode</span>
+              <span className="nav-theme-word">Format</span>
               <div className="nav-theme-icons">
                 <button
                   className={`nav-theme-icon-btn${theme === 'light' ? ' active' : ''}`}
@@ -1365,6 +1382,19 @@ export default function GolfOddsComparison() {
                     <circle cx="10" cy="10" r="9" fill="#222222" stroke="#555555" strokeWidth="1.5"/>
                   </svg>
                 </button>
+              </div>
+            </div>
+            <div className="nav-theme-row">
+              <span className="nav-theme-word">Odds</span>
+              <div className="nav-odds-btns">
+                {[['decimal','1.5'],['fractional','1/2'],['american','-200']].map(([val, label]) => (
+                  <button
+                    key={val}
+                    className={`nav-odds-btn${oddsFormat === val ? ' active' : ''}`}
+                    onClick={() => { setOddsFormat(val); localStorage.setItem('oddsFormat', val); }}
+                    aria-pressed={oddsFormat === val}
+                  >{label}</button>
+                ))}
               </div>
             </div>
           </div>
