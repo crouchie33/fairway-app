@@ -10,6 +10,13 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-8RKDTSYNRG');
+      <script>
+  (function() {
+    const saved = localStorage.getItem('fairway-theme');
+    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.dataset.theme = saved || preferred;
+  })();
+</script>
     </script>
   </head>
   <body>
