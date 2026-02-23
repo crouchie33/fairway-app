@@ -249,7 +249,7 @@ function resolvePlayerName(sheetName, dgNames) {
   }
 
   // 5. Fallback — keep original and log for audit
-  console.warn(\`[Name unmatched] "\${sheetName}" — add to PLAYER_ALIASES if incorrect\`);
+  console.warn('[Name unmatched] "' + sheetName + '" — add to PLAYER_ALIASES if incorrect');
   return sheetName;
 }
 const lookupNationality = (map, name) => {
