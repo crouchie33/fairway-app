@@ -955,35 +955,24 @@ export default function GolfOddsComparison() {
           font-size: 0.78rem; color: var(--text-secondary);
         }
 
-        /* ── THEME TOGGLE (inside drawer) ── */
-        .theme-toggle-row {
-          padding: 16px 24px;
-          border-top: 1px solid var(--border-main);
-          display: flex; flex-direction: column; gap: 10px;
+        /* ── THEME TOGGLE (inline in drawer header) ── */
+        .nav-theme-row {
+          display: flex; align-items: center; gap: 10px; margin-top: 12px;
         }
-        .theme-toggle-label {
-          font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
-          color: var(--text-muted); font-weight: 600;
+        .nav-theme-word {
+          font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.08em; color: var(--text-muted);
         }
-        .theme-toggle-btns {
-          display: flex; gap: 6px;
+        .nav-theme-icons { display: flex; gap: 8px; align-items: center; }
+        .nav-theme-icon-btn {
+          background: none; border: 2px solid transparent;
+          border-radius: 50%; padding: 2px; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: border-color 0.15s, transform 0.15s;
+          line-height: 0;
         }
-        .theme-btn {
-          flex: 1; display: flex; flex-direction: column; align-items: center;
-          gap: 4px; padding: 8px 4px; border-radius: 6px; cursor: pointer;
-          border: 1.5px solid var(--border-main);
-          background: var(--bg-card);
-          color: var(--text-primary);
-          font-size: 0.72rem; font-weight: 600;
-          transition: all 0.15s;
-        }
-        .theme-btn:hover { border-color: var(--accent-primary); }
-        .theme-btn.active {
-          background: var(--accent-primary);
-          color: var(--tab-active-color);
-          border-color: var(--accent-primary);
-        }
-        .theme-btn-icon { font-size: 1rem; line-height: 1; }
+        .nav-theme-icon-btn:hover { transform: scale(1.15); }
+        .nav-theme-icon-btn.active { border-color: var(--accent-primary); }
 
         /* ── TABS ── */
         .tabs-row-desktop { display: flex; gap: 8px; margin-top: 8px; }
@@ -1342,30 +1331,48 @@ export default function GolfOddsComparison() {
           <div className="nav-drawer-header">
             <img src={wordmarkImg} alt="The Fairway" style={{height:'28px',width:'auto',filter:'var(--wordmark-filter)'}} />
             <button className="nav-drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
+            <div className="nav-theme-row">
+              <span className="nav-theme-word">Mode</span>
+              <div className="nav-theme-icons">
+                <button
+                  className={`nav-theme-icon-btn${theme === 'light' ? ' active' : ''}`}
+                  onClick={() => setTheme('light')}
+                  aria-label="Light mode"
+                  title="Light"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="9" fill="white" stroke="#cccccc" strokeWidth="1.5"/>
+                  </svg>
+                </button>
+                <button
+                  className={`nav-theme-icon-btn${theme === 'grey' ? ' active' : ''}`}
+                  onClick={() => setTheme('grey')}
+                  aria-label="Grey mode"
+                  title="Grey"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="9" fill="#888888" stroke="#555555" strokeWidth="1.5"/>
+                    <path d="M10 1 A9 9 0 0 1 10 19 Z" fill="white"/>
+                  </svg>
+                </button>
+                <button
+                  className={`nav-theme-icon-btn${theme === 'dark' ? ' active' : ''}`}
+                  onClick={() => setTheme('dark')}
+                  aria-label="Dark mode"
+                  title="Dark"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="9" fill="#222222" stroke="#555555" strokeWidth="1.5"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
           <div className="nav-drawer-links">
             <a href="/" className="nav-drawer-link active">Odds Comparison</a>
             <div className="nav-drawer-section">Blog</div>
             <a href="/blog" className="nav-drawer-link">All Articles</a>
             <a href="/blog/masters-2026-outsiders" className="nav-drawer-link">Masters 2026 Outsiders</a>
-          </div>
-
-          {/* ── THEME TOGGLE ── */}
-          <div className="theme-toggle-row">
-            <div className="theme-toggle-label">Display Theme</div>
-            <div className="theme-toggle-btns">
-              {THEMES.map(t => (
-                <button
-                  key={t}
-                  className={`theme-btn${theme === t ? ' active' : ''}`}
-                  onClick={() => setTheme(t)}
-                  aria-pressed={theme === t}
-                >
-                  <span className="theme-btn-icon">{THEME_ICONS[t]}</span>
-                  {THEME_LABELS[t]}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className="nav-drawer-footer">18+ | BeGambleAware.org</div>
