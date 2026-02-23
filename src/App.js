@@ -1349,7 +1349,7 @@ export default function GolfOddsComparison() {
             <img src={wordmarkImg} alt="The Fairway" style={{height:'28px',width:'auto',filter:'var(--wordmark-filter)'}} />
             <button className="nav-drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
             <div className="nav-theme-row">
-              <span className="nav-theme-word">Format</span>
+              <span className="nav-theme-word">Mode</span>
               <div className="nav-theme-icons">
                 <button
                   className={`nav-theme-icon-btn${theme === 'light' ? ' active' : ''}`}
