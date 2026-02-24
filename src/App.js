@@ -447,21 +447,11 @@ export default function GolfOddsComparison() {
     const url      = SHEET_PRICES_URLS[selectedTournament.id];
     const cacheKey = `fairway_sheetPrices_${selectedTournament.id}`;
 
-    // EW terms have their own short cache (1 hour) so they update when prices are refreshed
-    const ewCacheKey = `fairway_ewTerms_${selectedTournament.id}`;
-    const EW_CACHE_MS = 60 * 60 * 1000;
-    try {
-      const ewCached = localStorage.getItem(ewCacheKey);
-      if (ewCached) {
-        const { data, ts } = JSON.parse(ewCached);
-        if (Date.now() - ts < EW_CACHE_MS && data) setEwTermsMap(data);
-      }
-    } catch {}
-
+    // Serve prices and EW terms from cache if valid (same 12hr expiry)
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { data, ts } = JSON.parse(cached);
+        const { data, ewData, ts } = JSON.parse(cached);
         if (Date.now() - ts < SHEET_PRICES_CACHE_MS && data && Object.keys(data).length > 0) {
           const builtPlayers = buildPlayersFromSheet(data, Object.keys(nationalityMap));
           const withRankings = builtPlayers.map((p) => {
@@ -470,6 +460,7 @@ export default function GolfOddsComparison() {
           });
           setPlayers(withRankings);
           setBookmakers(BOOKMAKERS);
+          if (ewData) setEwTermsMap(ewData);
           setUseMock(false);
           setSheetError(false);
           return;
@@ -495,16 +486,11 @@ export default function GolfOddsComparison() {
         });
         setPlayers(withRankings);
         setBookmakers(BOOKMAKERS);
-        if (ewData) {
-          setEwTermsMap(ewData);
-          try { localStorage.setItem(ewCacheKey, JSON.stringify({ data: ewData, ts: Date.now() })); } catch {}
-        }
+        if (ewData) setEwTermsMap(ewData);
         setUseMock(false);
         setSheetError(false);
 
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ts: Date.now() }));
-        } catch {}
+        try { localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ewData, ts: Date.now() })); } catch {}
       })
       .catch((err) => {
         console.warn('Sheet prices unavailable, falling back to demo:', err.message);
