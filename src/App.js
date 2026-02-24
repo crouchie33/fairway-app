@@ -176,6 +176,7 @@ const BM_NAME_MAP = {
   'boylesports':  'BoyleSports',
   'skybet':       'Sky Bet',
   'sky bet':      'Sky Bet',
+  'Skybet':       'Sky Bet',
   'betfair':      'Betfair Sportsbook',
   'star sports':  'Star Sports',
   'ak bets':      'AK Bets',
@@ -446,10 +447,21 @@ export default function GolfOddsComparison() {
     const url      = SHEET_PRICES_URLS[selectedTournament.id];
     const cacheKey = `fairway_sheetPrices_${selectedTournament.id}`;
 
+    // EW terms have their own short cache (1 hour) so they update when prices are refreshed
+    const ewCacheKey = `fairway_ewTerms_${selectedTournament.id}`;
+    const EW_CACHE_MS = 60 * 60 * 1000;
+    try {
+      const ewCached = localStorage.getItem(ewCacheKey);
+      if (ewCached) {
+        const { data, ts } = JSON.parse(ewCached);
+        if (Date.now() - ts < EW_CACHE_MS && data) setEwTermsMap(data);
+      }
+    } catch {}
+
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { data, ewData, ts } = JSON.parse(cached);
+        const { data, ts } = JSON.parse(cached);
         if (Date.now() - ts < SHEET_PRICES_CACHE_MS && data && Object.keys(data).length > 0) {
           const builtPlayers = buildPlayersFromSheet(data, Object.keys(nationalityMap));
           const withRankings = builtPlayers.map((p) => {
@@ -458,7 +470,6 @@ export default function GolfOddsComparison() {
           });
           setPlayers(withRankings);
           setBookmakers(BOOKMAKERS);
-          if (ewData) setEwTermsMap(ewData);
           setUseMock(false);
           setSheetError(false);
           return;
@@ -484,12 +495,15 @@ export default function GolfOddsComparison() {
         });
         setPlayers(withRankings);
         setBookmakers(BOOKMAKERS);
-        if (ewData) setEwTermsMap(ewData);
+        if (ewData) {
+          setEwTermsMap(ewData);
+          try { localStorage.setItem(ewCacheKey, JSON.stringify({ data: ewData, ts: Date.now() })); } catch {}
+        }
         setUseMock(false);
         setSheetError(false);
 
         try {
-          localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ewData, ts: Date.now() }));
+          localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ts: Date.now() }));
         } catch {}
       })
       .catch((err) => {
@@ -720,6 +734,10 @@ export default function GolfOddsComparison() {
 
   const getEwTerms = useCallback((bmName) => {
     if (ewTermsMap[bmName]) return ewTermsMap[bmName];
+    // Normalised fallback — handles sheet name variants like "Skybet" vs "Sky Bet"
+    const normBm = norm(bmName);
+    const key = Object.keys(ewTermsMap).find(k => norm(k) === normBm);
+    if (key) return ewTermsMap[key];
     const bm = BOOKMAKERS.find((b) => b.name === bmName);
     return bm ? bm.ew : '5';
   }, [ewTermsMap]);
