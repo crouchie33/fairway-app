@@ -13,17 +13,18 @@ const ODDS_CACHE_MS = 60 * 60 * 1000;
 const RANKINGS_URL = 'https://script.google.com/macros/s/AKfycbz0AV6lo8WSGm1qFLfKVKW8zbg2NrLaYGd82e20vPvrPFmQqsMUK6sIA0sc5fApVUUx/exec';
 const NATIONALITY_URL       = 'https://script.google.com/macros/s/AKfycbzQweWv_6kEsGShpITxBKLpo4U81F3TmzSUkolKsW6AXx1vrj0s7JCy_7mt-Qe8eV3ieQ/exec';
 const NATIONALITY_CACHE_KEY = 'fairway_nationalities';
-const NATIONALITY_CACHE_MS  = 30 * 24 * 60 * 60 * 1000;
+const NATIONALITY_CACHE_MS  = 30 * 24 * 60 * 60 * 1000; // 30 days
 const RANKINGS_CACHE_KEY = 'fairway_rankings';
 const RANKINGS_CACHE_MS = 24 * 60 * 60 * 1000;
 
+// ── SHEET PRICES — paste your 4 deployed Apps Script URLs here ────────────────
 const SHEET_PRICES_URLS = {
   masters: 'https://script.google.com/macros/s/AKfycbw1w-GVUGobfw3NHMjDdyB0v8ZLZuHe79k0zYFEV_SWv_SzFIoJfIa693eQYGVQd6VN/exec',
   pga:     'https://script.google.com/macros/s/AKfycbwk6W89Wn1pjq0zpOu6JKdh-qEcXi_-Gu03LjymwNRs-KF9BIl7j2kYmiwOyzmYH9m3/exec',
   usopen:  'https://script.google.com/macros/s/AKfycbzsCWHaIyPu4cRKE9vYAgTe5bX7RXl5QWGBioNGeYyWViLvSSWzgDC4RSMR1wlCzHOKoA/exec',
   open:    'https://script.google.com/macros/s/AKfycbwNw5qTNLMqmE7n_3K7M5NaJG7z70qD6coxj2nKrIGH7cRc6QjRgltot3xgwt310wMh/exec',
 };
-const SHEET_PRICES_CACHE_MS = 12 * 60 * 60 * 1000;
+const SHEET_PRICES_CACHE_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────────────
 
@@ -85,13 +86,14 @@ const POLYMARKET_CACHE_MS = 6 * 60 * 60 * 1000;
 
 const MAJORS_FORM_URL = "https://script.google.com/macros/s/AKfycbwjUK-2zF8GYa8eFevPCWTdUJOeCRA-J5TCXdneuF8b22y2RQexnJL76uxqWr3wBCFw/exec";
 
+// Confirmed players per event — add URLs as each field is confirmed
 const CONFIRMED_URLS = {
   masters: 'https://script.google.com/macros/s/AKfycbxeH8CQ3I1xKGOwEq6TOwzULNuqp5C__ug4mlWdhrKwGf3_MG3KhyK2HUoNObIqdOua/exec',
   pga:     null,
   usopen:  null,
   open:    null,
 };
-const CONFIRMED_CACHE_MS = 12 * 60 * 60 * 1000;
+const CONFIRMED_CACHE_MS = 12 * 60 * 60 * 1000; // 12 hours
 const MAJORS_FORM_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const CURRENT_FORM_URL = "https://script.google.com/macros/s/AKfycbzFo29_upCpM4_qg_WiB-ncdqwTMxqoMbsMs7LdHMEw_FnqZNAimPnipv3cTrWPlSuJ/exec";
@@ -170,6 +172,7 @@ function setRankingsCache(map) {
   } catch {}
 }
 
+// Maps sheet bookmaker names to app bookmaker names
 const BM_NAME_MAP = {
   'bet365':       'Bet365',
   'boyle sports': 'BoyleSports',
@@ -184,38 +187,58 @@ const BM_NAME_MAP = {
 };
 const normBmName = (name) => BM_NAME_MAP[name.toLowerCase().trim()] || name.trim();
 
+// Player name aliases — maps alternate names to canonical name
+// Known irregular names that can't be resolved by surname matching
+// Key = any known variant (lowercase), Value = canonical DataGolf name
+// ─── PLAYER NAME ALIASES ─────────────────────────────────────────────────────
+// Manual overrides for names that can't be auto-resolved.
+// Key = any known bookmaker variant (lowercase), Value = canonical DataGolf name.
+// Add entries here whenever you find a player with a non-matching name.
 const PLAYER_ALIASES = {
-  'siwoo kim':       'Si Woo Kim',
-  'joohyung kim':    'Tom Kim',
-  'kh lee':          'K.H. Lee',
-  'kyoung-hoon lee': 'K.H. Lee',
-  'byeonghun an':    'Byeong Hun An',
-  'harold varner':   'Harold Varner III',
-  'hao tong li':     'Haotong Li',
-  'li haotong':      'Haotong Li',
-  'daniel brown':    'Dan Brown',
-  'shaun norris':    'Shaun Norris',
+  'siwoo kim':       'Si Woo Kim',        // spacing variant
+  'joohyung kim':    'Tom Kim',           // real name vs DataGolf nickname
+  'kh lee':          'K.H. Lee',          // initials without dots
+  'kyoung-hoon lee': 'K.H. Lee',          // full name vs initials
+  'byeonghun an':    'Byeong Hun An',     // spacing variant
+  'harold varner':   'Harold Varner III', // missing suffix
+  'hao tong li':     'Haotong Li',        // spacing variant
+  'li haotong':      'Haotong Li',        // surname first variant
+  'daniel brown':    'Dan Brown',         // full name vs shortened
+  'shaun norris':    'Shaun Norris',      // duplicate surname — pin exact name
 };
 
+// ─── NAME RESOLUTION PIPELINE ────────────────────────────────────────────────
+// Resolves a bookmaker player name to canonical DataGolf name.
+// Steps:
+//   1. Manual aliases  — handles known irregular names
+//   2. Exact match     — norm comparison against DataGolf list
+//   3. Unique surname  — only when one player has that surname
+//   4. First initial + surname — e.g. "D. Brown" matches "Dan Brown" if unique
+//   5. Fallback        — keep original, log unmatched name for audit
 function resolvePlayerName(sheetName, dgNames) {
   if (!sheetName) return sheetName;
   const cleaned     = sheetName.replace(/\(a\)/gi, '').trim();
   const normCleaned = norm(cleaned);
 
+  // 1. Manual aliases
   if (PLAYER_ALIASES[normCleaned]) return PLAYER_ALIASES[normCleaned];
+
   if (!dgNames || dgNames.length === 0) return sheetName;
 
+  // 2. Exact match
   const exact = dgNames.find(n => norm(n) === normCleaned);
   if (exact) return exact;
 
   const parts   = normCleaned.split(' ');
   const surname = parts.slice(-1)[0];
 
+  // 3. Unique surname match
   const surnameMatches = dgNames.filter(n => norm(n).split(' ').slice(-1)[0] === surname);
   if (surnameMatches.length === 1) return surnameMatches[0];
 
+  // 4. First initial + surname match — e.g. "d. brown" or "d brown" → "Dan Brown"
   if (parts.length >= 2) {
-    const initial = parts[0].replace(/\./g, '');
+    const initial = parts[0].replace(/\./g, ''); // strip dots from initial
     if (initial.length === 1) {
       const initialMatches = surnameMatches.filter(n => {
         const dgFirst = norm(n).split(' ')[0];
@@ -225,10 +248,10 @@ function resolvePlayerName(sheetName, dgNames) {
     }
   }
 
+  // 5. Fallback — keep original and log for audit
   console.warn('[Name unmatched] "' + sheetName + '" — add to PLAYER_ALIASES if incorrect');
   return sheetName;
 }
-
 const lookupNationality = (map, name) => {
   if (!map || !name) return 'TBD';
   const n = norm(name);
@@ -236,16 +259,21 @@ const lookupNationality = (map, name) => {
   return key ? map[key] : 'TBD';
 };
 
+// Lookup a player in any map — tries exact norm match first, then surname-only match
+// Handles cases like "Jayden Schaper" matching "Jayden Trey Schaper"
 function lookupByName(map, playerName) {
   if (!map || !playerName) return null;
   const n = norm(playerName);
   const surname = n.split(' ').slice(-1)[0];
+  // Exact match
   let key = Object.keys(map).find(k => norm(k) === n);
   if (key) return key;
+  // Surname match — only if unique
   const hits = Object.keys(map).filter(k => norm(k).split(' ').slice(-1)[0] === surname);
   return hits.length === 1 ? hits[0] : null;
 }
 
+// Converts sheet odds response into the player array the table expects
 function buildPlayersFromSheet(oddsData, dgNames = []) {
   return Object.entries(oddsData).map(([name, bookOdds]) => {
     const canonicalName = resolvePlayerName(name, dgNames);
@@ -263,28 +291,13 @@ function buildPlayersFromSheet(oddsData, dgNames = []) {
       name: canonicalName,
       nationality: 'TBD',
       owgr: null,
-      recentForm: [1],
+      recentForm: [1], // non-empty so form card renders
       courseHistory: 'TBD',
       tipsterPicks: [],
       bookmakerOdds,
       avgOdds,
     };
   });
-}
-
-// ─── THEME ───────────────────────────────────────────────────────────────────
-
-const THEMES = ['light', 'grey', 'dark'];
-
-const THEME_ICONS = { light: '☀️', grey: '◑', dark: '🌙' };
-const THEME_LABELS = { light: 'Light', grey: 'Grey', dark: 'Dark' };
-
-function getInitialTheme() {
-  try {
-    const saved = localStorage.getItem('fairway-theme');
-    if (saved && THEMES.includes(saved)) return saved;
-  } catch {}
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
@@ -304,7 +317,7 @@ export default function GolfOddsComparison() {
   const [sortConfig, setSortConfig]               = useState({ key: 'avgOdds', direction: 'asc' });
   const [filterText, setFilterText]               = useState('');
   const [expandedPlayer, setExpandedPlayer]       = useState(null);
-  const [oddsFormat, setOddsFormat]               = useState('decimal');
+  const [oddsFormat, setOddsFormat]               = useState('fractional');
   const [activeMobilePane, setActiveMobilePane]   = useState(0);
   const [countdown, setCountdown]                 = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [menuOpen, setMenuOpen]                   = useState(false);
@@ -319,18 +332,8 @@ export default function GolfOddsComparison() {
   const [tipsterModal, setTipsterModal]           = useState(null);
   const [isUS, setIsUS]                           = useState(false);
   const [promoIndex, setPromoIndex]               = useState(0);
-  const [theme, setTheme]                         = useState(getInitialTheme);
 
-  // ── apply theme to <html> and persist ──
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem('fairway-theme', theme); } catch {}
-  }, [theme]);
-
-  const cycleTheme = () => {
-    setTheme(prev => THEMES[(THEMES.indexOf(prev) + 1) % THEMES.length]);
-  };
-
+  // Derived max for tipster bars — whoever has most tips = 100% bar width
   const derivedMaxTips = useMemo(() => {
     const vals = Object.values(tipsterPicksMap).map(p => p.length);
     return vals.length ? Math.max(...vals) : 1;
@@ -369,6 +372,7 @@ export default function GolfOddsComparison() {
     return () => clearInterval(id);
   }, []);
 
+  // ── fetch DataGolf rankings ──
   useEffect(() => {
     const cached = getRankingsCache();
     if (cached) { setRankingsMap(cached); setRankingsCount(Object.keys(cached).length); return; }
@@ -385,6 +389,7 @@ export default function GolfOddsComparison() {
       .catch((err) => console.warn('Rankings unavailable:', err.message));
   }, []);
 
+  // ── apply rankings to players ──
   useEffect(() => {
     if (Object.keys(rankingsMap).length === 0 || players.length === 0) return;
     setPlayers((prev) =>
@@ -395,6 +400,9 @@ export default function GolfOddsComparison() {
     );
   }, [rankingsMap, selectedTournament]); // eslint-disable-line
 
+  // ── re-resolve player names when nationalityMap or players change ──
+  // Prices may load from cache before nationalityMap is ready, leaving bookmaker
+  // name variants (e.g. "Christopher Gotterup") unresolved. Re-run whenever either changes.
   useEffect(() => {
     const dgNames = Object.keys(nationalityMap);
     if (dgNames.length === 0 || players.length === 0) return;
@@ -410,10 +418,12 @@ export default function GolfOddsComparison() {
     );
   }, [nationalityMap, players.length]); // eslint-disable-line
 
+  // ── fetch sheet prices whenever tournament changes ──
   useEffect(() => {
     const url      = SHEET_PRICES_URLS[selectedTournament.id];
     const cacheKey = `fairway_sheetPrices_${selectedTournament.id}`;
 
+    // Check cache first
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -468,6 +478,7 @@ export default function GolfOddsComparison() {
       .finally(() => setSheetLoading(false));
   }, [selectedTournament]); // eslint-disable-line
 
+  // ── fetch Polymarket odds ──
   useEffect(() => {
     try {
       const cached = localStorage.getItem(POLYMARKET_CACHE_KEY);
@@ -487,11 +498,13 @@ export default function GolfOddsComparison() {
       .catch((err) => console.warn('Polymarket unavailable:', err.message));
   }, []);
 
+  // ── fetch major event form + nationalities ──
   useEffect(() => {
     const nameMap = { 'The Masters': 'Masters', 'PGA Championship': 'PGA Championship', 'US Open': 'US Open', 'The Open': 'The Open' };
     const majorName = nameMap[selectedTournament.name] || selectedTournament.name;
     const cacheKey = 'fairway_form_' + majorName.replace(/\s/g, '_');
 
+    // Check nationality cache (shared across all tournaments)
     try {
       const cachedNat = localStorage.getItem('fairway_nationalities');
       if (cachedNat) {
@@ -522,26 +535,44 @@ export default function GolfOddsComparison() {
       .catch((err) => console.warn('Majors form unavailable:', err.message));
   }, [selectedTournament]); // eslint-disable-line
 
+  // ── fetch current form ──
   useEffect(() => {
     const cacheKey = 'currentForm2026';
+
+    // Bust cache if last saved before most recent Tuesday 3am
+    const lastTuesday3am = () => {
+      const now = new Date();
+      const d   = new Date(now);
+      d.setHours(3, 0, 0, 0);
+      const day = d.getDay(); // 0=Sun, 2=Tue
+      d.setDate(d.getDate() - ((day + 5) % 7)); // roll back to last Tuesday
+      if (d > now) d.setDate(d.getDate() - 7);  // if that's in the future, go back a week
+      return d.getTime();
+    };
+
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CURRENT_FORM_CACHE_MS && data && Object.keys(data).length > 0) { setCurrentFormMap(data); return; }
+        if (ts > lastTuesday3am() && data && Object.keys(data).length > 0) {
+          setCurrentFormMap(data);
+          return;
+        }
       }
     } catch {}
+
     fetch(CURRENT_FORM_URL)
-      .then((r) => r.json())
-      .then((json) => {
+      .then(r => r.json())
+      .then(json => {
         if (json.players && Object.keys(json.players).length > 0) {
           setCurrentFormMap(json.players);
           try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() })); } catch {}
         }
       })
-      .catch((err) => console.warn('Current form unavailable:', err.message));
+      .catch(err => console.warn('Current form unavailable:', err.message));
   }, []); // eslint-disable-line
 
+  // ── detect US users ──
   useEffect(() => {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
@@ -549,6 +580,7 @@ export default function GolfOddsComparison() {
       .catch(() => setIsUS(false));
   }, []); // eslint-disable-line
 
+  // ── fetch confirmed players for current tournament ──
   useEffect(() => {
     const url = CONFIRMED_URLS[selectedTournament.id];
     if (!url) { setConfirmedPlayers([]); return; }
@@ -575,6 +607,7 @@ export default function GolfOddsComparison() {
       .catch(err => console.warn('Confirmed players unavailable:', err.message));
   }, [selectedTournament]); // eslint-disable-line
 
+  // ── fetch nationalities from DataGolf player list ──
   useEffect(() => {
     try {
       const cached = localStorage.getItem(NATIONALITY_CACHE_KEY);
@@ -598,6 +631,7 @@ export default function GolfOddsComparison() {
       .catch(err => console.warn('Nationality fetch unavailable:', err.message));
   }, []); // eslint-disable-line
 
+  // ── fetch tipster picks ──
   useEffect(() => {
     const cacheKey = 'tipsterPicks_v2';
     try {
@@ -620,6 +654,7 @@ export default function GolfOddsComparison() {
       .catch(err => console.warn('Tipster picks unavailable:', err.message));
   }, []); // eslint-disable-line
 
+  // ── mock data fallback ──
   const loadMock = useCallback(() => {
     setUseMock(true);
     const result = MOCK_PLAYERS.map((p) => {
@@ -636,6 +671,7 @@ export default function GolfOddsComparison() {
     setBookmakers(BOOKMAKERS);
   }, []);
 
+  // ── format odds ──
   const formatOdds = useCallback((val) => {
     if (!val || val === 'N/A') return '-';
     const n = typeof val === 'string' ? parseFloat(val) : val;
@@ -667,12 +703,14 @@ export default function GolfOddsComparison() {
     return 'finish-other';
   };
 
+  // Resolve e/w terms: prefer sheet data, fall back to BOOKMAKERS static config
   const getEwTerms = useCallback((bmName) => {
     if (ewTermsMap[bmName]) return ewTermsMap[bmName];
     const bm = BOOKMAKERS.find((b) => b.name === bmName);
     return bm ? bm.ew : '5';
   }, [ewTermsMap]);
 
+  // ── sort + filter ──
   const sorted = useMemo(() => {
     const dgNames = Object.keys(nationalityMap);
     const normConfirmed = (n) => norm(resolvePlayerName(n.replace(/\(a\)/gi, '').trim(), dgNames));
@@ -715,489 +753,146 @@ export default function GolfOddsComparison() {
   return (
     <div className="app-container">
       <style>{`
-
-        /* ══════════════════════════════════════════════════
-           THEME TOKENS
-           ══════════════════════════════════════════════════ */
-
-        /* Light (default) */
-        :root, [data-theme="light"] {
-          --bg-base:           #F5F7FA;
-          --bg-surface:        #EDF0F4;
-          --bg-surface-alt:    #E2E8F0;
-          --bg-header:         #F5F7FA;
-          --bg-drawer:         #ffffff;
-          --bg-cell-sticky:    #F5F7FA;
-          --bg-cell-hover:     #E8ECF0;
-          --bg-thead:          #EDF0F4;
-          --bg-expanded:       #EDF0F4;
-          --bg-card:           #F5F7FA;
-          --bg-input:          #ffffff;
-          --bg-promo:          #F5F7FA;
-          --bg-footer:         #EDF0F4;
-          --bg-best-odds:      #E8ECF0;
-
-          --text-primary:      #2D3748;
-          --text-secondary:    #718096;
-          --text-muted:        #A0AEC0;
-          --text-tagline:      #718096;
-          --text-odds:         #2D3748;
-          --text-poly:         #6046ff;
-
-          --border-main:       #CBD5E0;
-          --border-light:      #E2E8F0;
-          --border-best:       #2D3748;
-
-          --accent-primary:    #2D3748;
-          --accent-secondary:  #4A5568;
-          --accent-bar:        #2D3748;
-          --accent-bar-grad:   linear-gradient(90deg, #2D3748, #4A5568);
-          --accent-bar-text:   #2D3748;
-          --accent-highlight:  #2D3748; /* best odds cell */
-
-          --tab-active-bg:     #2D3748;
-          --tab-active-color:  #ffffff;
-
-          --tipster-bg:        #DDE2E8;
-          --tipster-count-col: #2D3748;
-
-          --btn-bg:            #2D3748;
-          --btn-color:         #ffffff;
-          --btn-hamburger:     #2D3748;
-
-          --wordmark-filter:   none;
-          --logo-filter:       none;
-        }
-
-        /* Grey */
-        [data-theme="grey"] {
-          --bg-base:           #d4d4d4;
-          --bg-surface:        #c2c2c2;
-          --bg-surface-alt:    #b0b0b0;
-          --bg-header:         #d4d4d4;
-          --bg-drawer:         #c8c8c8;
-          --bg-cell-sticky:    #d4d4d4;
-          --bg-cell-hover:     #bebebe;
-          --bg-thead:          #c2c2c2;
-          --bg-expanded:       #c2c2c2;
-          --bg-card:           #d4d4d4;
-          --bg-input:          #cbcbcb;
-          --bg-promo:          #d4d4d4;
-          --bg-footer:         #c2c2c2;
-          --bg-best-odds:      #b8b8b8;
-
-          --text-primary:      #1a1a1a;
-          --text-secondary:    #3a3a3a;
-          --text-muted:        #555555;
-          --text-tagline:      #3a3a3a;
-          --text-odds:         #1a1a1a;
-          --text-poly:         #4433cc;
-
-          --border-main:       #999999;
-          --border-light:      #b0b0b0;
-          --border-best:       #1a1a1a;
-
-          --accent-primary:    #2a2a2a;
-          --accent-secondary:  #444444;
-          --accent-bar:        #3a6b3a;
-          --accent-bar-grad:   linear-gradient(90deg, #3a6b3a, #4e8f4e);
-          --accent-bar-text:   #1a1a1a;
-          --accent-highlight:  #2e7d32;
-
-          --tab-active-bg:     #2a2a2a;
-          --tab-active-color:  #ffffff;
-
-          --tipster-bg:        #b8b8b8;
-          --tipster-count-col: #1a1a1a;
-
-          --btn-bg:            #2a2a2a;
-          --btn-color:         #ffffff;
-          --btn-hamburger:     #1a1a1a;
-
-          --wordmark-filter:   grayscale(100%) contrast(1.1);
-          --logo-filter:       grayscale(100%) contrast(1.1);
-        }
-
-        /* Dark */
-        [data-theme="dark"] {
-          --bg-base:           #2b2b2b;
-          --bg-surface:        #333333;
-          --bg-surface-alt:    #3d3d3d;
-          --bg-header:         #2b2b2b;
-          --bg-drawer:         #222222;
-          --bg-cell-sticky:    #2b2b2b;
-          --bg-cell-hover:     #3a3a3a;
-          --bg-thead:          #303030;
-          --bg-expanded:       #303030;
-          --bg-card:           #333333;
-          --bg-input:          #3d3d3d;
-          --bg-promo:          #333333;
-          --bg-footer:         #222222;
-          --bg-best-odds:      #3a3a3a;
-
-          --text-primary:      #e0e0e0;
-          --text-secondary:    #aaaaaa;
-          --text-muted:        #777777;
-          --text-tagline:      #aaaaaa;
-          --text-odds:         #e0e0e0;
-          --text-poly:         #9b8fff;
-
-          --border-main:       #4a4a4a;
-          --border-light:      #404040;
-          --border-best:       #4caf50;
-
-          --accent-primary:    #e0e0e0;
-          --accent-secondary:  #aaaaaa;
-          --accent-bar:        #4caf50;
-          --accent-bar-grad:   linear-gradient(90deg, #388e3c, #4caf50);
-          --accent-bar-text:   #e0e0e0;
-          --accent-highlight:  #4caf50;
-
-          --tab-active-bg:     #e0e0e0;
-          --tab-active-color:  #2b2b2b;
-
-          --tipster-bg:        #444444;
-          --tipster-count-col: #e0e0e0;
-
-          --btn-bg:            #e0e0e0;
-          --btn-color:         #2b2b2b;
-          --btn-hamburger:     #e0e0e0;
-
-          --wordmark-filter:   invert(1) brightness(1.15);
-          --logo-filter:       invert(1) brightness(1.15);
-        }
-
-        /* ══════════════════════════════════════════════════
-           RESET & BASE
-           ══════════════════════════════════════════════════ */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-          letter-spacing: -0.01em;
-          background: var(--bg-base);
-          color: var(--text-primary);
-          overflow-x: hidden;
-          transition: background 0.2s ease, color 0.2s ease;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; letter-spacing: -0.01em; background: #F5F7FA; color: #2D3748; overflow-x: hidden; }
         .app-container { max-width: 1600px; margin: 0 auto; }
 
         /* ── HEADER ── */
-        header {
-          background: var(--bg-header);
-          border-bottom: 1px solid var(--border-main);
-          padding: 20px 30px;
-          position: sticky; top: 0; z-index: 100;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-          position: relative;
-        }
+        header { background: #F5F7FA; border-bottom: 1px solid #CBD5E0; padding: 20px 30px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; }
         .header-content { display: flex; flex-direction: column; gap: 0; }
         .header-top-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; width: 100%; }
         .header-left  { justify-self: start; }
         .header-center{ justify-self: center; }
         .header-right { display: flex; flex-direction: column; align-items: flex-end; }
-        .tagline { font-size: 1.7rem; color: var(--text-tagline); font-weight: 500; padding-top: 8px; }
-        .wordmark { width: 100mm; height: auto; filter: var(--wordmark-filter); transition: filter 0.2s; }
-        .logo-center { height: 90px; width: auto; filter: var(--logo-filter); transition: filter 0.2s; }
+        .tagline { font-size: 1.7rem; color: #718096; font-weight: 500; padding-top: 8px; }
+        .wordmark { width: 100mm; height: auto; }
+        .logo-center { height: 90px; width: auto; }
         .logo-mobile { display: none; }
         .logo-desktop{ display: block; }
 
-        /* ── NAV / HAMBURGER ── */
-        .nav-menu-btn {
-          background: none; border: none; cursor: pointer; padding: 6px;
-          display: flex; flex-direction: column; gap: 5px;
-          align-items: center; justify-content: center;
-          flex-shrink: 0; align-self: flex-end;
-        }
-        .nav-menu-btn span {
-          display: block; width: 22px; height: 2px;
-          background: var(--btn-hamburger);
-          border-radius: 2px; transition: all 0.2s;
-        }
+        /* ── NAV ── */
+        .nav-menu-btn { background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center; flex-shrink: 0; align-self: flex-end; }
+        .nav-menu-btn span { display: block; width: 22px; height: 2px; background: #2D3748; border-radius: 2px; transition: all 0.2s; }
         .nav-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
         .nav-menu-btn.open span:nth-child(2) { opacity: 0; }
         .nav-menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-        .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 150; }
+        .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 150; }
         .nav-overlay.open { display: block; }
-        .nav-drawer {
-          position: fixed; top: 0; right: -300px; width: 300px; height: 100vh;
-          background: var(--bg-drawer); z-index: 160;
-          transition: right 0.25s ease;
-          box-shadow: -4px 0 20px rgba(0,0,0,0.18);
-          display: flex; flex-direction: column;
-        }
+        .nav-drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: white; z-index: 160; transition: right 0.25s ease; box-shadow: -4px 0 20px rgba(0,0,0,0.12); display: flex; flex-direction: column; }
         .nav-drawer.open { right: 0; }
-        .nav-drawer-header {
-          padding: 20px 24px; border-bottom: 1px solid var(--border-main);
-          font-weight: 700; font-size: 1rem; color: var(--text-primary); position: relative;
-        }
-        .nav-drawer-close {
-          position: absolute; top: 20px; right: 20px; background: none; border: none;
-          cursor: pointer; font-size: 1.3rem; color: var(--text-muted);
-          line-height: 1; padding: 0; width: 24px; height: 24px;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .nav-drawer-close:hover { color: var(--text-primary); }
+        .nav-drawer-header { padding: 20px 24px; border-bottom: 1px solid #CBD5E0; font-weight: 700; font-size: 1rem; color: #2D3748; position: relative; }
+        .nav-drawer-close { position: absolute; top: 20px; right: 20px; background: none; border: none; cursor: pointer; font-size: 1.3rem; color: #A0AEC0; line-height: 1; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+        .nav-drawer-close:hover { color: #2D3748; }
         .nav-drawer-links { display: flex; flex-direction: column; padding: 12px 0; flex: 1; }
-        .nav-drawer-link {
-          padding: 14px 24px; font-size: 1rem; color: var(--text-primary);
-          text-decoration: none; font-weight: 500;
-          border-bottom: 1px solid var(--bg-base);
-          transition: background 0.1s;
-        }
-        .nav-drawer-link:hover { background: var(--bg-base); }
-        .nav-drawer-link.active { color: var(--text-primary); font-weight: 700; }
-        .nav-drawer-section {
-          padding: 10px 24px 4px; font-size: 0.72rem; text-transform: uppercase;
-          letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; margin-top: 8px;
-        }
-        .nav-drawer-footer {
-          padding: 16px 24px; border-top: 1px solid var(--border-main);
-          font-size: 0.78rem; color: var(--text-secondary);
-        }
-
-        /* ── THEME TOGGLE (inline in drawer header) ── */
-        .nav-theme-row {
-          display: flex; align-items: center; gap: 10px; margin-top: 12px;
-        }
-        .nav-theme-word {
-          font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
-          letter-spacing: 0.08em; color: var(--text-muted);
-        }
-        .nav-theme-icons { display: flex; gap: 8px; align-items: center; }
-        .nav-theme-icon-btn {
-          background: none; border: 2px solid transparent;
-          border-radius: 50%; padding: 2px; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          transition: border-color 0.15s, transform 0.15s;
-          line-height: 0;
-        }
-        .nav-theme-icon-btn:hover { transform: scale(1.15); }
-        .nav-theme-icon-btn.active { border-color: var(--accent-primary); }
-
-        /* ── ODDS FORMAT TOGGLE (inline in drawer header) ── */
-        .nav-odds-btns {
-          display: flex; border: 1.5px solid var(--border-main); border-radius: 6px; overflow: hidden;
-        }
-        .nav-odds-btn {
-          flex: 1; background: none; border: none; border-right: 1px solid var(--border-main);
-          padding: 5px 10px; font-size: 0.75rem; font-weight: 600;
-          color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          letter-spacing: 0.01em;
-        }
-        .nav-odds-btn:last-child { border-right: none; }
-        .nav-odds-btn:hover { background: var(--bg-base); color: var(--text-primary); }
-        .nav-odds-btn.active {
-          background: var(--accent-primary); color: var(--tab-active-color);
-        }
+        .nav-drawer-link { padding: 14px 24px; font-size: 1rem; color: #2D3748; text-decoration: none; font-weight: 500; border-bottom: 1px solid #F5F7FA; transition: background 0.1s; }
+        .nav-drawer-link:hover { background: #F5F7FA; }
+        .nav-drawer-link.active { color: #2D3748; font-weight: 700; }
+        .nav-drawer-section { padding: 10px 24px 4px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #718096; font-weight: 600; margin-top: 8px; }
+        .nav-drawer-footer { padding: 16px 24px; border-top: 1px solid #CBD5E0; font-size: 0.78rem; color: #718096; }
 
         /* ── TABS ── */
         .tabs-row-desktop { display: flex; gap: 8px; margin-top: 8px; }
         .tabs-row-mobile  { display: none; }
-        .tournament-tab {
-          padding: 8px 16px;
-          background: var(--bg-base);
-          border: 1px solid var(--border-main);
-          border-radius: 6px; font-size: 0.85rem; font-weight: 500;
-          color: var(--text-secondary); cursor: pointer; transition: all 0.15s; white-space: nowrap;
-        }
-        .tournament-tab:hover { color: var(--text-primary); border-color: var(--accent-primary); }
-        .tournament-tab.active {
-          background: var(--tab-active-bg); color: var(--tab-active-color);
-          border-color: var(--tab-active-bg); font-weight: 600;
-        }
+        .tournament-tab { padding: 8px 16px; background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.85rem; font-weight: 500; color: #718096; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+        .tournament-tab:hover { color: #2D3748; border-color: #2D3748; }
+        .tournament-tab.active { background: #2D3748; color: white; border-color: #2D3748; font-weight: 600; }
 
         /* ── COUNTDOWN ── */
         .countdown-container { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 0.85rem; }
-        .countdown-label { color: var(--text-secondary); font-weight: 500; }
-        .countdown-time  { font-weight: 700; font-family: 'Courier New', monospace; color: var(--text-primary); }
+        .countdown-label { color: #718096; font-weight: 500; }
+        .countdown-time  { font-weight: 700; font-family: 'Courier New', monospace; }
 
         /* ── PROMO ── */
-        .promo-banner {
-          flex: 1; overflow: hidden; position: relative; height: 36px;
-          border-radius: 6px; border: 1px solid var(--border-main);
-          background: var(--bg-promo);
-        }
+        .promo-banner { flex: 1; overflow: hidden; position: relative; height: 36px; border-radius: 6px; border: 1px solid #CBD5E0; background: #F5F7FA; }
         .promo-track { position: relative; width: 100%; height: 100%; }
-        .promo-card {
-          display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 36px;
-          white-space: nowrap; text-decoration: none; color: var(--text-primary);
-          font-size: 0.85rem; position: absolute; top: 0; left: 0; width: 100%;
-          opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none;
-        }
+        .promo-card { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 36px; white-space: nowrap; text-decoration: none; color: #2D3748; font-size: 0.85rem; position: absolute; top: 0; left: 0; width: 100%; opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none; }
         .promo-card.promo-active { opacity: 1; pointer-events: auto; }
-        .promo-card:hover { background: var(--bg-surface); }
-        .promo-card-label {
-          background: var(--accent-primary); color: var(--tab-active-color);
-          font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 3px;
-          text-transform: uppercase; flex-shrink: 0;
-        }
-        .promo-card-label.book { background: #e07b00; color: #fff; }
+        .promo-card:hover { background: #F5F7FA; }
+        .promo-card-label { background: #2D3748; color: white; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; flex-shrink: 0; }
+        .promo-card-label.book { background: #e07b00; }
         .promo-card-text { font-weight: 500; }
         .promo-dots { display: flex; gap: 4px; align-items: center; padding: 0 8px; flex-shrink: 0; }
-        .promo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-main); cursor: pointer; transition: background 0.2s; }
-        .promo-dot.active { background: var(--accent-primary); }
+        .promo-dot { width: 5px; height: 5px; border-radius: 50%; background: #d0d0d0; cursor: pointer; transition: background 0.2s; }
+        .promo-dot.active { background: #2D3748; }
         @media (max-width: 768px) { .promo-banner { display: none; } .promo-dots { display: none; } }
 
         /* ── TIPSTER MODAL ── */
-        .tipster-ball {
-          display: none; align-items: center; justify-content: center;
-          width: 24px; height: 24px; border-radius: 50%;
-          background: var(--accent-primary); color: var(--tab-active-color);
-          font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
-          margin-left: auto; margin-right: 8px; cursor: pointer;
-        }
+        .tipster-ball { display: none; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #2D3748; color: white; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-left: auto; margin-right: 8px; cursor: pointer; }
         @media (max-width: 768px) { .tipster-ball { display: inline-flex; } }
-        .tipster-modal-overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300;
-          display: flex; align-items: center; justify-content: center; padding: 20px;
-        }
-        .tipster-modal {
-          background: var(--bg-drawer); border-radius: 12px; padding: 28px 32px;
-          max-width: 360px; width: 100%;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative;
-          border: 1px solid var(--border-main);
-        }
-        .tipster-modal-close {
-          position: absolute; top: 14px; right: 16px; background: none; border: none;
-          cursor: pointer; font-size: 1.2rem; color: var(--text-muted); line-height: 1; padding: 4px;
-        }
-        .tipster-modal-close:hover { color: var(--text-primary); }
-        .tipster-modal-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px; }
-        .tipster-modal-player { font-family: Georgia, serif; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .tipster-modal-count { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px; }
-        .tipster-modal-count span { font-weight: 700; color: var(--text-primary); }
+        .tipster-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .tipster-modal { background: white; border-radius: 12px; padding: 28px 32px; max-width: 360px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
+        .tipster-modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #A0AEC0; line-height: 1; padding: 4px; }
+        .tipster-modal-close:hover { color: #2D3748; }
+        .tipster-modal-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #A0AEC0; margin-bottom: 6px; }
+        .tipster-modal-player { font-family: Georgia, serif; font-size: 1.3rem; font-weight: 700; color: #2D3748; margin-bottom: 4px; }
+        .tipster-modal-count { font-size: 0.85rem; color: #718096; margin-bottom: 20px; }
+        .tipster-modal-count span { font-weight: 700; color: #2D3748; }
         .tipster-modal-list { display: flex; flex-wrap: wrap; gap: 8px; }
-        .tipster-modal-handle {
-          background: var(--bg-base); border: 1px solid var(--border-main);
-          border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; font-weight: 600; color: var(--text-primary);
-        }
+        .tipster-modal-handle { background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; font-weight: 600; color: #2D3748; }
 
         /* ── PICKS CTA ── */
         .picks-cta { display: flex; align-items: center; flex-shrink: 0; }
-        .picks-cta-btn {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: var(--btn-bg); color: var(--btn-color);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 0.78rem; font-weight: 700; padding: 0 14px; height: 36px;
-          border-radius: 6px; text-decoration: none; white-space: nowrap; transition: opacity 0.15s;
-        }
+        .picks-cta-btn { display: inline-flex; align-items: center; gap: 6px; background: #2D3748; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.78rem; font-weight: 700; padding: 0 14px; height: 36px; border-radius: 6px; text-decoration: none; white-space: nowrap; transition: opacity 0.15s; }
         .picks-cta-btn:hover { opacity: 0.85; }
 
         /* ── NOTICES ── */
         .notice { padding: 10px 30px; border-bottom: 1px solid; font-size: 0.85rem; }
-        .notice-demo    { background: var(--bg-surface-alt); border-color: var(--border-main); color: var(--text-primary); }
+        .notice-demo    { background: #CBD5E0; border-color: #A0AEC0; color: #2D3748; }
         .notice-live    { background: #d4edda; border-color: #28a745; color: #155724; font-weight: 600; }
         .notice-loading { background: #fff3cd; border-color: #ffc107; color: #856404; }
         .notice-error   { background: #f8d7da; border-color: #dc3545; color: #721c24; }
 
         /* ── CONTROLS ── */
-        .controls-bar {
-          background: var(--bg-base); padding: 12px 30px;
-          border-bottom: 1px solid var(--border-main);
-          display: flex; align-items: center; gap: 16px;
-        }
+        .controls-bar { background: #F5F7FA; padding: 12px 30px; border-bottom: 1px solid #CBD5E0; display: flex; align-items: center; gap: 16px; }
         .search-bar { position: relative; max-width: 300px; flex: 1; }
-        .search-bar input {
-          width: 100%; padding: 8px 12px 8px 34px;
-          border: 1px solid var(--border-main); border-radius: 6px; font-size: 0.9rem;
-          background: var(--bg-input); color: var(--text-primary);
-        }
-        .search-bar input:focus { outline: none; border-color: var(--accent-primary); }
-        .search-bar input::placeholder { color: var(--text-muted); }
-        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-bar input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.9rem; }
+        .search-bar input:focus { outline: none; border-color: #2D3748; }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #A0AEC0; }
 
         /* ── TABLE ── */
-        .odds-matrix-container {
-          background: var(--bg-base); overflow-x: auto; overflow-y: auto;
-          max-height: calc(100vh - 160px);
-        }
-        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid var(--border-main); }
-        .odds-matrix thead th {
-          background: var(--bg-thead); padding: 8px 4px; text-align: center;
-          font-weight: 600; font-size: 0.75rem; color: var(--text-primary);
-          border-right: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main);
-          position: sticky; top: 0; z-index: 10;
-        }
-        .player-header {
-          position: sticky; left: 0; top: 0; z-index: 11;
-          background: var(--bg-thead); text-align: left; padding: 16px 20px;
-          font-weight: 600; font-size: 0.75rem; color: var(--text-primary);
-          border-right: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main);
-          width: 204px; min-width: 204px; max-width: 204px;
-        }
+        .odds-matrix-container { background: #F5F7FA; overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 160px); }
+        .odds-matrix { width: 100%; border-collapse: collapse; min-width: 800px; border: 1px solid #CBD5E0; }
+        .odds-matrix thead th { background: #EDF0F4; padding: 8px 4px; text-align: center; font-weight: 600; font-size: 0.75rem; border-right: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0; position: sticky; top: 0; z-index: 10; }
+        .player-header { position: sticky; left: 0; top: 0; z-index: 11; background: #EDF0F4; text-align: left; padding: 16px 20px; font-weight: 600; font-size: 0.75rem; border-right: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0; width: 204px; min-width: 204px; max-width: 204px; }
         .player-header-content { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .header-separator { color: var(--border-main); }
-        .sortable-header { cursor: pointer; user-select: none; color: var(--text-primary); }
+        .header-separator { color: #ccc; }
+        .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { opacity: 0.7; }
         .sort-arrow { font-size: 0.8rem; opacity: 0.7; }
         .inline-sort { font-size: 0.75rem; font-weight: 600; }
         .poly-header { padding: 8px 4px; width: 42px; min-width: 42px; max-width: 42px; cursor: pointer; vertical-align: bottom; }
         .poly-cell { width: 42px; min-width: 42px; max-width: 42px; padding: 0 !important; position: relative; height: 36px; }
-        .poly-link {
-          display: flex; align-items: center; justify-content: center;
-          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          color: var(--text-poly); font-weight: 600; font-size: 0.88rem;
-          text-decoration: none; transition: background 0.15s;
-        }
-        .poly-link:hover { background: rgba(128,128,128,0.1); font-weight: 700; }
-        .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; color: var(--text-primary); }
+        .poly-link { display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #6046ff; font-weight: 600; font-size: 0.88rem; text-decoration: none; transition: background 0.15s; }
+        .poly-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
+        .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; }
         .owgr-header div { font-weight: 600; }
         .tipster-header { font-size: 1.4rem; cursor: pointer; padding: 12px 6px; width: 46px; min-width: 46px; max-width: 46px; }
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; height: 150px; padding: 0; overflow: hidden; width: 100%; }
         .bookmaker-logo-wrapper { height: 118px; width: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); overflow: hidden; padding: 0 1px; }
         .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
-        .ew-terms {
-          height: 32px; display: flex; align-items: center; justify-content: center;
-          font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
-          border-top: 1px solid var(--border-light); width: 100%;
-        }
-        .odds-matrix tbody tr { border-bottom: 1px solid var(--border-light); }
-        .odds-matrix tbody tr:hover { background: var(--bg-cell-hover); }
-        .odds-matrix tbody td {
-          padding: 0; font-size: 0.9rem; text-align: center;
-          border-right: 1px solid var(--border-light); height: 36px;
-          color: var(--text-odds);
-        }
-        .odds-matrix tbody td:first-child {
-          position: sticky; left: 0; background: var(--bg-cell-sticky); z-index: 1;
-          text-align: left; padding: 0 0 0 20px;
-          border-right: 1px solid var(--border-main);
-          width: 204px; min-width: 204px; max-width: 204px; height: 36px;
-          color: var(--text-primary);
-        }
-        .odds-matrix tbody tr:hover td:first-child { background: var(--bg-cell-hover); }
-        .odds-matrix tbody tr:hover td.odds-cell.best-odds { background: var(--bg-cell-hover); }
-        .player-cell {
-          display: flex; align-items: center; gap: 8px; cursor: pointer;
-          font-weight: 500; padding: 8px 0;
-        }
-        .expand-icon { color: var(--text-muted); flex-shrink: 0; }
-        .player-name { white-space: nowrap; color: var(--text-primary); }
-        .owgr-cell { width: 56px; font-weight: 600; color: var(--text-secondary); font-size: 0.85rem; }
+        .ew-terms { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; color: #2D3748; border-top: 1px solid #E2E8F0; width: 100%; }
+        .odds-matrix tbody tr { border-bottom: 1px solid #E2E8F0; }
+        .odds-matrix tbody tr:hover { background: #E8ECF0; }
+        .odds-matrix tbody td { padding: 0; font-size: 0.9rem; text-align: center; border-right: 1px solid #E2E8F0; height: 36px; }
+        .odds-matrix tbody td:first-child { position: sticky; left: 0; background: #F5F7FA; z-index: 1; text-align: left; padding: 0 0 0 20px; border-right: 1px solid #CBD5E0; width: 204px; min-width: 204px; max-width: 204px; height: 36px; }
+        .odds-matrix tbody tr:hover td:first-child { background: #E8ECF0; }
+        .odds-matrix tbody tr:hover td.odds-cell.best-odds { background: #D8DDE4; }
+        .player-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; padding: 8px 0; }
+        .expand-icon { color: #A0AEC0; flex-shrink: 0; }
+        .player-name { white-space: nowrap; }
+        .owgr-cell { width: 56px; font-weight: 600; color: #4A5568; font-size: 0.85rem; }
         .tipster-cell { width: 46px; padding: 0 4px !important; }
-        .tipster-bar-container {
-          position: relative; width: 100%; height: 20px;
-          background: var(--tipster-bg); border-radius: 3px; overflow: hidden; cursor: pointer;
-        }
+        .tipster-bar-container { position: relative; width: 100%; height: 20px; background: #DDE2E8; border-radius: 3px; overflow: hidden; cursor: pointer; }
         .tipster-bar-container:hover { opacity: 0.85; }
-        .tipster-bar { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent-bar-grad); }
+        .tipster-bar { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, #2D3748, #4A5568); }
         .tipster-count { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; font-weight: 700; }
-        .tipster-empty { color: var(--text-muted); }
+        .tipster-empty { color: #ccc; }
         .odds-cell { padding: 0 !important; position: relative; height: 36px; }
-        .odds-cell.best-odds {
-          background: var(--bg-best-odds);
-          box-shadow: inset 0 0 0 2.5px var(--accent-highlight);
-          border-radius: 4px; z-index: 2; position: relative;
-        }
+        .odds-cell.best-odds { background: #E8ECF0; box-shadow: inset 0 0 0 2.5px #2D3748; border-radius: 4px; z-index: 2; position: relative; }
         .best-odds .odds-link { font-weight: 700; border-radius: 4px; }
-        .odds-link {
-          display: flex; align-items: center; justify-content: center;
-          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-          color: var(--text-odds); text-decoration: none; font-weight: 500; transition: background 0.15s;
-        }
-        .odds-link:hover { background: rgba(128,128,128,0.1); font-weight: 700; }
-        .best-odds .odds-link:hover { background: rgba(128,128,128,0.15); }
+        .odds-link { display: flex; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #2D3748; text-decoration: none; font-weight: 500; transition: background 0.15s; }
+        .odds-link:hover { background: rgba(74,85,104,0.08); font-weight: 700; }
+        .best-odds .odds-link:hover { background: rgba(160,174,192,0.25); }
         .best-odds-header { display: none; }
         .best-odds-cell-mobile { display: none; }
         .desktop-only { display: table-cell; }
@@ -1205,36 +900,23 @@ export default function GolfOddsComparison() {
 
         /* ── EXPANDED ROW ── */
         .expanded-row td { padding: 0 !important; }
-        .expanded-content { padding: 20px 25px; background: var(--bg-expanded); }
+        .expanded-content { padding: 20px 25px; background: #EDF0F4; }
         .desktop-cards-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .desktop-info-card, .desktop-odds-card {
-          background: var(--bg-card); border: 1px solid var(--border-main);
-          border-radius: 6px; padding: 8px 10px; text-align: center; min-width: 85px;
-        }
-        .desktop-odds-card-clickable {
-          text-decoration: none; color: inherit; cursor: pointer; display: flex;
-          flex-direction: column; transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .desktop-odds-card-clickable:hover {
-          transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-          border-color: var(--accent-primary);
-        }
+        .desktop-info-card, .desktop-odds-card { background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 6px; padding: 8px 10px; text-align: center; min-width: 85px; }
+        .desktop-odds-card-clickable { text-decoration: none; color: inherit; cursor: pointer; display: flex; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; }
+        .desktop-odds-card-clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #2D3748; }
         .desktop-form-card { min-width: 260px; }
-        .desktop-card-label    { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; line-height: 1.2; }
-        .desktop-card-sublabel { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
-        .desktop-card-value    { font-size: 1rem; font-weight: 700; margin-top: 5px; color: var(--text-primary); }
-        .desktop-card-odds     { font-size: 1.15rem; font-weight: 700; margin-top: 3px; color: var(--text-primary); }
+        .desktop-card-label    { font-size: 0.62rem; color: #A0AEC0; text-transform: uppercase; font-weight: 600; line-height: 1.2; }
+        .desktop-card-sublabel { font-size: 0.58rem; color: #bbb; text-transform: uppercase; margin-bottom: 2px; }
+        .desktop-card-value    { font-size: 1rem; font-weight: 700; margin-top: 5px; }
+        .desktop-card-odds     { font-size: 1.15rem; font-weight: 700; margin-top: 3px; }
 
         /* ── FORM BOXES ── */
         .form-boxes { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-        .form-box {
-          display: inline-block; padding: 5px 7px;
-          border: 1px solid var(--border-light); border-right: none;
-          font-size: 0.78rem; font-weight: 600; min-width: 34px; text-align: center;
-        }
+        .form-box { display: inline-block; padding: 5px 7px; border: 1px solid #d0d0d0; border-right: none; font-size: 0.78rem; font-weight: 600; min-width: 34px; text-align: center; }
         .form-box:first-child { border-radius: 3px 0 0 3px; }
-        .form-box:last-child  { border-right: 1px solid var(--border-light); border-radius: 0 3px 3px 0; }
-        .form-box:only-child  { border-radius: 3px; border-right: 1px solid var(--border-light); }
+        .form-box:last-child  { border-right: 1px solid #d0d0d0; border-radius: 0 3px 3px 0; }
+        .form-box:only-child  { border-radius: 3px; border-right: 1px solid #d0d0d0; }
         .form-box.finish-1      { background: #2D3748; color: white; }
         .form-box.finish-2-5    { background: #4A5568; color: white; }
         .form-box.finish-6-10   { background: #718096; color: white; }
@@ -1242,34 +924,28 @@ export default function GolfOddsComparison() {
         .form-box.finish-21-30  { background: #CBD5E0; color: #2D3748; }
         .form-box.finish-31-50  { background: #E2E8F0; color: #2D3748; }
         .form-box.finish-mc     { background: #f3f4f6; color: #6b7280; }
-        .form-box.finish-other  { background: var(--bg-card); color: var(--text-primary); }
+        .form-box.finish-other  { background: #f9fafb; color: #2D3748; }
 
-        .loading-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 1.1rem; }
+        .loading-state { text-align: center; padding: 60px 20px; color: #A0AEC0; font-size: 1.1rem; }
 
         /* ── FOOTER ── */
-        .site-footer {
-          background: var(--bg-footer); border-top: 1px solid var(--border-main);
-          padding: 40px 30px 30px; margin-top: 60px;
-        }
+        .site-footer { background: #EDF0F4; border-top: 1px solid #CBD5E0; padding: 40px 30px 30px; margin-top: 60px; }
         .footer-content { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
-        .responsible-gambling { font-size: 0.9rem; color: var(--text-primary); line-height: 1.6; }
+        .responsible-gambling { font-size: 0.9rem; color: #2D3748; line-height: 1.6; }
         .responsible-gambling strong { color: #d32f2f; }
-        .responsible-gambling a { color: var(--text-primary); font-weight: 600; }
-        .affiliate-notice { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+        .responsible-gambling a { color: #2D3748; font-weight: 600; }
+        .affiliate-notice { font-size: 0.82rem; color: #718096; line-height: 1.5; }
         .footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; }
-        .footer-link { color: var(--text-primary); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+        .footer-link { color: #2D3748; text-decoration: none; font-size: 0.88rem; font-weight: 500; }
         .footer-link:hover { text-decoration: underline; }
-        .footer-separator { color: var(--border-main); }
-        .footer-logos { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 16px 0; border-top: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main); }
-        .gamcare-text { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
-        .footer-odds-format { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 0; border-top: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main); }
-        .footer-odds-format label { font-size: 0.88rem; color: var(--text-secondary); font-weight: 500; }
-        .footer-odds-dropdown {
-          padding: 6px 12px; border: 1px solid var(--border-main); border-radius: 6px;
-          font-size: 0.88rem; background: var(--bg-input); color: var(--text-primary); cursor: pointer;
-        }
-        .footer-odds-dropdown:focus { outline: none; border-color: var(--accent-primary); }
-        .footer-copyright p { font-size: 0.82rem; color: var(--text-muted); text-align: center; }
+        .footer-separator { color: #ccc; }
+        .footer-logos { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 16px 0; border-top: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0; }
+        .gamcare-text { font-size: 0.88rem; font-weight: 600; }
+        .footer-odds-format { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 0; border-top: 1px solid #CBD5E0; border-bottom: 1px solid #CBD5E0; }
+        .footer-odds-format label { font-size: 0.88rem; color: #718096; font-weight: 500; }
+        .footer-odds-dropdown { padding: 6px 12px; border: 1px solid #CBD5E0; border-radius: 6px; font-size: 0.88rem; background: #F5F7FA; cursor: pointer; }
+        .footer-odds-dropdown:focus { outline: none; border-color: #2D3748; }
+        .footer-copyright p { font-size: 0.82rem; color: #A0AEC0; text-align: center; }
 
         .desktop-expanded-view { display: block; }
         .mobile-panes-wrapper  { display: none; }
@@ -1302,10 +978,10 @@ export default function GolfOddsComparison() {
           .odds-matrix tbody td:first-child  { min-width: unset !important; max-width: unset !important; width: auto !important; }
           .odds-matrix tbody td { height: 44px !important; }
           .odds-matrix tbody td:first-child { height: 44px !important; }
-          .best-odds-header { display: table-cell !important; width: 28vw; max-width: 110px; text-align: center; position: static !important; color: var(--text-primary); }
+          .best-odds-header { display: table-cell !important; width: 28vw; max-width: 110px; text-align: center; position: static !important; }
           .odds-matrix { table-layout: fixed; width: 100%; min-width: unset !important; }
           .odds-matrix-container { overflow-x: hidden; }
-          .best-odds-cell-mobile { display: table-cell !important; font-size: 1.1rem; font-weight: 700; cursor: pointer; padding: 0 8px !important; color: var(--text-primary); }
+          .best-odds-cell-mobile { display: table-cell !important; font-size: 1.1rem; font-weight: 700; cursor: pointer; padding: 0 8px !important; }
           .expanded-content { padding: 0 !important; }
           .expanded-cell { max-width: 100vw !important; width: 100vw !important; padding: 0 !important; }
           .expanded-row { display: block !important; }
@@ -1313,27 +989,27 @@ export default function GolfOddsComparison() {
           .mobile-panes-wrapper { display: block; width: 100vw; overflow: hidden; }
           .mobile-tabs-container { display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
           .mobile-tabs-container::-webkit-scrollbar { display: none; }
-          .mobile-tab-pane { flex: 0 0 100vw; width: 100vw; scroll-snap-align: start; scroll-snap-stop: always; padding: 18px 16px; box-sizing: border-box; background: var(--bg-expanded); }
-          .mobile-pane-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; text-align: center; color: var(--text-primary); }
+          .mobile-tab-pane { flex: 0 0 100vw; width: 100vw; scroll-snap-align: start; scroll-snap-stop: always; padding: 18px 16px; box-sizing: border-box; }
+          .mobile-pane-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; text-align: center; }
           .mobile-bookmaker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .mobile-bookmaker-card { background: var(--bg-card); border: 2px solid var(--border-main); border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
-          .mobile-bookmaker-card.best { background: var(--bg-best-odds); border-color: var(--accent-highlight); border-width: 3px; }
-          .mobile-bookmaker-name { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 5px; font-weight: 600; }
-          .mobile-bookmaker-odds { font-size: 1.35rem; font-weight: 700; margin-bottom: 3px; color: var(--text-primary); }
-          .mobile-bookmaker-ew   { font-size: 0.68rem; color: var(--text-muted); }
+          .mobile-bookmaker-card { background: #F5F7FA; border: 2px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
+          .mobile-bookmaker-card.best { background: #E8ECF0; border-color: #d4af37; border-width: 3px; }
+          .mobile-bookmaker-name { font-size: 0.72rem; color: #718096; margin-bottom: 5px; font-weight: 600; }
+          .mobile-bookmaker-odds { font-size: 1.35rem; font-weight: 700; margin-bottom: 3px; }
+          .mobile-bookmaker-ew   { font-size: 0.68rem; color: #A0AEC0; }
           .mobile-extra-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .mobile-extra-card { background: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; }
-          .mobile-extra-label     { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
-          .mobile-extra-bookmaker { font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 5px; }
-          .mobile-extra-odds      { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+          .mobile-extra-card { background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; text-decoration: none; color: inherit; }
+          .mobile-extra-label     { font-size: 0.68rem; color: #A0AEC0; text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
+          .mobile-extra-bookmaker { font-size: 0.68rem; color: #718096; margin-bottom: 5px; }
+          .mobile-extra-odds      { font-size: 1.25rem; font-weight: 700; }
           .mobile-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-          .mobile-stat-card { background: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; padding: 12px; text-align: center; }
+          .mobile-stat-card { background: #F5F7FA; border: 1px solid #CBD5E0; border-radius: 8px; padding: 12px; text-align: center; }
           .mobile-stat-full-width { grid-column: 1 / -1; }
-          .mobile-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 7px; font-weight: 600; }
-          .mobile-stat-value { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
-          .mobile-swipe-indicator { display: flex; justify-content: center; gap: 8px; padding: 12px; border-top: 1px solid var(--border-light); background: var(--bg-expanded); }
-          .swipe-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-main); }
-          .swipe-dot.active { background: var(--text-secondary); }
+          .mobile-stat-label { font-size: 0.68rem; color: #A0AEC0; text-transform: uppercase; margin-bottom: 7px; font-weight: 600; }
+          .mobile-stat-value { font-size: 1rem; font-weight: 700; }
+          .mobile-swipe-indicator { display: flex; justify-content: center; gap: 8px; padding: 12px; border-top: 1px solid #DDE2E8; }
+          .swipe-dot { width: 8px; height: 8px; border-radius: 50%; background: #d0d0d0; }
+          .swipe-dot.active { background: #718096; }
           .footer-odds-format { flex-direction: column; gap: 10px; }
           .footer-links { flex-direction: column; align-items: center; gap: 10px; }
           .footer-separator { display: none; }
@@ -1346,57 +1022,8 @@ export default function GolfOddsComparison() {
         <div className={`nav-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
         <nav className={`nav-drawer${menuOpen ? ' open' : ''}`}>
           <div className="nav-drawer-header">
-            <img src={wordmarkImg} alt="The Fairway" style={{height:'28px',width:'auto',filter:'var(--wordmark-filter)'}} />
+            <img src={wordmarkImg} alt="The Fairway" style={{height:'28px',width:'auto'}} />
             <button className="nav-drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
-            <div className="nav-theme-row">
-              <span className="nav-theme-word">Mode</span>
-              <div className="nav-theme-icons">
-                <button
-                  className={`nav-theme-icon-btn${theme === 'light' ? ' active' : ''}`}
-                  onClick={() => setTheme('light')}
-                  aria-label="Light mode"
-                  title="Light"
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20">
-                    <circle cx="10" cy="10" r="9" fill="white" stroke="#cccccc" strokeWidth="1.5"/>
-                  </svg>
-                </button>
-                <button
-                  className={`nav-theme-icon-btn${theme === 'grey' ? ' active' : ''}`}
-                  onClick={() => setTheme('grey')}
-                  aria-label="Grey mode"
-                  title="Grey"
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20">
-                    <circle cx="10" cy="10" r="9" fill="#888888" stroke="#555555" strokeWidth="1.5"/>
-                    <path d="M10 1 A9 9 0 0 1 10 19 Z" fill="white"/>
-                  </svg>
-                </button>
-                <button
-                  className={`nav-theme-icon-btn${theme === 'dark' ? ' active' : ''}`}
-                  onClick={() => setTheme('dark')}
-                  aria-label="Dark mode"
-                  title="Dark"
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20">
-                    <circle cx="10" cy="10" r="9" fill="#222222" stroke="#555555" strokeWidth="1.5"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="nav-theme-row">
-              <span className="nav-theme-word">Odds</span>
-              <div className="nav-odds-btns">
-                {[['decimal','1.5'],['fractional','1/2'],['american','-200']].map(([val, label]) => (
-                  <button
-                    key={val}
-                    className={`nav-odds-btn${oddsFormat === val ? ' active' : ''}`}
-                    onClick={() => { setOddsFormat(val); localStorage.setItem('oddsFormat', val); }}
-                    aria-pressed={oddsFormat === val}
-                  >{label}</button>
-                ))}
-              </div>
-            </div>
           </div>
           <div className="nav-drawer-links">
             <a href="/" className="nav-drawer-link active">Odds Comparison</a>
@@ -1404,7 +1031,6 @@ export default function GolfOddsComparison() {
             <a href="/blog" className="nav-drawer-link">All Articles</a>
             <a href="/blog/masters-2026-outsiders" className="nav-drawer-link">Masters 2026 Outsiders</a>
           </div>
-
           <div className="nav-drawer-footer">18+ | BeGambleAware.org</div>
         </nav>
         <div className="header-content">
@@ -1516,7 +1142,7 @@ export default function GolfOddsComparison() {
                     <div className="bookmaker-header">
                       <div className="bookmaker-logo-wrapper">
                         <img src={`/logos/${bm.logo}`} alt={bm.name} className="bookmaker-logo" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                        <span style={{display:'none',fontSize:'0.55rem',fontWeight:700,textAlign:'center',lineHeight:'1.2',color:'var(--text-primary)',writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'nowrap'}}>{bm.name}</span>
+                        <span style={{display:'none',fontSize:'0.55rem',fontWeight:700,textAlign:'center',lineHeight:'1.2',color:'#2D3748',writingMode:'vertical-rl',transform:'rotate(180deg)',whiteSpace:'nowrap'}}>{bm.name}</span>
                       </div>
                       <div className="ew-terms">{getEwTerms(bm.name)}</div>
                     </div>
@@ -1554,7 +1180,7 @@ export default function GolfOddsComparison() {
                           return picks.length > 0 ? (
                             <div className="tipster-bar-container" onClick={() => setTipsterModal({ name: player.name, picks })} title="Number of tipsters backing this player">
                               <div className="tipster-bar" style={{ width: `${Math.min((picks.length / derivedMaxTips) * 70, 70)}%` }} />
-                              <span className="tipster-count" style={{ color: 'var(--tipster-count-col)' }}>{picks.length}</span>
+                              <span className="tipster-count" style={{ color: '#2D3748' }}>{picks.length}</span>
                             </div>
                           ) : <div className="tipster-empty">-</div>;
                         })()}
@@ -1568,7 +1194,7 @@ export default function GolfOddsComparison() {
                               isUS
                                 ? <a href={POLYMARKET_URL} target="_blank" rel="noopener noreferrer" className="poly-link">{formatOdds(polyVal)}</a>
                                 : <span className="poly-link" style={{cursor:'default',opacity:0.6}}>{formatOdds(polyVal)}</span>
-                            ) : <span style={{color:'var(--text-muted)'}}>-</span>}
+                            ) : <span style={{color:'#ccc'}}>-</span>}
                           </td>
                         );
                       })()}
@@ -1627,7 +1253,7 @@ export default function GolfOddsComparison() {
                                       {(() => {
                                         const key = lookupByName(majorFormMap, player.name);
                                         const results = key ? majorFormMap[key] : [];
-                                        if (!results || results.length === 0) return <span style={{color:'var(--text-muted)',fontSize:'0.75rem'}}>No data</span>;
+                                        if (!results || results.length === 0) return <span style={{color:'#A0AEC0',fontSize:'0.75rem'}}>No data</span>;
                                         return results.map((p, i) => (
                                           <span key={i} className={`form-box ${getFinishClass(p)}`}>{String(p).replace('T','')}</span>
                                         ));
