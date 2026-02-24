@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -176,7 +177,6 @@ const BM_NAME_MAP = {
   'boylesports':  'BoyleSports',
   'skybet':       'Sky Bet',
   'sky bet':      'Sky Bet',
-  'Skybet':       'Sky Bet',
   'betfair':      'Betfair Sportsbook',
   'star sports':  'Star Sports',
   'ak bets':      'AK Bets',
@@ -198,38 +198,25 @@ const PLAYER_ALIASES = {
   'shaun norris':    'Shaun Norris',
 };
 
-// ─── NAME RESOLUTION PIPELINE ────────────────────────────────────────────────
-// Resolves a bookmaker player name to canonical DataGolf name.
-// Steps:
-//   1. Manual aliases  — handles known irregular names
-//   2. Exact match     — norm comparison against DataGolf list
-//   3. Unique surname  — only when one player has that surname
-//   4. First initial + surname — e.g. "D. Brown" matches "Dan Brown" if unique
-//   5. Fallback        — keep original, log unmatched name for audit
 function resolvePlayerName(sheetName, dgNames) {
   if (!sheetName) return sheetName;
   const cleaned     = sheetName.replace(/\(a\)/gi, '').trim();
   const normCleaned = norm(cleaned);
 
-  // 1. Manual aliases
   if (PLAYER_ALIASES[normCleaned]) return PLAYER_ALIASES[normCleaned];
-
   if (!dgNames || dgNames.length === 0) return sheetName;
 
-  // 2. Exact match
   const exact = dgNames.find(n => norm(n) === normCleaned);
   if (exact) return exact;
 
   const parts   = normCleaned.split(' ');
   const surname = parts.slice(-1)[0];
 
-  // 3. Unique surname match
   const surnameMatches = dgNames.filter(n => norm(n).split(' ').slice(-1)[0] === surname);
   if (surnameMatches.length === 1) return surnameMatches[0];
 
-  // 4. First initial + surname match — e.g. "d. brown" or "d brown" → "Dan Brown"
   if (parts.length >= 2) {
-    const initial = parts[0].replace(/\./g, ''); // strip dots from initial
+    const initial = parts[0].replace(/\./g, '');
     if (initial.length === 1) {
       const initialMatches = surnameMatches.filter(n => {
         const dgFirst = norm(n).split(' ')[0];
@@ -239,10 +226,10 @@ function resolvePlayerName(sheetName, dgNames) {
     }
   }
 
-  // 5. Fallback — keep original and log for audit
   console.warn('[Name unmatched] "' + sheetName + '" — add to PLAYER_ALIASES if incorrect');
   return sheetName;
 }
+
 const lookupNationality = (map, name) => {
   if (!map || !name) return 'TBD';
   const n = norm(name);
@@ -408,25 +395,6 @@ export default function GolfOddsComparison() {
       })
     );
   }, [rankingsMap, selectedTournament]); // eslint-disable-line
-  // ── re-resolve player names when nationalityMap or players change ──
-  // Prices may load from cache before nationalityMap is ready, leaving bookmaker
-  // name variants (e.g. "Christopher Gotterup") unresolved. Re-run whenever either changes.
-  useEffect(() => {
-    const dgNames = Object.keys(nationalityMap);
-    if (dgNames.length === 0 || players.length === 0) return;
-    const needsUpdate = players.some(p => resolvePlayerName(p.name, dgNames) !== p.name);
-    if (!needsUpdate) return;
-    setPlayers((prev) =>
-      prev.map((p) => {
-        const resolved = resolvePlayerName(p.name, dgNames);
-        if (resolved === p.name) return p;
-        const rank = lookupRank(rankingsMap, resolved);
-        return { ...p, name: resolved, owgr: rank !== null ? rank : p.owgr };
-      })
-    );
-  }, [nationalityMap, players.length]); // eslint-disable-line
-
-
 
   useEffect(() => {
     const dgNames = Object.keys(nationalityMap);
@@ -447,7 +415,6 @@ export default function GolfOddsComparison() {
     const url      = SHEET_PRICES_URLS[selectedTournament.id];
     const cacheKey = `fairway_sheetPrices_${selectedTournament.id}`;
 
-    // Serve prices and EW terms from cache if valid (same 12hr expiry)
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -490,7 +457,9 @@ export default function GolfOddsComparison() {
         setUseMock(false);
         setSheetError(false);
 
-        try { localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ewData, ts: Date.now() })); } catch {}
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ewData, ts: Date.now() }));
+        } catch {}
       })
       .catch((err) => {
         console.warn('Sheet prices unavailable, falling back to demo:', err.message);
@@ -554,44 +523,25 @@ export default function GolfOddsComparison() {
       .catch((err) => console.warn('Majors form unavailable:', err.message));
   }, [selectedTournament]); // eslint-disable-line
 
-  // ── fetch current form ──
   useEffect(() => {
     const cacheKey = 'currentForm2026';
-
-    // Bust cache if last saved before most recent Tuesday 3am
-    const lastTuesday3am = () => {
-      const now = new Date();
-      const d   = new Date(now);
-      d.setHours(3, 0, 0, 0);
-      const day = d.getDay(); // 0=Sun, 2=Tue
-      d.setDate(d.getDate() - ((day + 5) % 7)); // roll back to last Tuesday
-      if (d > now) d.setDate(d.getDate() - 7);  // if that's in the future, go back a week
-      return d.getTime();
-    };
-
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { data, ts } = JSON.parse(cached);
-        if (ts > lastTuesday3am() && data && Object.keys(data).length > 0) {
-          setCurrentFormMap(data);
-          return;
-        }
+        if (Date.now() - ts < CURRENT_FORM_CACHE_MS && data && Object.keys(data).length > 0) { setCurrentFormMap(data); return; }
       }
     } catch {}
-
     fetch(CURRENT_FORM_URL)
-      .then(r => r.json())
-      .then(json => {
+      .then((r) => r.json())
+      .then((json) => {
         if (json.players && Object.keys(json.players).length > 0) {
           setCurrentFormMap(json.players);
           try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() })); } catch {}
         }
       })
-      .catch(err => console.warn('Current form unavailable:', err.message));
+      .catch((err) => console.warn('Current form unavailable:', err.message));
   }, []); // eslint-disable-line
-
-  // ── detect US users ──
 
   useEffect(() => {
     fetch('https://ipapi.co/json/')
@@ -720,10 +670,6 @@ export default function GolfOddsComparison() {
 
   const getEwTerms = useCallback((bmName) => {
     if (ewTermsMap[bmName]) return ewTermsMap[bmName];
-    // Normalised fallback — handles sheet name variants like "Skybet" vs "Sky Bet"
-    const normBm = norm(bmName);
-    const key = Object.keys(ewTermsMap).find(k => norm(k) === normBm);
-    if (key) return ewTermsMap[key];
     const bm = BOOKMAKERS.find((b) => b.name === bmName);
     return bm ? bm.ew : '5';
   }, [ewTermsMap]);
