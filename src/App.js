@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -525,22 +524,58 @@ export default function GolfOddsComparison() {
 
   useEffect(() => {
     const cacheKey = 'currentForm2026';
+    const versionKey = 'currentForm2026_version';
+
+    // Load cached data immediately so UI isn't empty
+    let cachedData = null;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CURRENT_FORM_CACHE_MS && data && Object.keys(data).length > 0) { setCurrentFormMap(data); return; }
+        const { data } = JSON.parse(cached);
+        if (data && Object.keys(data).length > 0) {
+          cachedData = data;
+          setCurrentFormMap(data);
+        }
       }
     } catch {}
-    fetch(CURRENT_FORM_URL)
+
+    // Lightweight version check — tiny JSON response
+    fetch(CURRENT_FORM_URL + '?versionOnly=true')
       .then((r) => r.json())
       .then((json) => {
-        if (json.players && Object.keys(json.players).length > 0) {
-          setCurrentFormMap(json.players);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() })); } catch {}
-        }
+        const remoteVersion = json.version || '';
+        const localVersion  = localStorage.getItem(versionKey) || '';
+
+        // Versions match and we have cache — no re-fetch needed
+        if (remoteVersion && remoteVersion === localVersion && cachedData) return;
+
+        // Version changed or no cache — fetch full data
+        return fetch(CURRENT_FORM_URL)
+          .then((r) => r.json())
+          .then((fullJson) => {
+            if (fullJson.players && Object.keys(fullJson.players).length > 0) {
+              setCurrentFormMap(fullJson.players);
+              const newVersion = fullJson.version || new Date().toISOString();
+              try {
+                localStorage.setItem(cacheKey, JSON.stringify({ data: fullJson.players, ts: Date.now() }));
+                localStorage.setItem(versionKey, newVersion);
+              } catch {}
+            }
+          });
       })
-      .catch((err) => console.warn('Current form unavailable:', err.message));
+      .catch(() => {
+        // Version check failed — fall back to full fetch if no cache
+        if (cachedData) return;
+        fetch(CURRENT_FORM_URL)
+          .then((r) => r.json())
+          .then((json) => {
+            if (json.players && Object.keys(json.players).length > 0) {
+              setCurrentFormMap(json.players);
+              try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() })); } catch {}
+            }
+          })
+          .catch((err2) => console.warn('Current form unavailable:', err2.message));
+      });
   }, []); // eslint-disable-line
 
   useEffect(() => {
