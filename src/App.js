@@ -369,62 +369,18 @@ export default function GolfOddsComparison() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    const cached = getRankingsCache();
-    if (cached) { setRankingsMap(cached); setRankingsCount(Object.keys(cached).length); return; }
-    fetch(RANKINGS_URL)
-      .then((r) => r.json())
-      .then((json) => {
-        const raw = json.rankings || {};
-        const map = {};
-        Object.entries(raw).forEach(([name, rank]) => { map[norm(name)] = Number(rank); });
-        setRankingsMap(map);
-        setRankingsCount(Object.keys(map).length);
-        setRankingsCache(map);
-      })
-      .catch((err) => console.warn('Rankings unavailable:', err.message));
-  }, []);
-
-  useEffect(() => {
-    if (Object.keys(rankingsMap).length === 0 || players.length === 0) return;
-    setPlayers((prev) =>
-      prev.map((p) => {
-        const rank = lookupRank(rankingsMap, p.name);
-        return rank !== null ? { ...p, owgr: rank } : p;
-      })
-    );
-  }, [rankingsMap, selectedTournament]); // eslint-disable-line
-
-  useEffect(() => {
-    const dgNames = Object.keys(nationalityMap);
-    if (dgNames.length === 0 || players.length === 0) return;
-    const needsUpdate = players.some(p => resolvePlayerName(p.name, dgNames) !== p.name);
-    if (!needsUpdate) return;
-    setPlayers((prev) =>
-      prev.map((p) => {
-        const resolved = resolvePlayerName(p.name, dgNames);
-        if (resolved === p.name) return p;
-        const rank = lookupRank(rankingsMap, resolved);
-        return { ...p, name: resolved, owgr: rank !== null ? rank : p.owgr };
-      })
-    );
-  }, [nationalityMap, players.length]); // eslint-disable-line
+  // ── TIER 1: IMMEDIATE — odds table + polymarket ──────────────────────────────
 
   useEffect(() => {
     const url      = SHEET_PRICES_URLS[selectedTournament.id];
     const cacheKey = `fairway_sheetPrices_${selectedTournament.id}`;
-
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { data, ewData, ts } = JSON.parse(cached);
         if (Date.now() - ts < SHEET_PRICES_CACHE_MS && data && Object.keys(data).length > 0) {
           const builtPlayers = buildPlayersFromSheet(data, Object.keys(nationalityMap));
-          const withRankings = builtPlayers.map((p) => {
-            const rank = lookupRank(rankingsMap, p.name);
-            return rank !== null ? { ...p, owgr: rank } : p;
-          });
-          setPlayers(withRankings);
+          setPlayers(builtPlayers);
           setBookmakers(BOOKMAKERS);
           if (ewData) setEwTermsMap(ewData);
           setUseMock(false);
@@ -433,32 +389,21 @@ export default function GolfOddsComparison() {
         }
       }
     } catch {}
-
     setSheetLoading(true);
     setSheetError(false);
-
     fetch(url)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((json) => {
         const oddsData = json.odds || json;
         const ewData   = json.ewTerms || null;
-
         if (!oddsData || Object.keys(oddsData).length === 0) throw new Error('Empty response');
-
         const builtPlayers = buildPlayersFromSheet(oddsData, Object.keys(nationalityMap));
-        const withRankings = builtPlayers.map((p) => {
-          const rank = lookupRank(rankingsMap, p.name);
-          return rank !== null ? { ...p, owgr: rank } : p;
-        });
-        setPlayers(withRankings);
+        setPlayers(builtPlayers);
         setBookmakers(BOOKMAKERS);
         if (ewData) setEwTermsMap(ewData);
         setUseMock(false);
         setSheetError(false);
-
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ewData, ts: Date.now() }));
-        } catch {}
+        try { localStorage.setItem(cacheKey, JSON.stringify({ data: oddsData, ewData, ts: Date.now() })); } catch {}
       })
       .catch((err) => {
         console.warn('Sheet prices unavailable, falling back to demo:', err.message);
@@ -485,175 +430,201 @@ export default function GolfOddsComparison() {
         }
       })
       .catch((err) => console.warn('Polymarket unavailable:', err.message));
-  }, []);
+  }, [selectedTournament]); // eslint-disable-line
+
+  // ── TIER 2: 2s DELAY — rankings + tipsters ───────────────────────────────────
 
   useEffect(() => {
-    const nameMap = { 'The Masters': 'Masters', 'PGA Championship': 'PGA Championship', 'US Open': 'US Open', 'The Open': 'The Open' };
-    const majorName = nameMap[selectedTournament.name] || selectedTournament.name;
-    const cacheKey = 'fairway_form_' + majorName.replace(/\s/g, '_');
+    const run = () => {
+      const cached = getRankingsCache();
+      if (cached) { setRankingsMap(cached); setRankingsCount(Object.keys(cached).length); return; }
+      fetch(RANKINGS_URL)
+        .then((r) => r.json())
+        .then((json) => {
+          const raw = json.rankings || {};
+          const map = {};
+          Object.entries(raw).forEach(([name, rank]) => { map[norm(name)] = Number(rank); });
+          setRankingsMap(map);
+          setRankingsCount(Object.keys(map).length);
+          setRankingsCache(map);
+        })
+        .catch((err) => console.warn('Rankings unavailable:', err.message));
+    };
+    const t = setTimeout(run, 2000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line
 
-    try {
-      const cachedNat = localStorage.getItem('fairway_nationalities');
-      if (cachedNat) {
-        const c = JSON.parse(cachedNat);
-        if (Date.now() - c.ts < MAJORS_FORM_CACHE_MS) setNationalityMap(c.data);
-      }
-    } catch {}
+  useEffect(() => {
+    const run = () => {
+      const cacheKey = 'tipsterPicks_v2';
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < TIPSTER_PICKS_CACHE_MS && data && Object.keys(data).length > 0) { setTipsterPicksMap(data); return; }
+        }
+      } catch {}
+      fetch(TIPSTER_PICKS_URL)
+        .then(r => r.json())
+        .then(json => {
+          if (json && Object.keys(json).length > 0) {
+            setTipsterPicksMap(json);
+            const max = Math.max(...Object.values(json).map(picks => picks.length));
+            setMaxTipsterPicks(max > 0 ? max : 23);
+            try { localStorage.setItem(cacheKey, JSON.stringify({ data: json, ts: Date.now() })); } catch {}
+          }
+        })
+        .catch(err => console.warn('Tipster picks unavailable:', err.message));
+    };
+    const t = setTimeout(run, 2000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line
 
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const c = JSON.parse(cached);
-        if (Date.now() - c.ts < MAJORS_FORM_CACHE_MS) { setMajorFormMap(c.data); return; }
-      }
-    } catch {}
-    fetch(MAJORS_FORM_URL + '?major=' + encodeURIComponent(majorName))
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.form && Object.keys(json.form).length > 0) {
-          setMajorFormMap(json.form);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.form, ts: Date.now() })); } catch {}
-        }
-        if (json.nationalities && Object.keys(json.nationalities).length > 0) {
-          setNationalityMap(json.nationalities);
-          try { localStorage.setItem('fairway_nationalities', JSON.stringify({ data: json.nationalities, ts: Date.now() })); } catch {}
-        }
+  // ── apply rankings to players once both are loaded ───────────────────────────
+  useEffect(() => {
+    if (Object.keys(rankingsMap).length === 0 || players.length === 0) return;
+    setPlayers((prev) =>
+      prev.map((p) => {
+        const rank = lookupRank(rankingsMap, p.name);
+        return rank !== null ? { ...p, owgr: rank } : p;
       })
-      .catch((err) => console.warn('Majors form unavailable:', err.message));
+    );
+  }, [rankingsMap, selectedTournament]); // eslint-disable-line
+
+  // ── re-resolve names once nationalityMap loads ───────────────────────────────
+  useEffect(() => {
+    const dgNames = Object.keys(nationalityMap);
+    if (dgNames.length === 0 || players.length === 0) return;
+    const needsUpdate = players.some(p => resolvePlayerName(p.name, dgNames) !== p.name);
+    if (!needsUpdate) return;
+    setPlayers((prev) =>
+      prev.map((p) => {
+        const resolved = resolvePlayerName(p.name, dgNames);
+        if (resolved === p.name) return p;
+        const rank = lookupRank(rankingsMap, resolved);
+        return { ...p, name: resolved, owgr: rank !== null ? rank : p.owgr };
+      })
+    );
+  }, [nationalityMap, players.length]); // eslint-disable-line
+
+  // ── TIER 3: 5s DELAY — nationalities, form x2, confirmed players ─────────────
+
+  useEffect(() => {
+    const run = () => {
+      // nationalities
+      try {
+        const cached = localStorage.getItem(NATIONALITY_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < NATIONALITY_CACHE_MS && data && Object.keys(data).length > 0) {
+            setNationalityMap(data);
+            return;
+          }
+        }
+      } catch {}
+      fetch(NATIONALITY_URL)
+        .then(r => r.json())
+        .then(json => {
+          const map = json.nationalities || {};
+          if (Object.keys(map).length > 0) {
+            setNationalityMap(map);
+            try { localStorage.setItem(NATIONALITY_CACHE_KEY, JSON.stringify({ data: map, ts: Date.now() })); } catch {}
+          }
+        })
+        .catch(err => console.warn('Nationality fetch unavailable:', err.message));
+    };
+    const t = setTimeout(run, 5000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line
+
+  useEffect(() => {
+    const run = () => {
+      const nameMap = { 'The Masters': 'Masters', 'PGA Championship': 'PGA Championship', 'US Open': 'US Open', 'The Open': 'The Open' };
+      const majorName = nameMap[selectedTournament.name] || selectedTournament.name;
+      const cacheKey = 'fairway_form_' + majorName.replace(/\s/g, '_');
+      // major form
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const c = JSON.parse(cached);
+          if (Date.now() - c.ts < MAJORS_FORM_CACHE_MS) { setMajorFormMap(c.data); return; }
+        }
+      } catch {}
+      fetch(MAJORS_FORM_URL + '?major=' + encodeURIComponent(majorName))
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.form && Object.keys(json.form).length > 0) {
+            setMajorFormMap(json.form);
+            try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.form, ts: Date.now() })); } catch {}
+          }
+          if (json.nationalities && Object.keys(json.nationalities).length > 0) {
+            setNationalityMap(prev => Object.keys(prev).length === 0 ? json.nationalities : prev);
+            try { localStorage.setItem('fairway_nationalities', JSON.stringify({ data: json.nationalities, ts: Date.now() })); } catch {}
+          }
+        })
+        .catch((err) => console.warn('Majors form unavailable:', err.message));
+    };
+    const t = setTimeout(run, 5000);
+    return () => clearTimeout(t);
   }, [selectedTournament]); // eslint-disable-line
 
   useEffect(() => {
-    const cacheKey = 'currentForm2026';
-    const versionKey = 'currentForm2026_version';
-
-    // Load cached data immediately so UI isn't empty
-    let cachedData = null;
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { data } = JSON.parse(cached);
-        if (data && Object.keys(data).length > 0) {
-          cachedData = data;
-          setCurrentFormMap(data);
+    const run = () => {
+      const cacheKey = 'currentForm2026';
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CURRENT_FORM_CACHE_MS && data && Object.keys(data).length > 0) { setCurrentFormMap(data); return; }
         }
-      }
-    } catch {}
-
-    // Lightweight version check — tiny JSON response
-    fetch(CURRENT_FORM_URL + '?versionOnly=true')
-      .then((r) => r.json())
-      .then((json) => {
-        const remoteVersion = json.version || '';
-        const localVersion  = localStorage.getItem(versionKey) || '';
-
-        // Versions match and we have cache — no re-fetch needed
-        if (remoteVersion && remoteVersion === localVersion && cachedData) return;
-
-        // Version changed or no cache — fetch full data
-        return fetch(CURRENT_FORM_URL)
-          .then((r) => r.json())
-          .then((fullJson) => {
-            if (fullJson.players && Object.keys(fullJson.players).length > 0) {
-              setCurrentFormMap(fullJson.players);
-              const newVersion = fullJson.version || new Date().toISOString();
-              try {
-                localStorage.setItem(cacheKey, JSON.stringify({ data: fullJson.players, ts: Date.now() }));
-                localStorage.setItem(versionKey, newVersion);
-              } catch {}
-            }
-          });
-      })
-      .catch(() => {
-        // Version check failed — fall back to full fetch if no cache
-        if (cachedData) return;
-        fetch(CURRENT_FORM_URL)
-          .then((r) => r.json())
-          .then((json) => {
-            if (json.players && Object.keys(json.players).length > 0) {
-              setCurrentFormMap(json.players);
-              try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() })); } catch {}
-            }
-          })
-          .catch((err2) => console.warn('Current form unavailable:', err2.message));
-      });
+      } catch {}
+      fetch(CURRENT_FORM_URL)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.players && Object.keys(json.players).length > 0) {
+            setCurrentFormMap(json.players);
+            try { localStorage.setItem(cacheKey, JSON.stringify({ data: json.players, ts: Date.now() })); } catch {}
+          }
+        })
+        .catch((err) => console.warn('Current form unavailable:', err.message));
+    };
+    const t = setTimeout(run, 5000);
+    return () => clearTimeout(t);
   }, []); // eslint-disable-line
 
+  useEffect(() => {
+    const run = () => {
+      const url = CONFIRMED_URLS[selectedTournament.id];
+      if (!url) { setConfirmedPlayers([]); return; }
+      const cacheKey = 'fairway_confirmed_' + selectedTournament.id;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CONFIRMED_CACHE_MS && data && data.length > 0) { setConfirmedPlayers(data); return; }
+        }
+      } catch {}
+      fetch(url)
+        .then(r => r.json())
+        .then(json => {
+          const list = json.confirmed || [];
+          if (list.length > 0) {
+            setConfirmedPlayers(list);
+            try { localStorage.setItem(cacheKey, JSON.stringify({ data: list, ts: Date.now() })); } catch {}
+          }
+        })
+        .catch(err => console.warn('Confirmed players unavailable:', err.message));
+    };
+    const t = setTimeout(run, 5000);
+    return () => clearTimeout(t);
+  }, [selectedTournament]); // eslint-disable-line
+
+  // ── US detection (fire and forget, low priority) ─────────────────────────────
   useEffect(() => {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
       .then(d => { if (d.country_code === 'US') setIsUS(true); })
       .catch(() => setIsUS(false));
-  }, []); // eslint-disable-line
-
-  useEffect(() => {
-    const url = CONFIRMED_URLS[selectedTournament.id];
-    if (!url) { setConfirmedPlayers([]); return; }
-    const cacheKey = 'fairway_confirmed_' + selectedTournament.id;
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CONFIRMED_CACHE_MS && data && data.length > 0) {
-          setConfirmedPlayers(data);
-          return;
-        }
-      }
-    } catch {}
-    fetch(url)
-      .then(r => r.json())
-      .then(json => {
-        const list = json.confirmed || [];
-        if (list.length > 0) {
-          setConfirmedPlayers(list);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: list, ts: Date.now() })); } catch {}
-        }
-      })
-      .catch(err => console.warn('Confirmed players unavailable:', err.message));
-  }, [selectedTournament]); // eslint-disable-line
-
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem(NATIONALITY_CACHE_KEY);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < NATIONALITY_CACHE_MS && data && Object.keys(data).length > 0) {
-          setNationalityMap(data);
-          return;
-        }
-      }
-    } catch {}
-    fetch(NATIONALITY_URL)
-      .then(r => r.json())
-      .then(json => {
-        const map = json.nationalities || {};
-        if (Object.keys(map).length > 0) {
-          setNationalityMap(map);
-          try { localStorage.setItem(NATIONALITY_CACHE_KEY, JSON.stringify({ data: map, ts: Date.now() })); } catch {}
-        }
-      })
-      .catch(err => console.warn('Nationality fetch unavailable:', err.message));
-  }, []); // eslint-disable-line
-
-  useEffect(() => {
-    const cacheKey = 'tipsterPicks_v2';
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < TIPSTER_PICKS_CACHE_MS && data && Object.keys(data).length > 0) { setTipsterPicksMap(data); return; }
-      }
-    } catch {}
-    fetch(TIPSTER_PICKS_URL)
-      .then(r => r.json())
-      .then(json => {
-        if (json && Object.keys(json).length > 0) {
-          setTipsterPicksMap(json);
-          const max = Math.max(...Object.values(json).map(picks => picks.length));
-          setMaxTipsterPicks(max > 0 ? max : 23);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: json, ts: Date.now() })); } catch {}
-        }
-      })
-      .catch(err => console.warn('Tipster picks unavailable:', err.message));
   }, []); // eslint-disable-line
 
   const loadMock = useCallback(() => {
@@ -1282,6 +1253,26 @@ export default function GolfOddsComparison() {
 
         .loading-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 1.1rem; }
 
+        /* ── SKELETON LOADER ── */
+        @keyframes shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        .skeleton {
+          background: linear-gradient(90deg,
+            var(--bg-surface) 25%,
+            var(--bg-surface-alt) 50%,
+            var(--bg-surface) 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+          border-radius: 4px;
+        }
+        .skeleton-name { height: 14px; width: 130px; }
+        .skeleton-cell { height: 14px; width: 28px; }
+        .skeleton-bar  { height: 14px; width: 36px; }
+        .skeleton-table tbody tr { height: 36px; }
+        .skeleton-table tbody td { vertical-align: middle; }
+
         /* ── FOOTER ── */
         .site-footer {
           background: var(--bg-footer); border-top: 1px solid var(--border-main);
@@ -1385,7 +1376,7 @@ export default function GolfOddsComparison() {
             <img src={wordmarkImg} alt="The Fairway" style={{height:'28px',width:'auto',filter:'var(--wordmark-filter)'}} />
             <button className="nav-drawer-close" onClick={() => setMenuOpen(false)}>✕</button>
             <div className="nav-theme-row">
-              <span className="nav-theme-word">Mode</span>
+              <span className="nav-theme-word">Format</span>
               <div className="nav-theme-icons">
                 <button
                   className={`nav-theme-icon-btn${theme === 'light' ? ' active' : ''}`}
@@ -1513,8 +1504,33 @@ export default function GolfOddsComparison() {
       </div>
 
       {/* ── TABLE ── */}
-      {loading ? (
-        <div className="loading-state">Loading odds…</div>
+      {sheetLoading ? (
+        <div className="odds-matrix-container">
+          <table className="odds-matrix skeleton-table">
+            <thead>
+              <tr>
+                <th className="player-header"><div className="skeleton skeleton-name" /></th>
+                <th className="owgr-header desktop-only"><div className="skeleton skeleton-cell" /></th>
+                <th className="tipster-header desktop-only"><div className="skeleton skeleton-cell" /></th>
+                <th className="poly-header desktop-only"><div className="skeleton skeleton-cell" /></th>
+                {BOOKMAKERS.map((_, i) => <th key={i} style={{width:'42px'}}><div className="skeleton skeleton-cell" /></th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({length: 14}).map((_, i) => (
+                <tr key={i}>
+                  <td><div style={{padding:'8px 0 8px 20px'}}><div className="skeleton skeleton-name" /></div></td>
+                  <td className="desktop-only"><div className="skeleton skeleton-cell" style={{margin:'0 auto'}} /></td>
+                  <td className="desktop-only"><div className="skeleton skeleton-bar" style={{margin:'0 6px'}} /></td>
+                  <td className="desktop-only"><div className="skeleton skeleton-cell" style={{margin:'0 auto'}} /></td>
+                  {BOOKMAKERS.map((_, j) => (
+                    <td key={j}><div className="skeleton skeleton-cell" style={{margin:'0 auto'}} /></td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div className="odds-matrix-container">
           <table className="odds-matrix">
