@@ -1553,7 +1553,13 @@ export default function GolfOddsComparison() {
                   {sortConfig.key === 'owgr' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} title="Tipster Consensus">
-                  🎯{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
+                  <div className="bookmaker-header">
+                    <div className="bookmaker-logo-wrapper">
+                      <img src="/tipster-icon.png" alt="Tipsters" className="bookmaker-logo" style={{transform:'rotate(90deg)'}} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
+                      <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>TIPS</span>
+                    </div>
+                  </div>
+                  {sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
                   <div className="bookmaker-header">
