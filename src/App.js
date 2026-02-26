@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
@@ -1553,13 +1554,7 @@ export default function GolfOddsComparison() {
                   {sortConfig.key === 'owgr' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} title="Tipster Consensus">
-                  <div className="bookmaker-header">
-                    <div className="bookmaker-logo-wrapper">
-                      <img src="/tipster-icon.png" alt="Tipsters" className="bookmaker-logo" style={{transform:'rotate(-90deg) scaleX(0.4)', transformOrigin:'center center', filter:'var(--wordmark-filter)', maxWidth:'none', width:'80px'}} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                      <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>TIPS</span>
-                    </div>
-                  </div>
-                  {sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
+                  🎯{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
                   <div className="bookmaker-header">
