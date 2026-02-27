@@ -247,7 +247,7 @@ function lookupByName(map, playerName) {
   return hits.length === 1 ? hits[0] : null;
 }
 
-function buildPlayersFromSheet(oddsData, dgNames = []) {
+function buildPlayersFromSheet(oddsData, dgNames = [], rankMap = {}) {
   return Object.entries(oddsData).map(([name, bookOdds]) => {
     const canonicalName = resolvePlayerName(name, dgNames);
     const bookmakerOdds = {};
@@ -260,10 +260,12 @@ function buildPlayersFromSheet(oddsData, dgNames = []) {
     });
     const vals = Object.values(bookmakerOdds).map((o) => o.outright).filter(Number.isFinite);
     const avgOdds = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 999;
+    const normName = norm(canonicalName);
+    const owgr = rankMap[normName] ?? null;
     return {
       name: canonicalName,
       nationality: 'TBD',
-      owgr: null,
+      owgr,
       recentForm: [1],
       courseHistory: 'TBD',
       tipsterPicks: [],
@@ -380,7 +382,7 @@ export default function GolfOddsComparison() {
       if (cached) {
         const { data, ewData, ts } = JSON.parse(cached);
         if (Date.now() - ts < SHEET_PRICES_CACHE_MS && data && Object.keys(data).length > 0) {
-          const builtPlayers = buildPlayersFromSheet(data, Object.keys(nationalityMap));
+          const builtPlayers = buildPlayersFromSheet(data, Object.keys(nationalityMap), rankingsMap);
           setPlayers(builtPlayers);
           setBookmakers(BOOKMAKERS);
           if (ewData) setEwTermsMap(ewData);
@@ -398,7 +400,7 @@ export default function GolfOddsComparison() {
         const oddsData = json.odds || json;
         const ewData   = json.ewTerms || null;
         if (!oddsData || Object.keys(oddsData).length === 0) throw new Error('Empty response');
-        const builtPlayers = buildPlayersFromSheet(oddsData, Object.keys(nationalityMap));
+        const builtPlayers = buildPlayersFromSheet(oddsData, Object.keys(nationalityMap), rankingsMap);
         setPlayers(builtPlayers);
         setBookmakers(BOOKMAKERS);
         if (ewData) setEwTermsMap(ewData);
@@ -484,13 +486,18 @@ export default function GolfOddsComparison() {
   // ── apply rankings to players once both are loaded ───────────────────────────
   useEffect(() => {
     if (Object.keys(rankingsMap).length === 0 || players.length === 0) return;
+    const needsUpdate = players.some(p => {
+      const rank = lookupRank(rankingsMap, p.name);
+      return rank !== null && p.owgr !== rank;
+    });
+    if (!needsUpdate) return;
     setPlayers((prev) =>
       prev.map((p) => {
         const rank = lookupRank(rankingsMap, p.name);
         return rank !== null ? { ...p, owgr: rank } : p;
       })
     );
-  }, [rankingsMap, selectedTournament]); // eslint-disable-line
+  }, [rankingsMap, players]); // eslint-disable-line
 
   // ── re-resolve names once nationalityMap loads ───────────────────────────────
   useEffect(() => {
