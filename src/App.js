@@ -773,6 +773,7 @@ export default function GolfOddsComparison() {
           --btn-hamburger:     #2D3748;
 
           --wordmark-filter:   none;
+          --icon-invert:       none;
           --logo-filter:       none;
         }
 
@@ -822,6 +823,7 @@ export default function GolfOddsComparison() {
           --btn-hamburger:     #1a1a1a;
 
           --wordmark-filter:   grayscale(100%) contrast(1.1);
+          --icon-invert:       none;
           --logo-filter:       grayscale(100%) contrast(1.1);
         }
 
@@ -871,6 +873,7 @@ export default function GolfOddsComparison() {
           --btn-hamburger:     #e0e0e0;
 
           --wordmark-filter:   invert(1) brightness(1.15);
+          --icon-invert:       invert(1);
           --logo-filter:       invert(1) brightness(1.15);
         }
 
@@ -1555,7 +1558,7 @@ export default function GolfOddsComparison() {
                 <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} title="Tipster Consensus">
                   <div className="bookmaker-header">
                     <div className="bookmaker-logo-wrapper">
-                      <img src="/tipster-icon.png" alt="Tipsters" className="bookmaker-logo" style={{filter:'var(--wordmark-filter)'}} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
+                      <img src="/tipster-icon.png" alt="Tipsters" className="bookmaker-logo" style={{filter:'var(--icon-invert)'}} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
                       <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>TIPS</span>
                     </div>
                   </div>
