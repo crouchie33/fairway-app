@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import logoImg from './logo.png';
 import wordmarkImg from './wordmark.png';
+import tipstersImg from './tipsters.png';
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
@@ -773,7 +774,6 @@ export default function GolfOddsComparison() {
           --btn-hamburger:     #2D3748;
 
           --wordmark-filter:   none;
-          --icon-invert:       none;
           --logo-filter:       none;
         }
 
@@ -823,7 +823,6 @@ export default function GolfOddsComparison() {
           --btn-hamburger:     #1a1a1a;
 
           --wordmark-filter:   grayscale(100%) contrast(1.1);
-          --icon-invert:       none;
           --logo-filter:       grayscale(100%) contrast(1.1);
         }
 
@@ -873,7 +872,6 @@ export default function GolfOddsComparison() {
           --btn-hamburger:     #e0e0e0;
 
           --wordmark-filter:   invert(1) brightness(1.15);
-          --icon-invert:       invert(1);
           --logo-filter:       invert(1) brightness(1.15);
         }
 
@@ -1154,6 +1152,8 @@ export default function GolfOddsComparison() {
         .owgr-header { font-size: 0.7rem; padding: 8px 6px; width: 56px; min-width: 56px; max-width: 56px; line-height: 1.2; cursor: pointer; color: var(--text-primary); }
         .owgr-header div { font-weight: 600; }
         .tipster-header { font-size: 1.4rem; cursor: pointer; padding: 12px 6px; width: 46px; min-width: 46px; max-width: 46px; }
+        .tipster-header-img { height: 100px; width: auto; object-fit: contain; display: block; margin: 0 auto; }
+        [data-theme="dark"] .tipster-header-img { filter: invert(1); }
         .bookmaker-header { display: flex; flex-direction: column; align-items: center; height: 150px; padding: 0; overflow: hidden; width: 100%; }
         .bookmaker-logo-wrapper { height: 118px; width: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(270deg); overflow: hidden; padding: 0 1px; }
         .bookmaker-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -1556,13 +1556,7 @@ export default function GolfOddsComparison() {
                   {sortConfig.key === 'owgr' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="tipster-header desktop-only" onClick={() => handleSort('tipsterPicks')} title="Tipster Consensus">
-                  <div className="bookmaker-header">
-                    <div className="bookmaker-logo-wrapper">
-                      <img src="/tipster-icon.png" alt="Tipsters" className="bookmaker-logo" style={{filter:'var(--icon-invert)'}} onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} />
-                      <span style={{display:'none',fontSize:'0.6rem',fontWeight:700,textAlign:'center'}}>TIPS</span>
-                    </div>
-                  </div>
-                  {sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
+                  <img src={tipstersImg} alt="Tipsters" className="tipster-header-img" />{sortConfig.key === 'tipsterPicks' && <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>}
                 </th>
                 <th className="poly-header desktop-only" onClick={() => handleSort('polyOdds')} title="Polymarket implied odds">
                   <div className="bookmaker-header">
