@@ -666,7 +666,7 @@ export default function GolfOddsComparison() {
       const g = gcd(num, den);
       return `${num/g}/${den/g}`;
     }
-    return n % 1 === 0 ? String(n) : n.toFixed(1);
+    return n % 1 === 0 ? String(n) : (Math.round(n * 100) % 10 === 0 ? n.toFixed(1) : n.toFixed(2));
   }, [oddsFormat]);
 
   const getFinishClass = (pos) => {
